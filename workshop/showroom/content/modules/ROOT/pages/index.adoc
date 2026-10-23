@@ -1,0 +1,42 @@
+= Secure microservices with Red Hat Build of Keycloak
+:navtitle: Welcome
+
+Welcome to this hands-on lab. You will create an isolated Keycloak realm and
+connect it to three existing application login patterns: a browser SPA, a
+server-side backend-for-frontend (BFF), and a reverse proxy.
+
+You will work in your own OpenShift namespace and realm. The Keycloak server is
+shared, but the realm you create and the application copy you use are yours.
+Never paste credentials into shared chat, a terminal recording, or another
+attendee's namespace.
+
+== Learning outcomes
+
+By the end of the lab, you can:
+
+* create a realm using realm-scoped delegation without server-wide admin;
+* configure users, realm roles, OIDC clients, redirect URIs, PKCE, and API
+  audiences;
+* connect existing apps by changing runtime configuration and credentials;
+* explain why reader and manager requests produce different authorization
+  results;
+* distinguish a user's token from a service account and an exchanged token;
+* identify the operational and production tradeoffs in each login pattern.
+
+== Start here
+
+. Open xref:overview.adoc[] to see the seven modules and time estimate.
+. Read xref:details.adoc[] and confirm your attendee ID, namespace, realm
+  prefix, and app URLs from the facilitator.
+. Keep the facilitator-provided values private to your session. Do not infer
+  URLs or reuse another attendee's values.
+
+Keep your allocated routes handy: link:{spa_url}[SPA], link:{bff_url}[BFF],
+and link:{proxy_url}[reverse proxy]. The BFF and proxy depend on your realm's
+OIDC discovery endpoint. Before you create the realm in Module 2, they can
+temporarily return **503** or lead to a missing-realm page. This is expected
+during setup; repeat the route checks after Modules 3 and 4. Open your realm at
+link:{keycloak_origin}/admin/master/console/[Keycloak administration console].
+
+The activities follow a Know–Do–Check rhythm: learn a concept, make a change,
+then verify the result before moving on.

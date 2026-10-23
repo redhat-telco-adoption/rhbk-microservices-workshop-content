@@ -1,0 +1,44 @@
+= Module 7: Observability and production tradeoffs
+:navtitle: 7. Observe and review
+
+== Know
+
+Useful observability answers which operation failed, which service handled it,
+and which sanitized identity attributes were involved. Logs and traces should
+not expose passwords, client secrets, session cookies, or bearer tokens.
+
+== Do
+
+. Make one successful read and one denied write in your application copy.
+. Open the approved namespace-scoped logs and locate the matching Orders
+  requests by time and trace/request ID.
+. Follow the trace through the downstream Inventory or Notifications call if
+  tracing is enabled in your reservation.
+. Write one sentence for each pattern describing where the browser session
+  lives, how logout works, and the main operational dependency.
+. Review client lifetime, role ownership, redirect URI policy, token lifetime,
+  secret rotation, and audit-event retention with a partner.
+
+== Check
+
+Share a short production recommendation that names the pattern, threat or
+operational constraint it addresses, and a control you would add before
+production. Ensure your evidence contains no credentials or raw tokens.
+
+**Expected:** your recommendation accounts for browser token exposure, BFF or
+proxy availability, CSRF, exact redirects, audience restrictions, least
+privilege, audit data, and recovery.
+
+== Optional legacy API activity
+
+The project’s Legacy API depends on AWS, DNS, subnet, EC2, and publicly trusted
+TLS prerequisites. Use it only when your facilitator explicitly confirms it is
+available. Confirm the audience is `legacy-api`, test the prepared endpoint,
+and compare its identity evidence with the cluster APIs. Otherwise mark it
+skipped.
+
+== If something is wrong
+
+If logs or traces are unavailable, record that as a reservation dependency and
+finish the production review from the architecture and API responses. Never
+request cluster-wide logging access for this exercise.

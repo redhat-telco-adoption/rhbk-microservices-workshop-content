@@ -1,0 +1,19 @@
+---
+site:
+  title: Secure Microservices with Red Hat Build of Keycloak
+  start_page: modules::index.adoc
+content:
+  sources:
+    - url: ../..
+      branches: HEAD
+      start_path: workshop/showroom/content
+ui:
+  bundle:
+    url: https://github.com/rhpds/rhdp_showroom_theme/releases/download/latest/ui-bundle.zip
+output:
+  dir: ./build/www
+runtime:
+  cache_dir: ./build/antora-cache
+asciidoc:
+  attributes:
+    page-pagination: true

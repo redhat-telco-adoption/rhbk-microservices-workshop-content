@@ -1,0 +1,41 @@
+= Overview
+:navtitle: Overview
+
+This 4–6 hour workshop assumes basic OIDC, HTTP, and OpenShift familiarity.
+The facilitator provides a prepared shared Keycloak service and a separate
+namespace for each attendee. Each learner creates a realm; no realm is shared
+between learners.
+
+[cols="1,3,1",options="header"]
+|===
+|Module |Outcome |Time
+|1. Application architecture |Map browser, API, identity, and trust boundaries |25 min
+|2. Realm and users |Create your realm and test delegated administration |40 min
+|3. Clients, roles, and audiences |Configure OIDC and least-privilege claims |55 min
+|4. Connect applications |Update runtime issuer, client IDs, and secrets |50 min
+|5. Authorization decisions |Verify allowed and denied reader/manager actions |35 min
+|6. Login patterns and service identities |Compare SPA, BFF, proxy, token exchange, and client credentials |45 min
+|7. Observability and production tradeoffs |Trace a request and make a production review |30 min
+|Breaks and troubleshooting |Facilitated buffer |20–45 min
+|===
+
+== Application patterns
+
+* **SPA with PKCE:** the browser holds a short-lived access token in memory and
+  calls the API directly.
+* **BFF:** the browser receives a secure session cookie; the server keeps
+  tokens and relays the user token to the API.
+* **Reverse proxy:** the browser uses a session cookie; the proxy authorizes
+  the request and passes the required user context to the API.
+
+All three reach the same API contract. Orders allows reads to users with the
+`user` role and writes to users with the `manager` role. Orders calls inventory
+with an exchanged user token and calls notifications with a service-account
+token.
+
+== Definition of done
+
+You have created and connected your own realm, completed an interactive login
+through each available pattern, shown a reader request succeed and a reader
+write fail, shown a manager write succeed, and explained one downstream service
+identity. Finish with the production review in module 7.

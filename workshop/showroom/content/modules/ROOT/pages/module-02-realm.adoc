@@ -1,0 +1,39 @@
+= Module 2: Create your realm and users
+:navtitle: 2. Create a realm
+
+== Know
+
+The Keycloak `create-realm` permission permits a delegated user to create a
+realm and administer the realm it created. It does not require the global
+`admin` role. A realm is a separate identity boundary inside the shared
+Keycloak service.
+
+== Do
+
+. Open the link:{keycloak_origin}/admin/master/console/[Keycloak administration console] and sign in using your allocated
+  facilitator-provided account.
+. In the master realm, choose **Create realm**.
+. Use the exact realm name provided for your attendee ID. Enable the realm and
+  save it.
+. Switch to your new realm. Confirm its URL ends in `/realms/{realm_name}`.
+. Create two users with non-shared lab credentials: one named `reader` and one
+  named `manager`.
+. Assign the realm role `user` to both. Assign `manager` to the second user.
+. Set non-temporary passwords and use the lab's approved private credential
+  handling method.
+
+== Check
+
+Sign in as each user through the account console. Confirm both accounts are
+enabled and that only the second has the `manager` realm role. Confirm realm
+administration works inside your realm.
+
+**Expected:** your issuer is `{keycloak_origin}/realms/{realm_name}` and you
+cannot administer another attendee's realm or change server-wide settings.
+
+== If something is wrong
+
+If **Create realm** is missing, stop and ask the facilitator to check your
+delegated `create-realm` permission. If the realm name collides, do not rename
+another attendee's realm; request your exact assigned name. Do not grant
+yourself `admin` or add roles in the master realm.

@@ -1,0 +1,60 @@
+= Module 3: Configure clients, roles, and audiences
+:navtitle: 3. Clients and tokens
+
+== Know
+
+An OIDC client describes an application. Public browser clients cannot keep a
+secret; confidential server-side clients can. Authorization code with PKCE
+protects the browser login flow. Exact redirect URIs prevent a token response
+from being sent to an untrusted callback. An audience identifies the API that
+should accept a token.
+
+== Do: create the browser client
+
+. In your realm, create an enabled OpenID Connect client named `spa`.
+. Set client authentication **Off** and enable Standard flow. Keep implicit and
+  direct access grants disabled.
+. Set the valid redirect URI to `{spa_url}/auth/popup-callback` and Web Origin
+  to the exact SPA origin (scheme and host only).
+. Require PKCE with `S256` where the client configuration exposes the setting.
+. Save, then check that a URL on another host is not in the redirect allowlist.
+
+== Do: configure server-side clients
+
+. Create a confidential `bff` client with Standard flow, PKCE `S256`, and the
+  exact callback `{bff_url}/login/oauth2/code/keycloak`.
+. Create a confidential `proxy` client with Standard flow, PKCE `S256`, and
+  the exact callback `{proxy_url}/oauth2/callback`.
+. Create a confidential `orders-api` client with service accounts enabled and
+  browser flows disabled. Keep its generated secret in your own namespace.
+. Create API resource clients named `inventory-api` and `notifications-api`.
+  Do not enable user login flows for these resource clients.
+. Add realm roles `user` and `manager`; make `manager` include `user`.
+. Add the `notifier` client role to `notifications-api` and assign it only to
+  the `orders-api` service account.
+
+== Do: constrain token audiences
+
+Add audience mappers for `orders-api`, `inventory-api`, and
+`notifications-api` in the client scopes or client configuration supported by
+your RHBK version. Give the browser and BFF clients only the audiences their
+flows call. Configure standard token exchange so `orders-api` can exchange a
+user token for `inventory-api`; do not permit arbitrary clients to exchange
+tokens.
+
+== Check
+
+Inspect a token from your SPA client using the approved local token inspector.
+Confirm `iss` equals your realm issuer, the token has `user` for the reader,
+and its `aud` includes only the intended API. A token for Orders should not be
+accepted by Inventory without the exchange step.
+
+**Expected:** browser clients use authorization code + PKCE; the confidential
+clients have exact callback URIs; API tokens are audience-restricted.
+
+== If something is wrong
+
+Check for a missing scheme, path, or trailing slash in the redirect URI. Avoid
+wildcard redirect URIs. If PKCE or token exchange controls are absent in your
+console, ask the facilitator to confirm the installed RHBK version and provide
+the corresponding UI path. Never paste a client secret into the guide or chat.

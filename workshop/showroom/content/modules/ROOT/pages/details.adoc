@@ -1,0 +1,46 @@
+= Lab environment and preparation
+:navtitle: Preparation
+
+== Your session values
+
+Use only the values allocated to you by the facilitator. Record them locally
+for the session; do not commit them or post secrets in a shared channel.
+
+[cols="1,2",options="header"]
+|===
+|Value |Provided value
+|Attendee ID |{attendee_id}
+|OpenShift namespace |{attendee_namespace}
+|Keycloak server origin |{keycloak_origin}
+|Realm name |{realm_name}
+|Expected issuer |{issuer}
+|SPA URL |{spa_url}
+|BFF URL |{bff_url}
+|Proxy URL |{proxy_url}
+|===
+
+If an attribute shows `not-assigned`, `namespace-not-assigned`, or an
+`example.invalid` URL, stop and ask the facilitator for the reservation
+handoff. Do not guess an endpoint or reuse another learner's realm.
+
+== Prerequisites
+
+* A browser with access to the RHDP workshop site, Keycloak, and OpenShift
+  Console.
+* An attendee account that can create a realm in the shared Keycloak master
+  realm and administer only realms it creates.
+* An OpenShift identity limited to the allocated namespace.
+* The six workshop images already available to your namespace and the runtime
+  configuration ConfigMaps/Secrets named in module 4.
+* A facilitator-confirmed session secret handoff for confidential client
+  credentials. Never use a secret copied from another attendee.
+
+== Stop conditions
+
+Pause and contact the facilitator if your namespace is not the one assigned
+to you, the realm name is already owned by someone else, an app URL belongs to
+another attendee, or the Keycloak UI offers server-wide administration. Do not
+try to fix shared cluster or Keycloak settings yourself.
+
+The legacy API activity is optional ({legacy-status}). Skipping it does not
+prevent completion of the main workshop.

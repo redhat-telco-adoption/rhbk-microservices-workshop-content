@@ -1,0 +1,39 @@
+= Module 5: Verify authorization decisions
+:navtitle: 5. Allow and deny
+
+== Know
+
+Authentication identifies the caller. Authorization evaluates role, audience,
+issuer, and sometimes client identity for each protected API operation. A
+client-side button is not an authorization control.
+
+== Do
+
+. Sign in as `reader` using the SPA pattern and open Orders.
+. Run the read operation (`GET /orders`) and record the response code.
+. Attempt the manager operation (`POST /orders`) with a harmless lab payload.
+. Sign out. Sign in as `manager`, repeat the read, then repeat the write.
+. If the facilitator provides the safe local token matrix, try a token with a
+  wrong audience and observe the API response.
+
+== Check
+
+Record the results:
+
+[cols="1,1,2",options="header"]
+|===
+|Identity |Operation |Expected
+|reader with `user` |GET `/orders` |Success
+|reader with `user` |POST `/orders` |Denied
+|manager with `manager` and composite `user` |POST `/orders` |Success
+|Any identity with wrong `aud` |Protected API call |Rejected
+|===
+
+**Expected:** the API enforces the decision. A reader cannot gain write access
+by editing the UI or changing a request in the browser.
+
+== If something is wrong
+
+For an unexpected denial, check the token issuer, audience, role claim, and
+expiration before changing policy. For an unexpected success, stop and notify
+the facilitator; do not broaden the role or audience to make the test pass.

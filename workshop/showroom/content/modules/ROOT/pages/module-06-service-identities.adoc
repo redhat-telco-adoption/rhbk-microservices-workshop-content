@@ -1,0 +1,43 @@
+= Module 6: Compare login and service identities
+:navtitle: 6. Identity paths
+
+== Know
+
+The SPA, BFF, and proxy are three ways to handle the same user-facing login.
+They differ in where tokens live and how the browser calls an API. The
+downstream calls demonstrate two distinct grants:
+
+* **Token exchange:** Orders exchanges a user token for an Inventory-audience
+  token. The user identity remains available, while the API checks that the
+  authorized client is `orders-api`.
+* **Client credentials:** Orders obtains a machine token for Notifications.
+  There is no end-user identity; the service account has only the
+  `notifier` client role.
+
+== Do
+
+. Complete one Orders read using SPA PKCE, then repeat through the BFF and
+  reverse proxy.
+. In your namespace's workload logs or the approved token inspector, compare
+  the issuer, audience, token subject, and authorized party for each request.
+. Follow Orders → Inventory and identify the exchanged token's target audience
+  and calling client.
+. Follow Orders → Notifications and identify the service account and its
+  `notifier` role.
+. Ask the facilitator to demonstrate that a token from a different client or
+  wrong audience is rejected, if negative-token tooling is enabled.
+
+== Check
+
+Explain why the Notifications request cannot be attributed to `reader`, and
+why an arbitrary client must not be allowed to exchange a token for Inventory.
+
+**Expected:** user login differs from machine authentication; Inventory
+receives the narrow exchanged user token, Notifications receives a narrow
+service-account token.
+
+== If something is wrong
+
+If a downstream call fails, inspect only sanitized logs in your own namespace.
+Check the target audience, `azp`/authorized party, service-account role, and
+realm issuer. Do not expose full tokens or secrets in logs or screenshots.

@@ -1,0 +1,47 @@
+= Module 1: Explore the application architecture
+:navtitle: 1. Architecture
+
+== Know
+
+An identity provider authenticates the user and issues tokens. Each application
+and API still has to validate those tokens and make its own authorization
+decision. A valid login does not automatically authorize every API operation.
+
+The lab contains one frontend build configured at runtime for three patterns.
+Orders is the protected API. Inventory and notifications demonstrate two
+different service-to-service identities.
+
+== Do
+
+. Record your SPA, BFF, and proxy URLs from xref:details.adoc[]. Do not expect
+  all three routes to be ready yet: the BFF and proxy need the realm you create
+  in Module 2, and their clients and runtime settings from Modules 3 and 4.
+. Locate the application architecture diagram in the existing project guide.
+. Identify which process handles the browser callback in each pattern.
+. Trace the Orders → Inventory and Orders → Notifications calls.
+. In OpenShift Console, select your assigned project and inspect only your own
+  Deployments and Services.
+
+== Check
+
+Be able to answer:
+
+* Which pattern sends a bearer token directly from the browser to Orders?
+* Which patterns keep the token on the server and give the browser a session
+  cookie?
+* Which downstream call should retain the user identity, and which uses a
+  machine identity?
+
+**Expected:** SPA PKCE sends a bearer token from browser memory; BFF and proxy
+use session cookies. Orders exchanges the user token for Inventory and uses
+client credentials for Notifications.
+
+== If something is wrong
+
+Before Modules 2–4, an unavailable BFF or proxy route can mean its realm's OIDC
+discovery endpoint does not exist yet; a missing-realm page or temporary 503 is
+expected during this setup stage. After you create the realm, clients, and
+runtime settings, check the deployment readiness in your own namespace and
+retest the routes. If they are still unavailable then, ask the facilitator to
+check your reservation. Do not change routes or deployments in the shared
+`apps` namespace.
