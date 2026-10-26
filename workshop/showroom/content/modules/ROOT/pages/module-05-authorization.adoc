@@ -11,7 +11,10 @@ client-side button is not an authorization control.
 
 . Sign in as `reader` using the SPA pattern and open Orders.
 . Run the read operation (`GET /orders`) and record the response code.
-. Attempt the manager operation (`POST /orders`) with a harmless lab payload.
+. Attempt the manager operation (`POST /orders`) with the valid demo body
+  `{"item":"workshop-item","quantity":1}` if using the approved request
+  inspector. A `400` means the request body failed validation; it does not show
+  the expected role denial.
 . Sign out. Sign in as `manager`, repeat the read, then repeat the write.
 . If the facilitator provides the safe local token matrix, try a token with a
   wrong audience and observe the API response.

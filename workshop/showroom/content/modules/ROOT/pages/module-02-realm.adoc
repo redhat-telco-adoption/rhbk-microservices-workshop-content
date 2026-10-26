@@ -18,15 +18,17 @@ Keycloak service.
 . Switch to your new realm. Confirm its URL ends in `/realms/{realm_name}`.
 . Create two users with non-shared lab credentials: one named `reader` and one
   named `manager`.
-. Assign the realm role `user` to both. Assign `manager` to the second user.
 . Set non-temporary passwords and use the lab's approved private credential
   handling method.
 
+Leave both users without realm-role assignments for now. In Module 3, create
+the `user` and `manager` roles, make `manager` include `user`, then assign the
+roles to these users. Keycloak cannot assign a role before it exists.
+
 == Check
 
-Sign in as each user through the account console. Confirm both accounts are
-enabled and that only the second has the `manager` realm role. Confirm realm
-administration works inside your realm.
+Confirm both accounts are enabled and realm administration works inside your
+realm. The role check happens after the roles are created in Module 3.
 
 **Expected:** your issuer is `{keycloak_origin}/realms/{realm_name}` and you
 cannot administer another attendee's realm or change server-wide settings.

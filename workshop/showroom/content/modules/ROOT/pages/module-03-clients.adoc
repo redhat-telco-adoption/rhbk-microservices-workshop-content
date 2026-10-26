@@ -30,6 +30,8 @@ should accept a token.
 . Create API resource clients named `inventory-api` and `notifications-api`.
   Do not enable user login flows for these resource clients.
 . Add realm roles `user` and `manager`; make `manager` include `user`.
+. Assign `user` to both users created in Module 2. Assign `manager` to the
+  `manager` user as well.
 . Add the `notifier` client role to `notifications-api` and assign it only to
   the `orders-api` service account.
 
@@ -37,17 +39,34 @@ should accept a token.
 
 Add audience mappers for `orders-api`, `inventory-api`, and
 `notifications-api` in the client scopes or client configuration supported by
-your RHBK version. Give the browser and BFF clients only the audiences their
-flows call. Configure standard token exchange so `orders-api` can exchange a
-user token for `inventory-api`; do not permit arbitrary clients to exchange
-tokens.
+your RHBK version. Attach the resulting audiences to these clients:
+
+[cols="1,3",options="header"]
+|===
+|Client |Audience assignment
+|`spa`, `bff`, and `proxy` |`orders-api` only. Add `legacy-api` only if the facilitator confirms that optional service is available.
+|`orders-api` |`notifications-api` by default; allow `inventory-api` only for the configured token-exchange flow.
+|`verify-browser`, if provided |The same user-facing API audiences as `spa`.
+|===
+
+Do not give browser clients the `inventory-api` audience. Check the `proxy`
+client explicitly; it needs the same `orders-api` audience as `spa` and `bff`.
+Keep `notifications-api:notifier` on the `orders-api` service account only.
+
+Configure standard token exchange so `orders-api` can exchange a user token for
+`inventory-api`; do not permit arbitrary clients to exchange tokens. The
+facilitator will point out the audience-mapper controls for the installed RHBK
+version; preserve the exact client IDs and audience assignments above.
 
 == Check
 
-Inspect a token from your SPA client using the approved local token inspector.
-Confirm `iss` equals your realm issuer, the token has `user` for the reader,
-and its `aud` includes only the intended API. A token for Orders should not be
-accepted by Inventory without the exchange step.
+Confirm `iss` equals your realm issuer, the reader has the `user` role, and an
+SPA access token has `orders-api` in `aud` without `inventory-api`. Use only a
+facilitator-approved local inspector that displays selected claims and never
+prints or saves the full token. If that tool is unavailable, ask the
+facilitator to show the sanitized claim result. The direct Orders-token to
+Inventory rejection is demonstrated in Module 6 unless the facilitator
+provides the safe token matrix earlier.
 
 **Expected:** browser clients use authorization code + PKCE; the confidential
 clients have exact callback URIs; API tokens are audience-restricted.

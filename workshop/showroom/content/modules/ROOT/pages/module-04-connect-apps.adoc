@@ -10,23 +10,31 @@ No source edit or rebuild is needed for this activity.
 
 == Do
 
-. In OpenShift Console, select your namespace. Inspect `frontend-runtime-config`
-  and confirm `issuer` is your exact realm issuer and `spaClientId` is `spa`.
-. Confirm the SPA, BFF, and proxy routes match your session handoff.
-. Update the BFF ConfigMap issuer to your realm issuer. Confirm the existing
-  BFF client ID is `bff`; this project fixes that ID in the application and
-  expects the matching Keycloak client rather than a runtime override.
-. Update the proxy ConfigMap issuer and callback to your realm issuer and exact
-  proxy route.
-. Update Orders, Inventory, and Notifications ConfigMaps so their issuer is
-  your realm issuer. Confirm internal service URLs use your namespace, not
-  `apps.svc`.
-. Replace the `BFF_CLIENT_SECRET` value in `bff-client`, the `client-secret`
-  value in `proxy-secrets`, and the `client-secret` value in
-  `orders-api-client` with the matching secrets generated in module 3. The
-  `cookie-secret` and `redis-password` fields are reservation-generated; keep
-  them unchanged. Use the private console form, never command-line arguments
-  or shared logs.
+. In OpenShift Console, select your assigned namespace and confirm the SPA,
+  BFF, and proxy Routes match your session handoff.
+. Update only the listed fields in the ConfigMaps. Keep service URLs and other
+  reservation-generated values unchanged.
+
+[cols="1,2,3",options="header"]
+|===
+|ConfigMap |Fields to set |Value
+|`frontend-runtime-config` |In the `config.json` data value, set `issuer` and `spaClientId` |Your exact realm issuer; `spa`
+|`bff-config` |`OIDC_ISSUER` |Your exact realm issuer; the Keycloak client ID remains `bff`
+|`proxy-config` |`issuer`, `redirect-url` |Your exact realm issuer; `{proxy_url}/oauth2/callback`
+|`orders-api-config` |`ISSUER`, `WORKSHOP_ISSUER`, `SPA_ORIGIN` |Your exact realm issuer for both issuer fields; exact SPA origin
+|`inventory-api-config` |`ISSUER` |Your exact realm issuer
+|`notifications-api-config` |`ISSUER` |Your exact realm issuer
+|===
+
+. Leave `INVENTORY_API_URL`, `NOTIFICATIONS_API_URL`, and
+  `proxy-runtime-config` as provided; they must continue to use the
+  namespace-local services and runtime settings.
+. In the matching Secret fields, enter the confidential client secrets created
+  in Module 3: `BFF_CLIENT_SECRET` in `bff-client`, and `client-secret` in
+  `proxy-secrets` and `orders-api-client`. Keep `cookie-secret` and
+  `redis-password` unchanged. Edit Secrets through the private OpenShift
+  Console session; keep values out of terminal arguments, screenshots, and
+  shared logs.
 . Restart the corresponding Deployments through the console and wait for all
   readiness checks to pass.
 
@@ -42,8 +50,9 @@ namespace. The client secret does not appear in browser configuration.
 == If something is wrong
 
 Check issuer character-for-character, callback scheme/path, client ID, and
-Secret key names against the Deployment's `secretKeyRef`. A stale pod may need a
-rollout restart after a ConfigMap change. A BFF or proxy route can return 503
+Secret key names: `BFF_CLIENT_SECRET` in `bff-client`, `client-secret` in
+`proxy-secrets` and `orders-api-client`. A stale pod may need a rollout restart
+after a ConfigMap or Secret change. A BFF or proxy route can return 503
 before the realm and clients exist; after this module, verify the issuer and
 pod readiness if it persists. If the pod reports `ImagePullBackOff`, pause:
 this is a reservation image-pull setup issue, not a learner task.

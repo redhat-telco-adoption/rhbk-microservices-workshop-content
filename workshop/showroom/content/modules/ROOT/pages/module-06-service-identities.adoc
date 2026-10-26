@@ -18,14 +18,28 @@ downstream calls demonstrate two distinct grants:
 
 . Complete one Orders read using SPA PKCE, then repeat through the BFF and
   reverse proxy.
-. In your namespace's workload logs or the approved token inspector, compare
-  the issuer, audience, token subject, and authorized party for each request.
+. Sign in as `manager` and submit the valid `POST /orders` request from
+  Module 5. This successful write triggers the Orders → Inventory and Orders →
+  Notifications calls; use that request to find the downstream evidence.
+. In OpenShift Console, keep your project selected and open **Workloads > Pods**.
+  Choose only your Orders or Notifications pod and open its **Logs** view.
+  Compare the sanitized `subject`, `username`, `client_id` (the token's `azp`),
+  `roles`, `decision`, and `trace_id` fields for the request. These logs do not
+  include the full token or its audience; use the request time or trace ID to
+  match the downstream call. Do not inspect another attendee's namespace.
 . Follow Orders → Inventory and identify the exchanged token's target audience
-  and calling client.
+  and calling client. If the facilitator provides the approved local token
+  inspector, check only selected claims: `aud` includes `inventory-api`, `azp`
+  is `orders-api`, and `sub` matches the original user. Never copy, print, or
+  save the full token. Confirm the Inventory request succeeds for this
+  configured exchange.
 . Follow Orders → Notifications and identify the service account and its
   `notifier` role.
-. Ask the facilitator to demonstrate that a token from a different client or
-  wrong audience is rejected, if negative-token tooling is enabled.
+. If the safe token matrix is available, observe the original SPA Orders token
+  receive `401` from Inventory for its wrong audience, and the
+  `verify-denied` service token receive `403` from Notifications because it
+  lacks `notifier`. Otherwise ask the facilitator to show those sanitized
+  outcomes.
 
 == Check
 
@@ -39,5 +53,6 @@ service-account token.
 == If something is wrong
 
 If a downstream call fails, inspect only sanitized logs in your own namespace.
-Check the target audience, `azp`/authorized party, service-account role, and
-realm issuer. Do not expose full tokens or secrets in logs or screenshots.
+Check the configured issuer, target audience using the approved inspector,
+`client_id`/authorized party, and service-account role. Do not expose full
+tokens or secrets in logs or screenshots.
