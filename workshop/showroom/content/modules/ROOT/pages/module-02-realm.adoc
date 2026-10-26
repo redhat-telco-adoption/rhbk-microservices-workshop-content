@@ -21,9 +21,9 @@ Keycloak service.
 . Switch to your new realm. Confirm its URL ends in `/realms/{realm_name}`.
 . Create two users with non-shared lab credentials: one named `reader` and one
   named `manager`. Use synthetic email addresses `reader@example.invalid` and
-  `manager@example.invalid`; these addresses do not require SMTP delivery.
-. For each user, set **Email verified** to on before saving. Confirm the control
-  shows on after the change; do not assume that clicking it changed its state.
+  `manager@example.invalid`. These synthetic addresses do not require an inbox,
+  SMTP delivery, or an email-verification flow; the workshop does not verify
+  email addresses.
 . Set non-temporary passwords and use the lab's approved private credential
   handling method.
 
@@ -33,9 +33,10 @@ roles to these users. Keycloak cannot assign a role before it exists.
 
 == Check
 
-Confirm both accounts are enabled, each has the expected synthetic email and
-**Email verified** is on, and realm administration works inside your realm.
-The role check happens after the roles are created in Module 3.
+Confirm both accounts are enabled, each has the expected synthetic email, and
+realm administration works inside your realm. The proxy exercise accepts these
+unverified synthetic email claims. The role check happens after the roles are
+created in Module 3.
 
 **Expected:** your issuer is `{keycloak_origin}/realms/{realm_name}` and you
 cannot administer another attendee's realm or change server-wide settings.
