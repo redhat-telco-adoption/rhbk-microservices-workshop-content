@@ -12,12 +12,18 @@ Keycloak service.
 
 . Open the link:{keycloak_origin}/admin/master/console/[Keycloak administration console] and sign in using your allocated
   facilitator-provided account.
+. This account authenticates in the Keycloak `master` realm. Do not use
+  OpenShift Console SSO for workshop realm administration; it is a separate
+  login flow.
 . In the master realm, choose **Create realm**.
 . Use the exact realm name provided for your attendee ID. Enable the realm and
   save it.
 . Switch to your new realm. Confirm its URL ends in `/realms/{realm_name}`.
 . Create two users with non-shared lab credentials: one named `reader` and one
-  named `manager`.
+  named `manager`. Use synthetic email addresses `reader@example.invalid` and
+  `manager@example.invalid`; these addresses do not require SMTP delivery.
+. For each user, set **Email verified** to on before saving. Confirm the control
+  shows on after the change; do not assume that clicking it changed its state.
 . Set non-temporary passwords and use the lab's approved private credential
   handling method.
 
@@ -27,8 +33,9 @@ roles to these users. Keycloak cannot assign a role before it exists.
 
 == Check
 
-Confirm both accounts are enabled and realm administration works inside your
-realm. The role check happens after the roles are created in Module 3.
+Confirm both accounts are enabled, each has the expected synthetic email and
+**Email verified** is on, and realm administration works inside your realm.
+The role check happens after the roles are created in Module 3.
 
 **Expected:** your issuer is `{keycloak_origin}/realms/{realm_name}` and you
 cannot administer another attendee's realm or change server-wide settings.
