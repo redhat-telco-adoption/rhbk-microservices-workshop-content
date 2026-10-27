@@ -17,6 +17,13 @@ should accept a token.
 . Set SPA's exact redirect URI to `{spa_url}/auth/popup-callback`, post-logout
   redirect URI to `{spa_url}/auth/logout-callback`, and Web Origin to
   `{spa_url}` (scheme and host only).
+. Add each redirect URI, post-logout URI, and Web Origin to its list with the
+  console's **+** control, then click **Save**. Confirm `spa` appears in the
+  Clients list, reopen it, and verify it is enabled and Public, Standard flow
+  is On, PKCE is `S256`, and the exact redirect URI, post-logout URI, and Web
+  Origin persisted. If the client or a value is missing, resolve any visible
+  validation message. If Save remains unresolved and no message explains why,
+  stop and ask the facilitator; do not assume Save succeeded.
 . Create confidential clients `bff` and `proxy`. For both, set Standard flow
   On, implicit flow and direct access grants Off, and PKCE `S256`. Set BFF's
   exact callback to `{bff_url}/login/oauth2/code/keycloak` and post-logout URI
@@ -99,6 +106,13 @@ the official RHBK 26.4
 link:https://docs.redhat.com/en/documentation/red_hat_build_of_keycloak/26.4/html/server_administration_guide/assembly-managing-clients_server_administration_guide#link-client-scope-with-the-client[Link client scope with the client procedure].
 To check effective scopes, use the
 link:https://docs.redhat.com/en/documentation/red_hat_build_of_keycloak/26.4/html/server_administration_guide/assembly-managing-clients_server_administration_guide#evaluating-client-scopes[Evaluating Client Scopes procedure].
+
+When adding the `orders-api` audience, `orders-api` should appear in the
+**Included Client Audience** picker. If it is absent even though `orders-api`
+appears in the realm's Clients list, stop and ask the facilitator to check the
+console and realm state. Do not save an incomplete mapper or assume the scope
+name adds an audience. Continue after the saved mapper and client-scope
+evaluation show the intended audience in the access token.
 
 For role scope mappings, see the official RHBK 26.4
 link:https://docs.redhat.com/en/documentation/red_hat_build_of_keycloak/26.4/html/server_administration_guide/assigning_permissions_using_roles_and_groups#role-scope-mappings[Role scope mappings section].

@@ -10,8 +10,15 @@ No source edit or rebuild is needed for this activity.
 
 == Do
 
-. In OpenShift Console, select your assigned namespace and confirm the SPA,
-  BFF, and proxy Routes match your session handoff.
+. Open the OpenShift Console using the `sso` sign-in option and the assigned
+  Console username and credential in your private handoff. AgD provisions
+  separate accounts with the same username and assigned credential in Keycloak
+  `master` and the OpenShift OAuth `sso` realm. Use `master` for Keycloak
+  administration and `sso` for the OpenShift Console. Do not create either
+  account or change its password. If your handoff does not identify the Console
+  credential or the `sso` option is missing, stop and ask the facilitator.
+. Select your assigned namespace and confirm the SPA, BFF, and proxy Routes
+  match your session handoff.
 . Update only the listed fields in each ConfigMap. Keep service URLs and other
   reservation-generated values unchanged. Each row names the workload that
   consumes that ConfigMap.
