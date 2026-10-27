@@ -10,8 +10,10 @@ Keycloak service.
 
 == Do
 
-. Open the link:{keycloak_origin}/admin/master/console/[Keycloak administration console] and sign in using your allocated
-  facilitator-provided account.
+. Open the
+  link:{keycloak_origin}/admin/master/console/[Keycloak administration console]
+  and sign in using your allocated account and assigned password. Keep this
+  attendee password unchanged; do not trigger a password-change prompt.
 . This account authenticates in the Keycloak `master` realm. Do not use
   OpenShift Console SSO for workshop realm administration; it is a separate
   login flow.
@@ -24,8 +26,11 @@ Keycloak service.
   `manager@example.invalid`. These synthetic addresses do not require an inbox,
   SMTP delivery, or an email-verification flow; the workshop does not verify
   email addresses.
-. Set non-temporary passwords and use the lab's approved private credential
-  handling method.
+. For each lab user, enter its private lab password and turn the **Temporary**
+  checkbox or switch **Off**. Verify it reads **Off** before saving the
+  password. The eye/visibility control only reveals the password you typed; it
+  does not change whether the password is temporary. Use the lab's approved
+  private credential handling method and do not reuse your attendee password.
 
 Leave both users without realm-role assignments for now. In Module 3, create
 the `user` and `manager` roles, make `manager` include `user`, then assign the

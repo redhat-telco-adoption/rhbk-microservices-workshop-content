@@ -9,71 +9,117 @@ protects the browser login flow. Exact redirect URIs prevent a token response
 from being sent to an untrusted callback. An audience identifies the API that
 should accept a token.
 
-== Do: create the browser client
+== Do: create clients
 
-. In your realm, create an enabled OpenID Connect client named `spa`.
-. Set client authentication **Off** and enable Standard flow. Keep implicit and
-  direct access grants disabled.
-. Set the valid redirect URI to `{spa_url}/auth/popup-callback` and Web Origin
-  to the exact SPA origin (scheme and host only).
-. Require PKCE with `S256` where the client configuration exposes the setting.
-. Save, then check that a URL on another host is not in the redirect allowlist.
+. In your realm, create an enabled OpenID Connect client named `spa`. Set it to
+  **Public** (client authentication Off), Standard flow On, implicit flow and
+  direct access grants Off. Require PKCE method `S256`.
+. Set SPA's exact redirect URI to `{spa_url}/auth/popup-callback`, post-logout
+  redirect URI to `{spa_url}/auth/logout-callback`, and Web Origin to
+  `{spa_url}` (scheme and host only).
+. Create confidential clients `bff` and `proxy`. For both, set Standard flow
+  On, implicit flow and direct access grants Off, and PKCE `S256`. Set BFF's
+  exact callback to `{bff_url}/login/oauth2/code/keycloak` and post-logout URI
+  to `{bff_url}/`. Set proxy's exact callback to
+  `{proxy_url}/oauth2/callback` and post-logout URI to `{proxy_url}/`.
+. Create confidential `orders-api` with Standard flow Off, implicit flow Off,
+  direct access grants Off, and service account On. Enable standard token
+  exchange for this client only. Keep its generated secret private in your
+  namespace.
+. Create confidential resource clients `inventory-api` and
+  `notifications-api`; keep Standard flow, implicit flow, direct access grants,
+  and service accounts Off. Add client role `notifier` to `notifications-api`.
 
-== Do: configure server-side clients
+**Check:** `spa`, `bff`, and `proxy` have the exact callback and PKCE settings
+above. Only `orders-api` has a service account and standard token exchange.
+For `spa`, `bff`, `proxy`, and `orders-api`, check that the effective client
+scopes retain the `roles`, `profile`, and `email` defaults. The roles mapper
+adds role claims to tokens; role scope mappings separately limit which roles
+the client may receive.
 
-. Create a confidential `bff` client with Standard flow, PKCE `S256`, and the
-  exact callback `{bff_url}/login/oauth2/code/keycloak`.
-. Create a confidential `proxy` client with Standard flow, PKCE `S256`, and
-  the exact callback `{proxy_url}/oauth2/callback`.
-. Create a confidential `orders-api` client with service accounts enabled and
-  browser flows disabled. Keep its generated secret in your own namespace.
-. Create API resource clients named `inventory-api` and `notifications-api`.
-  Do not enable user login flows for these resource clients.
-. Add realm roles `user` and `manager`; make `manager` include `user`.
-. Assign `user` to both users created in Module 2. Assign `manager` to the
-  `manager` user as well.
-. Add the `notifier` client role to `notifications-api` and assign it only to
-  the `orders-api` service account.
+== Do: create and assign roles
+
+. Create realm roles `user` and `manager`; configure `manager` to include
+  `user` as a composite role.
+. Assign `user` to both users from Module 2. Assign `manager` to the `manager`
+  user as well.
+. Assign `notifications-api:notifier` only to the `orders-api` service
+  account.
+. Disable full-scope access on `spa`, `bff`, `proxy`, and `orders-api`. Allow
+  the required `user` and `manager` realm-role mappings on those clients, and
+  allow `notifications-api:notifier` on `orders-api` only.
+
+**Check:** the reader has `user`; the manager has `user` and `manager`; and
+only the Orders service account has `notifications-api:notifier`.
 
 == Do: constrain token audiences
 
-Add audience mappers for `orders-api`, `inventory-api`, and
-`notifications-api` in the client scopes or client configuration supported by
-your RHBK version. Attach the resulting audiences to these clients:
+Create client scopes with Audience protocol mappers. Each mapper must add its
+target client ID to the **access token** `aud` claim, not the ID token. Use
+these exact scope, client, and assignment values:
 
-[cols="1,3",options="header"]
+[cols="1,2,3",options="header"]
 |===
-|Client |Audience assignment
-|`spa`, `bff`, and `proxy` |`orders-api` only. Add `legacy-api` only if the facilitator confirms that optional service is available.
-|`orders-api` |`notifications-api` by default; allow `inventory-api` only for the configured token-exchange flow.
-|`verify-browser`, if provided |The same user-facing API audiences as `spa`.
+|Scope |Mapper audience |Assignment
+|`orders-api-aud` |`orders-api` |Default on `spa`, `bff`, and `proxy`
+|`notifications-api-aud` |`notifications-api` |Default on `orders-api`
+|`inventory-api-aud` |`inventory-api` |Optional on `orders-api` only
 |===
 
-Do not give browser clients the `inventory-api` audience. Check the `proxy`
-client explicitly; it needs the same `orders-api` audience as `spa` and `bff`.
-Keep `notifications-api:notifier` on the `orders-api` service account only.
+Add a separate Audience mapper for `proxy` itself to the proxy access token.
+Do not give browser clients the `inventory-api` audience. Orders calls
+Inventory using `scope=inventory-api-aud` and `audience=inventory-api` in its
+configured token-exchange flow.
 
-Configure standard token exchange so `orders-api` can exchange a user token for
-`inventory-api`; do not permit arbitrary clients to exchange tokens. The
-facilitator will point out the audience-mapper controls for the installed RHBK
-version; preserve the exact client IDs and audience assignments above.
+Legacy is excluded when the facilitator has not enabled it. Add
+`legacy-api-aud` as a default scope on `spa`, `bff`, and `proxy` only when the
+facilitator confirms that the Legacy API is available.
+
+For the audience mapper procedure, see the official RHBK 26.4
+link:https://docs.redhat.com/en/documentation/red_hat_build_of_keycloak/26.4/html/server_administration_guide/assembly-managing-clients_server_administration_guide#hardcoded-audience[Hardcoded audience section].
+It describes creating an Audience mapper for a client scope and selecting the
+included client audience. For attaching that scope as default or optional, use
+the official RHBK 26.4
+link:https://docs.redhat.com/en/documentation/red_hat_build_of_keycloak/26.4/html/server_administration_guide/assembly-managing-clients_server_administration_guide#link-client-scope-with-the-client[Link client scope with the client procedure].
+To check effective scopes, use the
+link:https://docs.redhat.com/en/documentation/red_hat_build_of_keycloak/26.4/html/server_administration_guide/assembly-managing-clients_server_administration_guide#evaluating-client-scopes[Evaluating Client Scopes procedure].
+
+For role scope mappings, see the official RHBK 26.4
+link:https://docs.redhat.com/en/documentation/red_hat_build_of_keycloak/26.4/html/server_administration_guide/assigning_permissions_using_roles_and_groups#role-scope-mappings[Role scope mappings section].
+Turn Full Scope Allowed Off and explicitly add only the intended roles. Keep
+the `roles` client scope and its role mapper so configured roles can appear as
+token claims; the scope mappings alone do not create role claims.
+
+For enabling the Orders service account and assigning its client role, see the
+official RHBK 26.4
+link:https://docs.redhat.com/en/documentation/red_hat_build_of_keycloak/26.4/html/server_administration_guide/assembly-managing-clients_server_administration_guide#using-a-service-account[Using a service account procedure].
+The guide describes enabling service accounts on the client and assigning
+roles to its service account. Console labels and layout can vary by version;
+confirm the installed UI with the facilitator rather than assuming a path.
+Use the
+link:https://docs.redhat.com/en/documentation/red_hat_build_of_keycloak/26.4/html/securing_applications_and_services_guide/token-exchange-[RHBK 26.4 token-exchange guide]
+for standard token exchange and its scope/audience behavior. Follow the exact
+settings in this module; if the installed console does not expose a required
+setting, ask the facilitator to verify the version and control instead of
+guessing a menu path.
 
 == Check
 
-Confirm `iss` equals your realm issuer, the reader has the `user` role, and an
-SPA access token has `orders-api` in `aud` without `inventory-api`. Use only a
-facilitator-approved local inspector that displays selected claims and never
-prints or saves the full token. If that tool is unavailable, ask the
-facilitator to show the sanitized claim result. The direct Orders-token to
-Inventory rejection is demonstrated in Module 6 unless the facilitator
-provides the safe token matrix earlier.
+Use only a facilitator-approved local inspector that displays selected
+claims. Never print, screenshot, or save a full token. Confirm the SPA access
+token has your realm issuer and `orders-api` in `aud`, and does not have
+`inventory-api`. Confirm Orders has the default `notifications-api` audience
+and can request the optional Inventory audience for token exchange. If the
+approved inspector is unavailable, ask the facilitator to show the sanitized
+claim result. The direct wrong-audience rejection is demonstrated in Module 6.
 
-**Expected:** browser clients use authorization code + PKCE; the confidential
-clients have exact callback URIs; API tokens are audience-restricted.
+**Expected:** browser clients use authorization code plus PKCE; server-side
+clients have exact callbacks; tokens contain only their intended audiences;
+and the service account has only the machine role required for Notifications.
 
 == If something is wrong
 
-Check for a missing scheme, path, or trailing slash in the redirect URI. Avoid
-wildcard redirect URIs. If PKCE or token exchange controls are absent in your
-console, ask the facilitator to confirm the installed RHBK version and provide
-the corresponding UI path. Never paste a client secret into the guide or chat.
+Check for a missing scheme, path, or trailing slash in a redirect URI. Avoid
+wildcards. If a required flow, scope, role-mapping, or PKCE control is absent,
+stop and ask the facilitator to verify the installed RHBK version and the
+corresponding setting. Never paste a client secret into the guide or chat.

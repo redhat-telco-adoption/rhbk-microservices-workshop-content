@@ -38,10 +38,15 @@ client credentials for Notifications.
 
 == If something is wrong
 
-Before Modules 2–4, an unavailable BFF or proxy route can mean its realm's OIDC
-discovery endpoint does not exist yet; a missing-realm page or temporary 503 is
-expected during this setup stage. After you create the realm, clients, and
-runtime settings, check the deployment readiness in your own namespace and
-retest the routes. If they are still unavailable then, ask the facilitator to
+Before you finish Modules 2–4, the BFF or proxy can be unavailable because its
+realm, client, or runtime configuration is not ready. The proxy can also show
+Keycloak's **Client not found** message before the `proxy` client exists in your
+realm. These are expected setup states; they do not mean that you should
+change a shared route.
+
+After Module 4, check that your own realm contains the matching client, the
+application configuration uses your exact issuer and client ID, and the
+application deployment is ready in your assigned namespace. Then retry the
+route. If those checks pass and the route still fails, ask the facilitator to
 check your reservation. Do not change routes or deployments in the shared
 `apps` namespace.
