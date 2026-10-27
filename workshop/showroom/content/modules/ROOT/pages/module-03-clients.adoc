@@ -37,20 +37,36 @@ scopes retain the `roles`, `profile`, and `email` defaults. The roles mapper
 adds role claims to tokens; role scope mappings separately limit which roles
 the client may receive.
 
-== Do: create and assign roles
+== Do: assign realm roles to learner users
 
 . Create realm roles `user` and `manager`; configure `manager` to include
   `user` as a composite role.
 . Assign `user` to both users from Module 2. Assign `manager` to the `manager`
   user as well.
-. Assign `notifications-api:notifier` only to the `orders-api` service
-  account.
-. Disable full-scope access on `spa`, `bff`, `proxy`, and `orders-api`. Allow
-  the required `user` and `manager` realm-role mappings on those clients, and
-  allow `notifications-api:notifier` on `orders-api` only.
 
-**Check:** the reader has `user`; the manager has `user` and `manager`; and
-only the Orders service account has `notifications-api:notifier`.
+Use the official RHBK 26.4 procedures for
+link:https://docs.redhat.com/en/documentation/red_hat_build_of_keycloak/26.4/html/server_administration_guide/assigning_permissions_using_roles_and_groups#creating-a-realm-role[creating realm roles],
+link:https://docs.redhat.com/en/documentation/red_hat_build_of_keycloak/26.4/html/server_administration_guide/assigning_permissions_using_roles_and_groups#converting-a-role-to-a-composite-role[converting `manager` to a composite role], and
+link:https://docs.redhat.com/en/documentation/red_hat_build_of_keycloak/26.4/html/server_administration_guide/assigning_permissions_using_roles_and_groups#assigning-role-mappings[assigning role mappings]. Follow the documented procedures without assuming a different console path.
+
+**Check:** the reader has realm role `user`; the manager has realm roles
+`user` and `manager`.
+
+== Do: limit client role scope mappings
+
+Disable full-scope access on `spa`, `bff`, `proxy`, and `orders-api`. For these
+clients, explicitly allow the realm roles `user` and `manager`. This limits
+which already-assigned user roles can be included in a token; it does not
+assign roles to the reader or manager.
+
+== Do: assign the Orders service-account client role
+
+Assign client role `notifications-api:notifier` only to the `orders-api`
+service account. This is a client role for the workload identity, separate
+from the users' realm roles.
+
+**Check:** only the Orders service account has
+`notifications-api:notifier`.
 
 == Do: constrain token audiences
 
