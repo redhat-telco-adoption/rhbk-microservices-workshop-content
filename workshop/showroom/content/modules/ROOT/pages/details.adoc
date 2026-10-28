@@ -1,39 +1,50 @@
 = Lab environment and preparation
 :navtitle: Preparation
 
-== Your session values
+== Your credentials
 
-Use only the values allocated to you by the facilitator. Record them locally
-for the session; do not commit them or post secrets in a shared channel.
+Use this account for both the Keycloak administration console and the
+OpenShift Console. Keep the password to yourself.
+
+[cols="1,2",options="header"]
+|===
+|Item |Value
+|Username |`{user}`
+|Password |`{password}`
+|Keycloak administration console |link:{keycloak_origin}/admin/master/console/[{keycloak_origin}/admin/master/console/,window=_blank]
+|OpenShift Console |link:{openshift_console_url}[{openshift_console_url},window=_blank] (choose the **sso** login option)
+|===
+
+Open both consoles in their own browser tabs. In Module 2 you also create two
+lab users, `reader` and `manager`, with passwords you choose. Write them down;
+you need them in Modules 4–6.
+
+== Your session values
 
 [cols="1,2",options="header"]
 |===
 |Value |Provided value
 |Attendee ID |{attendee_id}
 |OpenShift namespace |{attendee_namespace}
-|Keycloak server origin |{keycloak_origin}
-|Realm name |{realm_name}
+|Realm name (you create it in Module 2) |{realm_name}
 |Expected issuer |{issuer}
-|SPA URL |{spa_url}
-|BFF URL |{bff_url}
-|Proxy URL |{proxy_url}
+|SPA URL |link:{spa_url}[{spa_url},window=_blank]
+|BFF URL |link:{bff_url}[{bff_url},window=_blank]
+|Proxy URL |link:{proxy_url}[{proxy_url},window=_blank]
 |===
 
-If an attribute shows `not-assigned`, `namespace-not-assigned`, or an
-`example.invalid` URL, stop and ask the facilitator for the reservation
-handoff. Do not guess an endpoint or reuse another learner's realm.
+If a value shows `not-assigned`, `namespace-not-assigned`, or an
+`example.invalid` URL, stop and ask the facilitator. Do not guess an endpoint
+or reuse another attendee's realm.
 
-== Prerequisites
+== What is already prepared
 
-* A browser with access to the RHDP workshop site, Keycloak, and OpenShift
-  Console.
-* An attendee account that can create a realm in the shared Keycloak master
-  realm and administer only realms it creates.
-* An OpenShift identity limited to the allocated namespace.
-* The six workshop images already available to your namespace and the runtime
-  configuration ConfigMaps/Secrets named in module 4.
-* A facilitator-confirmed session secret handoff for confidential client
-  credentials. Never use a secret copied from another attendee.
+* A shared Keycloak server, where your account can create a realm and
+  administer only the realms it creates.
+* Your OpenShift namespace with the SPA frontend, BFF, proxy, and three APIs
+  already deployed. The BFF and proxy wait for the realm you create.
+* ConfigMaps already set to your realm's issuer, and three Secrets that hold a
+  placeholder until you paste the client secrets in Module 4.
 
 == Stop conditions
 

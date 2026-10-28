@@ -6,10 +6,5 @@ antora:
   modules: []
 default_width: 45
 persist_url_state: true
-view_switcher:
-  enabled: true
-  default_mode: split
 dev_mode: false
-tabs:
-  - name: OpenShift Console
-    url: 'https://console-openshift-console.${DOMAIN}'
+# The OpenShift Console refuses to load in a frame; the guide links to it instead.

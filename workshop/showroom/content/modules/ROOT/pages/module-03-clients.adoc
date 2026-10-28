@@ -9,145 +9,152 @@ protects the browser login flow. Exact redirect URIs prevent a token response
 from being sent to an untrusted callback. An audience identifies the API that
 should accept a token.
 
+All steps below happen in the Keycloak administration console with your realm
+`{realm_name}` selected in the realm list.
+
 == Do: create clients
 
-. In your realm, create an enabled OpenID Connect client named `spa`. Set it to
-  **Public** (client authentication Off), Standard flow On, implicit flow and
-  direct access grants Off. Require PKCE method `S256`.
-. Set SPA's exact redirect URI to `{spa_url}/auth/popup-callback`, post-logout
-  redirect URI to `{spa_url}/auth/logout-callback`, and Web Origin to
-  `{spa_url}` (scheme and host only).
-. Add each redirect URI, post-logout URI, and Web Origin to its list with the
-  console's **+** control, then click **Save**. Confirm `spa` appears in the
-  Clients list, reopen it, and verify it is enabled and Public, Standard flow
-  is On, PKCE is `S256`, and the exact redirect URI, post-logout URI, and Web
-  Origin persisted. If the client or a value is missing, resolve any visible
-  validation message. If Save remains unresolved and no message explains why,
-  stop and ask the facilitator; do not assume Save succeeded.
-. Create confidential clients `bff` and `proxy`. For both, set Standard flow
-  On, implicit flow and direct access grants Off, and PKCE `S256`. Set BFF's
-  exact callback to `{bff_url}/login/oauth2/code/keycloak` and post-logout URI
-  to `{bff_url}/`. Set proxy's exact callback to
-  `{proxy_url}/oauth2/callback` and post-logout URI to `{proxy_url}/`.
-. Create confidential `orders-api` with Standard flow Off, implicit flow Off,
-  direct access grants Off, and service account On. Enable standard token
-  exchange for this client only. Keep its generated secret private in your
-  namespace.
-. Create confidential resource clients `inventory-api` and
-  `notifications-api`; keep Standard flow, implicit flow, direct access grants,
-  and service accounts Off. Add client role `notifier` to `notifications-api`.
+Create each client from **Clients → Create client**. The wizard has three
+pages: **General settings** (client type OpenID Connect and the client ID),
+**Capability config**, and **Login settings**. Click **Next** between pages and
+**Save** on the last one. Leave every setting not listed here at its default.
 
-**Check:** `spa`, `bff`, and `proxy` have the exact callback and PKCE settings
-above. Only `orders-api` has a service account and standard token exchange.
-For `spa`, `bff`, `proxy`, and `orders-api`, check that the effective client
-scopes retain the `roles`, `profile`, and `email` defaults. The roles mapper
-adds role claims to tokens; role scope mappings separately limit which roles
-the client may receive.
+[cols="1,3,3",options="header"]
+|===
+|Client ID |Capability config |Login settings
+|`spa`
+|Client authentication **Off**; Standard flow **On**; Direct access grants
+**Off**; PKCE Method `S256`
+|Valid redirect URIs `{spa_url}/auth/popup-callback`; Valid post logout
+redirect URIs `{spa_url}/auth/logout-callback`; Web origins `{spa_url}`
+|`bff`
+|Client authentication **On**; Standard flow **On**; Direct access grants
+**Off**; PKCE Method `S256`
+|Valid redirect URIs `{bff_url}/login/oauth2/code/keycloak`; Valid post logout
+redirect URIs `{bff_url}/`
+|`proxy`
+|Client authentication **On**; Standard flow **On**; Direct access grants
+**Off**; PKCE Method `S256`
+|Valid redirect URIs `{proxy_url}/oauth2/callback`; Valid post logout redirect
+URIs `{proxy_url}/`
+|`orders-api`
+|Client authentication **On**; Standard flow **Off**; Direct access grants
+**Off**; Service accounts roles **On**; Standard Token Exchange **On**
+|none
+|`inventory-api`
+|Client authentication **On**; all flows **Off**
+|none
+|`notifications-api`
+|Client authentication **On**; all flows **Off**
+|none
+|===
 
-== Do: assign realm roles to learner users
+.Capability config for `spa`
+image::m03-spa-capability.png[Capability config page for the spa client]
 
-. Create realm roles `user` and `manager`; configure `manager` to include
-  `user` as a composite role.
-. Assign `user` to both users from Module 2. Assign `manager` to the `manager`
-  user as well.
+.Login settings for `spa`
+image::m03-spa-login-settings.png[Login settings page for the spa client]
 
-Use the official RHBK 26.4 procedures for
-link:https://docs.redhat.com/en/documentation/red_hat_build_of_keycloak/26.4/html/server_administration_guide/assigning_permissions_using_roles_and_groups#creating-a-realm-role[creating realm roles],
-link:https://docs.redhat.com/en/documentation/red_hat_build_of_keycloak/26.4/html/server_administration_guide/assigning_permissions_using_roles_and_groups#converting-a-role-to-a-composite-role[converting `manager` to a composite role], and
-link:https://docs.redhat.com/en/documentation/red_hat_build_of_keycloak/26.4/html/server_administration_guide/assigning_permissions_using_roles_and_groups#assigning-role-mappings[assigning role mappings]. Follow the documented procedures without assuming a different console path.
+Then add the Notifications client role: open **Clients → notifications-api →
+Roles → Create role**, enter `notifier`, and save.
 
-**Check:** the reader has realm role `user`; the manager has realm roles
-`user` and `manager`.
+**Check:** reopen `spa`, `bff`, and `proxy` and confirm the exact URIs and
+PKCE method persisted. Only `orders-api` has service accounts and Standard
+Token Exchange turned on.
 
-== Do: limit client role scope mappings
+== Do: create realm roles and assign them
 
-Disable full-scope access on `spa`, `bff`, `proxy`, and `orders-api`. For these
-clients, explicitly allow the realm roles `user` and `manager`. This limits
-which already-assigned user roles can be included in a token; it does not
-assign roles to the reader or manager.
+. Open **Realm roles → Create role**, enter `user`, and save. Do the same for
+  `manager`.
+. Open the `manager` role, choose **Action → Add associated roles**, filter by
+  realm roles, select `user`, and click **Assign**. `manager` is now a
+  composite role that includes `user`.
+. Open **Users → reader → Role mapping → Assign role**, filter by realm roles,
+  select `user`, and click **Assign**. For `manager`, assign `manager` (it
+  includes `user`).
++
+image::m03-role-mapping.png[Role mapping tab for the manager user]
 
-== Do: assign the Orders service-account client role
+**Check:** the reader's **Role mapping** tab shows `user`; the manager's shows
+`manager` (and `user` when you clear **Hide inherited roles**).
 
-Assign client role `notifications-api:notifier` only to the `orders-api`
-service account. This is a client role for the workload identity, separate
-from the users' realm roles.
+== Do: give the Orders service account its role
 
-Because full scope is off on `orders-api`, also allow this role in its scope:
-open **Clients → orders-api → Client scopes → orders-api-dedicated → Scope**,
-choose **Assign role**, filter by clients, and assign `notifications-api`
-`notifier`. Without it, the Orders service-account token carries no
-`notifier` role and every manager write fails with a 502.
+Open **Clients → orders-api → Service accounts roles → Assign role**, filter by
+clients, select `notifications-api` `notifier`, and click **Assign**. This is a
+machine role for the Orders workload, separate from the users' realm roles.
 
-**Check:** only the Orders service account has
-`notifications-api:notifier`, and `orders-api-dedicated` allows it.
+image::m03-service-account-roles.png[Service accounts roles tab for orders-api]
+
+== Do: limit which roles each client can receive
+
+For each of `spa`, `bff`, `proxy`, and `orders-api`:
+
+. Open **Clients →** _client_ **→ Client scopes →** _client_**-dedicated →
+  Scope**.
+. Turn **Full scope allowed** **Off**.
+. Click **Assign role**, filter by realm roles, select `user` and `manager`, and
+  click **Assign**.
+
+For `orders-api` only, also click **Assign role**, filter by clients, and assign
+`notifications-api` `notifier`. With full scope off, the Orders service-account
+token carries only the roles allowed here; without `notifier`, every manager
+write later fails with a 502.
+
+image::m03-dedicated-scope.png[Scope tab of orders-api-dedicated with user, manager, and notifier]
+
+**Check:** `orders-api-dedicated` lists `user`, `manager`, and
+`notifications-api notifier`; the other three list `user` and `manager`.
 
 == Do: constrain token audiences
 
-Create client scopes with Audience protocol mappers. Each mapper must add its
-target client ID to the **access token** `aud` claim, not the ID token. Use
-these exact scope, client, and assignment values:
+Create three client scopes, each with one Audience mapper:
 
-[cols="1,2,3",options="header"]
+. Open **Client scopes → Create client scope**. Enter the name, set **Type** to
+  **None**, keep **Include in token scope** On, and save.
+. On its **Mappers** tab choose **Configure a new mapper → Audience**. Enter the
+  scope name as the mapper name, select the **Included Client Audience**, turn
+  **Add to access token** On and **Add to ID token** Off, and save.
++
+image::m03-audience-mapper.png[Audience mapper for orders-api-aud]
+
+[cols="1,1,2",options="header"]
 |===
-|Scope |Mapper audience |Assignment
-|`orders-api-aud` |`orders-api` |Default on `spa`, `bff`, and `proxy`
-|`notifications-api-aud` |`notifications-api` |Default on `orders-api`
-|`inventory-api-aud` |`inventory-api` |Optional on `orders-api` only
+|Client scope |Included Client Audience |Attach to
+|`orders-api-aud` |`orders-api` |`spa`, `bff`, `proxy` as **Default**
+|`notifications-api-aud` |`notifications-api` |`orders-api` as **Default**
+|`inventory-api-aud` |`inventory-api` |`orders-api` as **Optional**
 |===
 
-Add a separate Audience mapper for `proxy` itself to the proxy access token.
-Do not give browser clients the `inventory-api` audience. Orders calls
-Inventory using `scope=inventory-api-aud` and `audience=inventory-api` in its
-configured token-exchange flow.
+Attach each scope from **Clients →** _client_ **→ Client scopes → Add client
+scope**: select the scope, then choose **Add → Default** or **Add → Optional**.
+Keep the exact scope names; Orders requests `inventory-api-aud` by name when it
+exchanges a token. Do not give browser clients the `inventory-api` audience.
+
+Finally, the proxy validates tokens issued to itself. Open **Clients → proxy →
+Client scopes → proxy-dedicated → Configure a new mapper** (or **Add mapper →
+By configuration**), choose **Audience**, name it `proxy-audience`, select
+`proxy` as the Included Client Audience, turn **Add to access token** On, and
+save.
 
 Legacy is excluded when the facilitator has not enabled it. Add
 `legacy-api-aud` as a default scope on `spa`, `bff`, and `proxy` only when the
 facilitator confirms that the Legacy API is available.
 
-For the audience mapper procedure, see the official RHBK 26.4
-link:https://docs.redhat.com/en/documentation/red_hat_build_of_keycloak/26.4/html/server_administration_guide/assembly-managing-clients_server_administration_guide#hardcoded-audience[Hardcoded audience section].
-It describes creating an Audience mapper for a client scope and selecting the
-included client audience. For attaching that scope as default or optional, use
-the official RHBK 26.4
-link:https://docs.redhat.com/en/documentation/red_hat_build_of_keycloak/26.4/html/server_administration_guide/assembly-managing-clients_server_administration_guide#link-client-scope-with-the-client[Link client scope with the client procedure].
-To check effective scopes, use the
-link:https://docs.redhat.com/en/documentation/red_hat_build_of_keycloak/26.4/html/server_administration_guide/assembly-managing-clients_server_administration_guide#evaluating-client-scopes[Evaluating Client Scopes procedure].
-
-When adding the `orders-api` audience, `orders-api` should appear in the
-**Included Client Audience** picker. If it is absent even though `orders-api`
-appears in the realm's Clients list, stop and ask the facilitator to check the
-console and realm state. Do not save an incomplete mapper or assume the scope
-name adds an audience. Continue after the saved mapper and client-scope
-evaluation show the intended audience in the access token.
-
-For role scope mappings, see the official RHBK 26.4
-link:https://docs.redhat.com/en/documentation/red_hat_build_of_keycloak/26.4/html/server_administration_guide/assigning_permissions_using_roles_and_groups#role-scope-mappings[Role scope mappings section].
-Turn Full Scope Allowed Off and explicitly add only the intended roles. Keep
-the `roles` client scope and its role mapper so configured roles can appear as
-token claims; the scope mappings alone do not create role claims.
-
-For enabling the Orders service account and assigning its client role, see the
-official RHBK 26.4
-link:https://docs.redhat.com/en/documentation/red_hat_build_of_keycloak/26.4/html/server_administration_guide/assembly-managing-clients_server_administration_guide#using-a-service-account[Using a service account procedure].
-The guide describes enabling service accounts on the client and assigning
-roles to its service account. Console labels and layout can vary by version;
-confirm the installed UI with the facilitator rather than assuming a path.
-Use the
-link:https://docs.redhat.com/en/documentation/red_hat_build_of_keycloak/26.4/html/securing_applications_and_services_guide/token-exchange-[RHBK 26.4 token-exchange guide]
-for standard token exchange and its scope/audience behavior. Follow the exact
-settings in this module; if the installed console does not expose a required
-setting, ask the facilitator to verify the version and control instead of
-guessing a menu path.
-
 == Check
 
-Use only a facilitator-approved local inspector that displays selected
-claims. Never print, screenshot, or save a full token. Confirm the SPA access
-token has your realm issuer and `orders-api` in `aud`, and does not have
-`inventory-api`. Confirm Orders has the default `notifications-api` audience
-and can request the optional Inventory audience for token exchange. If the
-approved inspector is unavailable, ask the facilitator to show the sanitized
-claim result. The direct wrong-audience rejection is demonstrated in Module 6.
+Keycloak can show the token a client would receive. Open **Clients → spa →
+Client scopes → Evaluate**, select user `reader`, and open **Generated access
+token**. Confirm:
+
+* `iss` is `{issuer}`;
+* `aud` includes `orders-api` and not `inventory-api`;
+* `realm_access.roles` includes `user` but not `manager`.
+
+Repeat for user `manager`: `realm_access.roles` includes `manager` and `user`.
+This view is for your own lab users only; do not copy or share the token.
+
+image::m03-evaluate.png[Generated access token for reader on the spa client]
 
 **Expected:** browser clients use authorization code plus PKCE; server-side
 clients have exact callbacks; tokens contain only their intended audiences;
@@ -156,6 +163,6 @@ and the service account has only the machine role required for Notifications.
 == If something is wrong
 
 Check for a missing scheme, path, or trailing slash in a redirect URI. Avoid
-wildcards. If a required flow, scope, role-mapping, or PKCE control is absent,
-stop and ask the facilitator to verify the installed RHBK version and the
-corresponding setting. Never paste a client secret into the guide or chat.
+wildcards. If `orders-api` is missing from the Included Client Audience list,
+check that the `orders-api` client exists in your realm. Never paste a client
+secret into the guide or chat.

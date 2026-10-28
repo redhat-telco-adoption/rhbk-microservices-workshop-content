@@ -8,6 +8,9 @@ asciidoc:
   attributes:
     page-pagination: true
     lab_name: Secure microservices with Red Hat Build of Keycloak
+    user: not-assigned
+    password: not-assigned
+    openshift_console_url: https://console.example.invalid
     attendee_id: not-assigned
     attendee_namespace: namespace-not-assigned
     keycloak_origin: https://keycloak.example.invalid

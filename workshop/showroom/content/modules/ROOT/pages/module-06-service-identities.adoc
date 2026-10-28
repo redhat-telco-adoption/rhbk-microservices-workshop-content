@@ -16,30 +16,27 @@ downstream calls demonstrate two distinct grants:
 
 == Do
 
-. Complete one Orders read using SPA PKCE, then repeat through the BFF and
-  reverse proxy.
-. Sign in as `manager` and submit the valid `POST /orders` request from
-  Module 5. This successful write triggers the Orders → Inventory and Orders →
-  Notifications calls; use that request to find the downstream evidence.
-. In OpenShift Console, keep your project selected and open **Workloads > Pods**.
-  Choose only your Orders or Notifications pod and open its **Logs** view.
-  Compare the sanitized `subject`, `username`, `client_id` (the token's `azp`),
-  `roles`, `decision`, and `trace_id` fields for the request. These logs do not
-  include the full token or its audience; use the request time or trace ID to
-  match the downstream call. Do not inspect another attendee's namespace.
-. Follow Orders → Inventory and identify the exchanged token's target audience
-  and calling client. If the facilitator provides the approved local token
-  inspector, check only selected claims: `aud` includes `inventory-api`, `azp`
-  is `orders-api`, and `sub` matches the original user. Never copy, print, or
-  save the full token. Confirm the Inventory request succeeds for this
-  configured exchange.
-. Follow Orders → Notifications and identify the service account and its
-  `notifier` role.
-. If the safe token matrix is available, observe the original SPA Orders token
-  receive `401` from Inventory for its wrong audience, and the
-  `verify-denied` service token receive `403` from Notifications because it
-  lacks `notifier`. Otherwise ask the facilitator to show those sanitized
-  outcomes.
+. Sign in as `manager` in any of the three apps and click **Create a sample
+  order**. The response shows the Inventory reservation (`reserved for
+  manager`) and the accepted notification. This one request triggers both
+  downstream calls.
+. In the OpenShift Console, keep your project selected and open **Workloads →
+  Pods**. Open the `orders-api` pod's **Logs** tab and use the search box to
+  find `/orders`. Health checks also write log lines, so search rather than
+  scroll. Note the `username`, `client_id` (the token's `azp`), `roles`, and
+  `decision` for your request.
++
+image::m06-orders-log.png[Orders pod log line for the manager's order]
+
+. Open the `inventory-api` pod's logs and find the matching `/inventory/reserve`
+  line by time. The `username` is still `manager`, but `client_id` is
+  `orders-api`: Orders exchanged the user's token for an Inventory token, so
+  the user identity is kept and the caller is Orders.
+. Open the `notifications-api` pod's logs and find the matching `/notify` line.
+  The `username` is `service-account-orders-api` with role `notifier`: Orders
+  used its own client credentials, so no end-user identity is involved.
+. Tracing is off in this lab, so `trace_id` is empty; match related lines by
+  their time.
 
 == Check
 
@@ -53,6 +50,8 @@ service-account token.
 == If something is wrong
 
 If a downstream call fails, inspect only sanitized logs in your own namespace.
-Check the configured issuer, target audience using the approved inspector,
-`client_id`/authorized party, and service-account role. Do not expose full
+Check the configured issuer, the audiences in **Client scopes → Evaluate**,
+`client_id`/authorized party, and the service-account role. A 502 on every
+manager write usually means `orders-api-dedicated` does not allow
+`notifications-api notifier` (Module 3). Do not expose full
 tokens or secrets in logs or screenshots.

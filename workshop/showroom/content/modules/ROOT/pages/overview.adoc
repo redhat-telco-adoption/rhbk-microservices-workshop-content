@@ -12,10 +12,10 @@ between learners.
 |1. Application architecture |Map browser, API, identity, and trust boundaries |25 min
 |2. Realm and users |Create your realm and test delegated administration |40 min
 |3. Clients, roles, and audiences |Configure OIDC and least-privilege claims |55 min
-|4. Connect applications |Update runtime issuer, client IDs, and secrets |50 min
+|4. Connect applications |Check runtime settings and copy client secrets |50 min
 |5. Authorization decisions |Verify allowed and denied reader/manager actions |35 min
 |6. Login patterns and service identities |Compare SPA, BFF, proxy, token exchange, and client credentials |45 min
-|7. Observability and production tradeoffs |Trace a request and make a production review |30 min
+|7. Observability and production tradeoffs |Follow a request in the logs and make a production review |30 min
 |Breaks and troubleshooting |Facilitated buffer |20–45 min
 |===
 

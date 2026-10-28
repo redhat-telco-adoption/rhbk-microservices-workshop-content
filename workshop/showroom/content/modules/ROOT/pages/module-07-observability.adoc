@@ -10,14 +10,14 @@ not expose passwords, client secrets, session cookies, or bearer tokens.
 == Do
 
 . Make one successful read and one denied write in your application copy.
-. Open the approved namespace-scoped logs and locate the matching Orders
-  requests by time and trace/request ID.
-. Follow the trace through the downstream Inventory or Notifications call if
-  tracing is enabled in your reservation.
+. In the OpenShift Console, open the `orders-api` pod logs and find both
+  requests by time. The denied write shows `decision` `deny` with status 403.
+  Tracing is off in this lab, so there is no trace to follow.
 . Write one sentence for each pattern describing where the browser session
   lives, how logout works, and the main operational dependency.
-. Review client lifetime, role ownership, redirect URI policy, token lifetime,
-  secret rotation, and audit-event retention with a partner.
+. Write down how you would handle client lifetime, role ownership, redirect URI
+  policy, token lifetime, secret rotation, and audit-event retention in
+  production. If you work with a partner, compare notes.
 
 == Check
 

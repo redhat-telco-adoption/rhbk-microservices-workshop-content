@@ -11,28 +11,33 @@ Keycloak service.
 == Do
 
 . Open the
-  link:{keycloak_origin}/admin/master/console/[Keycloak administration console]
-  and sign in using your allocated account and assigned password. Keep this
-  attendee password unchanged; do not trigger a password-change prompt.
-. This account authenticates in the Keycloak `master` realm. Do not use
-  OpenShift Console SSO for workshop realm administration; it is a separate
-  login flow.
-. In the master realm, choose **Create realm**.
-. Use the exact realm name provided for your attendee ID. Enable the realm and
-  save it.
-. Switch to your new realm. Confirm its URL ends in `/realms/{realm_name}`.
-. Create two users with non-shared lab credentials: one named `reader` and one
-  named `manager`. Use synthetic email addresses `reader@example.invalid` and
-  `manager@example.invalid`, and fill in **First name** and **Last name**
-  (for example `Reader`/`Lab`); Keycloak requires them, and a user without
-  them sees an extra profile form at first sign-in. These synthetic addresses do not require an inbox,
-  SMTP delivery, or an email-verification flow; the workshop does not verify
-  email addresses.
-. For each lab user, enter its private lab password and turn the **Temporary**
-  checkbox or switch **Off**. Verify it reads **Off** before saving the
-  password. The eye/visibility control only reveals the password you typed; it
-  does not change whether the password is temporary. Do not reuse your
-  attendee password.
+  link:{keycloak_origin}/admin/master/console/[Keycloak administration console,window=_blank]
+  and sign in with your username and password from xref:details.adoc[]. This
+  account lives in the Keycloak `master` realm; keep its password unchanged.
+. Open the realm list at the top of the left menu and choose **Manage realms →
+  Create realm**. Enter the realm name `{realm_name}`, keep **Enabled** on,
+  and click **Create**.
++
+image::m02-create-realm.png[Create realm form]
+
+. Keycloak switches to your new realm. Open **Realm settings** and, next to
+  **Endpoints**, click **OpenID Endpoint Configuration**. Confirm that
+  `issuer` is exactly `{issuer}`.
+. Open **Users → Create new user** (or **Add user**). Enter username `reader`,
+  email `reader@example.invalid`, first name `Reader`, and last name `Lab`, then
+  click **Create**. Keycloak requires the first and last name; without them
+  the user sees an extra profile form at first sign-in.
++
+image::m02-create-user.png[Create user form for reader]
+
+. On the user's **Credentials** tab, click **Set password**. Enter a password
+  you choose (not your attendee password), turn **Temporary** **Off**, and
+  click **Save**, then confirm **Save password** in the dialog that follows.
++
+image::m02-set-password.png[Set password dialog with Temporary turned off]
+
+. Repeat the last two steps for `manager` (`manager@example.invalid`, first
+  name `Manager`, last name `Lab`). Write down both lab passwords.
 
 Leave both users without realm-role assignments for now. In Module 3, create
 the `user` and `manager` roles, make `manager` include `user`, then assign the
@@ -40,8 +45,8 @@ roles to these users. Keycloak cannot assign a role before it exists.
 
 == Check
 
-Confirm both accounts are enabled, each has the expected synthetic email, and
-realm administration works inside your realm. The proxy exercise accepts these
+Confirm both users appear under **Users**, are enabled, and have the expected
+synthetic email, and that realm administration works inside your realm. The proxy exercise accepts these
 unverified synthetic email claims. The role check happens after the roles are
 created in Module 3.
 

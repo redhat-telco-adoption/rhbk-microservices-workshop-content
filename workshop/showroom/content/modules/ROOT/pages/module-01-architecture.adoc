@@ -16,11 +16,33 @@ different service-to-service identities.
 . Record your SPA, BFF, and proxy URLs from xref:details.adoc[]. Do not expect
   all three routes to be ready yet: the BFF and proxy need the realm you create
   in Module 2, and their clients and runtime settings from Modules 3 and 4.
-. Locate the application architecture diagram in the existing project guide.
-. Identify which process handles the browser callback in each pattern.
+. Study the three login patterns. In each, find which process receives the
+  browser callback and where the tokens are kept.
++
+.SPA with PKCE: tokens stay in browser memory
+image::spa-auth-flow.svg[SPA authorization code flow with PKCE]
++
+.BFF: tokens stay on the server
+image::bff-auth-flow.svg[BFF login and session flow]
++
+.Reverse proxy: tokens stay in the proxy's Redis session
+image::proxy-auth-flow.svg[Reverse proxy login and session flow]
+
 . Trace the Orders → Inventory and Orders → Notifications calls.
-. In OpenShift Console, select your assigned project and inspect only your own
-  Deployments and Services.
++
+.One order, two downstream identities
+image::service-auth-flow.svg[Token exchange to Inventory and client credentials to Notifications]
+
+. Open the link:{openshift_console_url}[OpenShift Console,window=_blank] in a
+  new browser tab and choose the **sso** login option. Sign in with your
+  username and password from xref:details.adoc[]. Select your project
+  `{attendee_namespace}` and open **Workloads → Deployments**. You see seven
+  Deployments: `frontend`, `bff`, `proxy`, `proxy-redis`, `orders-api`,
+  `inventory-api`, and `notifications-api`. Under **Networking → Routes** you
+  see four Routes: `frontend` (the SPA), `bff`, `proxy`, and `orders-api`, which
+  the SPA calls directly.
++
+image::m01-console-deployments.png[Your Deployments in the OpenShift Console]
 
 == Check
 

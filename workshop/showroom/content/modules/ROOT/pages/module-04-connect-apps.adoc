@@ -10,20 +10,13 @@ No source edit or rebuild is needed for this activity.
 
 == Do
 
-. Open the OpenShift Console using the `sso` sign-in option and the assigned
-  Console username and credential in your private handoff. AgD provisions
-  separate accounts with the same username and assigned credential in Keycloak
-  `master` and the OpenShift OAuth `sso` realm. Use `master` for Keycloak
-  administration and `sso` for the OpenShift Console. Do not create either
-  account or change its password. If your handoff does not identify the Console
-  credential or the `sso` option is missing, stop and ask the facilitator.
-. Select your assigned namespace and confirm the SPA, BFF, and proxy Routes
-  match your session handoff.
-. Check the listed fields in each ConfigMap and correct any that differ; the
-  reservation may already have set them. Keep service URLs and other
-  reservation-generated values unchanged. Each row names the workload that
-  consumes that ConfigMap.
-
+. Open the link:{openshift_console_url}[OpenShift Console,window=_blank],
+  choose the **sso** login option, and sign in with your username and password
+  from xref:details.adoc[]. Select your project `{attendee_namespace}`.
+. Open **Workloads → ConfigMaps** and check the fields below. The reservation
+  sets them to your realm already; correct any value that differs. Keep service
+  URLs and other values unchanged. Each row names the workload that reads it.
++
 [cols="1,2,3,1",options="header"]
 |===
 |ConfigMap |Fields to set |Value |Consuming workload
@@ -38,17 +31,34 @@ No source edit or rebuild is needed for this activity.
 . Leave `INVENTORY_API_URL`, `NOTIFICATIONS_API_URL`, and
   `proxy-runtime-config` as provided; they must continue to use the
   namespace-local services and runtime settings.
-. Copy each Module 3 client secret from Keycloak into its OpenShift Secret.
-  In Keycloak, open the client's **Credentials** tab and copy the client
-  secret. In the OpenShift Console, open the Secret in your namespace, choose
-  **Actions → Edit Secret**, paste the value into the listed key, and save:
-  `bff` → Secret `bff-client`, key `BFF_CLIENT_SECRET`; `proxy` → Secret
-  `proxy-secrets`, key `client-secret`; `orders-api` → Secret
-  `orders-api-client`, key `client-secret`. Keep `cookie-secret` and
-  `redis-password` unchanged.
-. Restart only the workloads whose ConfigMap or Secret you changed
-  (**Workloads → Deployments →** _deployment_ **→ Actions → Restart rollout**).
-  Wait for each restarted workload to report Ready before retrying its route.
+. Copy each confidential client's secret from Keycloak into its OpenShift
+  Secret. The Secrets hold a placeholder until you do this.
++
+[cols="1,1,1",options="header"]
+|===
+|Keycloak client |OpenShift Secret |Key
+|`bff` |`bff-client` |`BFF_CLIENT_SECRET`
+|`proxy` |`proxy-secrets` |`client-secret`
+|`orders-api` |`orders-api-client` |`client-secret`
+|===
++
+In Keycloak, open **Clients →** _client_ **→ Credentials** and use the copy
+button next to **Client Secret**.
++
+image::m04-client-credentials.png[Credentials tab of the bff client]
++
+In the OpenShift Console, open **Workloads → Secrets →** _secret_ **→ Actions →
+Edit Secret**, replace the value of the listed key, and click **Save**. Keep
+`cookie-secret` and `redis-password` in `proxy-secrets` unchanged.
++
+image::m04-edit-secret.png[Edit Secret form for bff-client]
+
+. Restart the three workloads that read those Secrets: open **Workloads →
+  Deployments →** `bff`, `proxy`, and `orders-api` in turn and choose **Actions →
+  Restart rollout**. Wait until each shows its pod as ready (1 of 1, or 2 of 2
+  for `proxy`).
++
+image::m04-restart-rollout.png[Restart rollout action on the bff Deployment]
 
 == Check
 

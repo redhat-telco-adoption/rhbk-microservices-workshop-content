@@ -9,15 +9,25 @@ client-side button is not an authorization control.
 
 == Do
 
-. Sign in as `reader` using the SPA pattern and open Orders.
-. Run the read operation (`GET /orders`) and record the response code.
-. Attempt the manager operation (`POST /orders`) with the valid demo body
-  `{"item":"workshop-item","quantity":1}` if using the approved request
-  inspector. A `400` means the request body failed validation; it does not show
-  the expected role denial.
-. Sign out. Sign in as `manager`, repeat the read, then repeat the write.
-. If the facilitator provides the safe local token matrix, try a token with a
-  wrong audience and observe the API response.
+Each app page has the same two buttons: **View orders** sends `GET /orders` and
+**Create a sample order** sends `POST /orders`. The result and response code
+appear in the message below the buttons.
+
+. Open your link:{spa_url}[SPA,window=_blank] and click **Sign in**. A sign-in
+  popup opens; sign in as `reader` with the lab password you chose in Module 2.
+. Click **View orders**, then **Create a sample order**, and record both
+  response codes.
++
+image::m05-spa-reader-denied.png[SPA showing the reader's write denied with 403]
+
+. Click **Sign out**, then sign in as `manager` and repeat both buttons.
++
+image::m05-spa-manager-created.png[SPA showing the manager's order created with 201]
+
+. Repeat the reader and manager checks through your
+  link:{bff_url}[BFF,window=_blank] and link:{proxy_url}[proxy,window=_blank].
+  Sign out between users; signing out also ends your Keycloak session, so the
+  next sign-in asks for a username again.
 
 == Check
 
@@ -28,8 +38,8 @@ Record the results:
 |Identity |Operation |Expected
 |reader with `user` |GET `/orders` |Success
 |reader with `user` |POST `/orders` |Denied
-|manager with `manager` and composite `user` |POST `/orders` |Success
-|Any identity with wrong `aud` |Protected API call |Rejected
+|manager with `manager` and composite `user` |GET `/orders` |Success
+|manager with `manager` and composite `user` |POST `/orders` |Success (201)
 |===
 
 **Expected:** the API enforces the decision. A reader cannot gain write access
