@@ -16,7 +16,9 @@ not expose passwords, client secrets, session cookies, or bearer tokens.
 . In **Observe → Logs**, search for `deny` and click **Run Query**; if the old
   results stay, click the refresh button. The Orders line shows
   `decision` `deny`, status 403, and `reason` `missing_role`, with no token or
-  secret in the log.
+  secret in the log. A denied write through the BFF also has a BFF line with
+  `roles: []`: the BFF logs its session's ID token, which carries no roles,
+  while Orders checks the access token.
 +
 image::m07-deny-log.png[Orders log line for the reader's denied write]
 

@@ -47,15 +47,15 @@ button next to **Client Secret**.
 +
 image::m04-client-credentials.png[Credentials tab of the bff client]
 +
-In the OpenShift Console, open **Workloads → Secrets →** _secret_ **→ Actions →
-Edit Secret**, replace the value of the listed key, and click **Save**. Keep
+In the OpenShift Console, open **Workloads → Secrets →** _secret_ and choose
+**Actions → Edit Secret** from the **Actions** menu at the top right of the page, replace the value of the listed key, and click **Save**. Keep
 `cookie-secret` and `redis-password` in `proxy-secrets` unchanged.
 +
 image::m04-edit-secret.png[Edit Secret form for bff-client]
 
 . Restart the three workloads that read those Secrets: open **Workloads →
-  Deployments →** `bff`, `proxy`, and `orders-api` in turn and choose **Actions →
-  Restart rollout**. Wait until each shows **1 of 1 pods**.
+  Deployments →** `bff`, `proxy`, and `orders-api` in turn and choose **Restart rollout** from the
+  **Actions** menu at the top right of the page (not a volume row's menu). Wait until each shows **1 of 1 pods**.
 +
 image::m04-restart-rollout.png[Restart rollout action on the bff Deployment]
 

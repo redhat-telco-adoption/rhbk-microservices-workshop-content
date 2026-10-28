@@ -10,7 +10,9 @@ from being sent to an untrusted callback. An audience identifies the API that
 should accept a token.
 
 All steps below happen in the Keycloak administration console with your realm
-`{realm_name}` selected in the realm list.
+`{realm_name}` selected in the realm list. Lists show 10 rows per page; once
+you have more clients, users, or roles, type the name in the list's search box
+instead of looking on page 1.
 
 == Do: create clients
 
@@ -67,12 +69,10 @@ Token Exchange turned on.
 . Open **Realm roles → Create role**, enter `user`, and save. Do the same for
   `manager`.
 . Open the `manager` role, go to its **Associated roles** tab, click **Assign
-  role**, choose **Realm roles** from the dropdown, select `user`, and click
-  **Assign**. If the dialog says no roles exist, it is still showing client
-  roles; switch the dropdown to **Realm roles**. `manager` is now a
-  composite role that includes `user`.
-. Open **Users → reader → Role mapping → Assign role**, choose **Realm roles**
-  from the dropdown, select `user`, and click **Assign**. For `manager`, assign `manager` (it
+  role**, and choose **Realm roles** from its menu. Select `user` and click
+  **Assign**. `manager` is now a composite role that includes `user`.
+. Open **Users → reader → Role mapping → Assign role → Realm roles**,
+  select `user`, and click **Assign**. For `manager`, assign `manager` (it
   includes `user`).
 +
 image::m03-role-mapping.png[Role mapping tab for the manager user]
@@ -83,8 +83,8 @@ Keycloak's own `default-roles-{realm_name}`.
 
 == Do: give the Orders service account its role
 
-Open **Clients → orders-api → Service accounts roles → Assign role**, choose
-**Client roles** from the dropdown, select `notifications-api` `notifier`, and
+Open **Clients → orders-api → Service accounts roles → Assign role → Client
+roles**, select `notifications-api` `notifier`, and
 click **Assign**. This is a
 machine role for the Orders workload, separate from the users' realm roles.
 
@@ -97,11 +97,10 @@ For each of `spa`, `bff`, `proxy`, and `orders-api`:
 . Open **Clients →** _client_ **→ Client scopes →** _client_**-dedicated →
   Scope**.
 . Turn **Full scope allowed** **Off**.
-. Click **Assign role**, choose **Realm roles** from the dropdown, select
-  `user` and `manager`, and click **Assign**.
+. Click **Assign role → Realm roles**, select `user` and `manager`, and click
+  **Assign**.
 
-For `orders-api` only, also click **Assign role**, choose **Client roles** from the
-dropdown, and assign `notifications-api` `notifier`. With full scope off, the Orders service-account
+For `orders-api` only, also click **Assign role → Client roles** and assign `notifications-api` `notifier`. With full scope off, the Orders service-account
 token carries only the roles allowed here; without `notifier`, every manager
 write later fails with a 502.
 
@@ -148,16 +147,17 @@ facilitator confirms that the Legacy API is available.
 == Check
 
 Keycloak can show the token a client would receive. Open **Clients → spa →
-Client scopes → Evaluate**, select user `reader`, and open **Generated access
-token**. Confirm:
+Client scopes → Evaluate**, click the **Users** field and pick `reader` from
+the list (typing alone does not select). Click **Effective role scope
+mappings**, then **Generated access token**; the token appears only after
+you switch tabs like this. Confirm:
 
 * `iss` is `pass:a[{issuer}]`;
 * `aud` includes `orders-api` and not `inventory-api`;
 * `realm_access.roles` includes `user` but not `manager`.
 
 Repeat for user `manager`: `realm_access.roles` includes `manager` and `user`.
-After you change the user, open another token view and come back to
-**Generated access token** so it refreshes.
+After you change the user, switch tabs the same way so the token refreshes.
 This view is for your own lab users only; do not copy or share the token.
 
 image::m03-evaluate.png[Generated access token for reader on the spa client]
