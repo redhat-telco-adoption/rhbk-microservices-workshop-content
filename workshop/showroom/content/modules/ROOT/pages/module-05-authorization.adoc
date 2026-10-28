@@ -67,14 +67,17 @@ await fetch('{orders_api_url}/orders', {
 +
 The result is `403`. No UI was involved: Orders read the `user` role from the
 token and refused.
-. Now remove the token and change one character of it:
+. Now remove the token, then change one character of it. Paste each line
+  separately; the console shows only the last result of a paste.
 +
 [source,javascript,subs="attributes+"]
 ----
 await fetch('{orders_api_url}/orders').then((r) => r.status);
-await fetch('{orders_api_url}/orders', {
-  headers: { Authorization: auth.slice(0, -4) + 'AAAA' },
-}).then((r) => r.status);
+----
++
+[source,javascript,subs="attributes+"]
+----
+await fetch('{orders_api_url}/orders', { headers: { Authorization: auth.slice(0, -4) + 'AAAA' } }).then((r) => r.status);
 ----
 +
 Both return `401`. The forged one fails the signature check you saw in
@@ -111,11 +114,22 @@ credential.
   give it those identities in Module 6.
 . Sign out.
 
+== Before you switch apps
+
+The three apps share one Keycloak sign-in in your browser. An app you already
+used keeps its own session until you sign out of it, and a new app may sign
+you in as the last user without asking. Sign out of every app before you
+switch users. If you open the BFF or proxy and Keycloak's sign-in page does not
+appear, you are already signed in as someone: sign out first. If **Sign out**
+shows Keycloak's "Do you want to log out?" page, click **Logout**. The BFF and
+proxy pages do not show who is signed in; the newest Orders log line's
+`username` and `client_id` tell you.
+
 == Do: the BFF
 
 . Open your link:{bff_url}[BFF,window=_blank] and sign in as `manager`.
 . Expand **Where session data is stored**: **Access token in JavaScript
-  memory: No**, and the only cookie JavaScript can read is `XSRF-TOKEN`.
+  memory: No**, and the only app cookie JavaScript can read is `XSRF-TOKEN`.
 . In **Application → Cookies**, find `SESSION`. Its **HttpOnly** box is
   ticked: JavaScript cannot read it, and it holds only a session ID. The
   tokens stay on the BFF server.
@@ -163,13 +177,6 @@ The result is `403`, and Orders never sees the request.
   configuration, not something oauth2-proxy provides. If you put a proxy in
   front of your own app, you must add an equivalent rule.
 . Sign out, sign in as `reader`, and confirm 200 and 403. Sign out.
-
-The three apps share one Keycloak sign-in in your browser. An app you already
-used keeps its own session until you sign out of it, and a new app may sign
-you in as the last user without asking. Sign out of every app before you
-switch users. If **Sign out** shows Keycloak's "Do you want to log out?" page,
-click **Logout**. The BFF and proxy pages do not show who is signed in; the
-newest Orders log line's `username` and `client_id` tell you.
 
 == Check
 

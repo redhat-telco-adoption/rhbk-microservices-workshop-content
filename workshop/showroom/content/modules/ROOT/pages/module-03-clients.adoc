@@ -31,7 +31,7 @@ A *client scope* is a reusable bundle of token contents (claims, audience
 mappers, and roles) that you attach to clients. Attached as **Default**, it is
 in every token the client receives. Attached as **Optional**, it is added only
 when the app asks for it by name in the `scope` parameter. Every client also
-has its own *dedicated* scope, named _client_`-dedicated`, for settings that
+has its own *dedicated* scope, named `<client>-dedicated`, for settings that
 apply to that client alone, including which roles its tokens may carry. When
 you create a scope, **Type None** means Keycloak does not attach it to new
 clients automatically, and **Include in token scope** lists its name in the
@@ -217,6 +217,10 @@ image::m03-audience-mapper.png[Audience mapper for orders-api-aud]
    the manager.
 +
 image::m03-evaluate.png[Generated access token for reader on the spa client]
+
+. Click **Generated ID token** for the same user. Its `aud` is `spa`, the app
+  that signed the user in, not `orders-api`. That is why an API must never
+  accept an ID token: it was never meant for the API.
 
 . In the SPA, sign in as `reader` and open **Identity and access details**
   again. **Intended APIs** now shows the Orders API and your role is `user`.

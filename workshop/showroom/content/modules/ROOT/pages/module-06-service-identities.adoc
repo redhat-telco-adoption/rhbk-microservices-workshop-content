@@ -132,7 +132,8 @@ minutes here), so it is still sending the old one without `notifier`.
 ====
 . Restart the `orders-api` rollout in the OpenShift Console (or wait five
   minutes), then create an order. It returns **201**: `reserved for manager`
-  and the notification accepted.
+  and the notification accepted. The first order after a restart can take a
+  few seconds while Orders fetches the realm's keys and its first tokens.
 
 If it fails with `Token exchange rejected` in the Orders log after a restart,
 check that the new pod really started (Module 4) and that the `orders-api-client`

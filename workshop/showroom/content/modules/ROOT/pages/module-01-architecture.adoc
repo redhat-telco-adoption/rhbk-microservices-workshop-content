@@ -34,7 +34,7 @@ mixing them up causes real bugs.
 [cols="1,2,2",options="header"]
 |===
 |Token |What it is for |Who reads it
-|*Access token* |Calling APIs. Short-lived (five minutes here). |The APIs. To the app that holds it, it is an opaque string to pass along.
+|*Access token* |Calling APIs. Short-lived (five minutes here). |The APIs. The app that holds it should only pass it along. (This lab's frontend decodes it to show you what is inside.)
 |*ID token* |Telling the signing-in app who the user is: name, email, when they signed in. |Only the app that signed the user in. An API must never accept it.
 |*Refresh token* |Getting a new access token without asking the user to sign in again. Longer-lived. |Only Keycloak. The app sends it back to Keycloak and never to an API; it must be kept as carefully as a password.
 |===

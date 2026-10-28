@@ -98,8 +98,8 @@ image::m04-issuer-log.png[The BFF's startup error in Observe → Logs]
 
 . Restart the rollout of `bff`, `proxy`, and `orders-api` the same way, so
   they read the new secrets and configuration. Wait until each shows **1 of 1
-  pods**, and check that the pod's age under **Workloads → Pods** is
-  minutes, not hours: an old pod means the restart did not happen. (The
+  pods**, and check that the pod's **Created** time under **Workloads → Pods**
+  is just now: an older pod means the restart did not happen. (The
   proxy's pod shows **2/2** containers: the gateway and its sign-in
   component.)
 . Open `pass:a[{spa_url}/config.json]` in a new tab. It shows your issuer and
