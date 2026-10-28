@@ -29,8 +29,8 @@ Keycloak service.
 . For each lab user, enter its private lab password and turn the **Temporary**
   checkbox or switch **Off**. Verify it reads **Off** before saving the
   password. The eye/visibility control only reveals the password you typed; it
-  does not change whether the password is temporary. Use the lab's approved
-  private credential handling method and do not reuse your attendee password.
+  does not change whether the password is temporary. Do not reuse your
+  attendee password.
 
 Leave both users without realm-role assignments for now. In Module 3, create
 the `user` and `manager` roles, make `manager` include `user`, then assign the
