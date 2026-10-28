@@ -29,9 +29,11 @@ downstream calls demonstrate two distinct grants:
 +
 image::m06-trace.png[Trace of a manager order across Orders, Inventory, and Notifications]
 
-. Copy the trace ID from the trace page. Open **Observe → Logs**, keep your
-  namespace selected, and search for that trace ID. You see the matching log
-  lines from all three APIs. Compare their `username`, `client_id` (the token's
+. Copy the trace ID from the trace page. Open **Observe → Logs**, which shows
+  only your namespace, search for that trace ID, and click **Run Query**. The
+  trace page drops leading zeros, so if the ID starts with fewer than 32
+  characters, search without them or add the zeros back. Scroll the results to
+  see the lines from all three APIs. Compare their `username`, `client_id` (the token's
   `azp`), `roles`, and `decision` fields:
 +
 * **Orders:** `username` `manager`, `client_id` `spa` (or `bff`/`proxy`), roles
