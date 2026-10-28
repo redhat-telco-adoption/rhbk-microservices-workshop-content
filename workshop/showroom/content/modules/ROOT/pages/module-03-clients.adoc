@@ -72,8 +72,14 @@ Assign client role `notifications-api:notifier` only to the `orders-api`
 service account. This is a client role for the workload identity, separate
 from the users' realm roles.
 
+Because full scope is off on `orders-api`, also allow this role in its scope:
+open **Clients → orders-api → Client scopes → orders-api-dedicated → Scope**,
+choose **Assign role**, filter by clients, and assign `notifications-api`
+`notifier`. Without it, the Orders service-account token carries no
+`notifier` role and every manager write fails with a 502.
+
 **Check:** only the Orders service account has
-`notifications-api:notifier`.
+`notifications-api:notifier`, and `orders-api-dedicated` allows it.
 
 == Do: constrain token audiences
 

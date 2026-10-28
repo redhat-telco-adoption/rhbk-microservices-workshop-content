@@ -23,7 +23,9 @@ Keycloak service.
 . Switch to your new realm. Confirm its URL ends in `/realms/{realm_name}`.
 . Create two users with non-shared lab credentials: one named `reader` and one
   named `manager`. Use synthetic email addresses `reader@example.invalid` and
-  `manager@example.invalid`. These synthetic addresses do not require an inbox,
+  `manager@example.invalid`, and fill in **First name** and **Last name**
+  (for example `Reader`/`Lab`); Keycloak requires them, and a user without
+  them sees an extra profile form at first sign-in. These synthetic addresses do not require an inbox,
   SMTP delivery, or an email-verification flow; the workshop does not verify
   email addresses.
 . For each lab user, enter its private lab password and turn the **Temporary**

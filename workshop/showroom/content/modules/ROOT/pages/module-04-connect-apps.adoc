@@ -19,7 +19,8 @@ No source edit or rebuild is needed for this activity.
   credential or the `sso` option is missing, stop and ask the facilitator.
 . Select your assigned namespace and confirm the SPA, BFF, and proxy Routes
   match your session handoff.
-. Update only the listed fields in each ConfigMap. Keep service URLs and other
+. Check the listed fields in each ConfigMap and correct any that differ; the
+  reservation may already have set them. Keep service URLs and other
   reservation-generated values unchanged. Each row names the workload that
   consumes that ConfigMap.
 
@@ -45,8 +46,9 @@ No source edit or rebuild is needed for this activity.
   `proxy-secrets`, key `client-secret`; `orders-api` → Secret
   `orders-api-client`, key `client-secret`. Keep `cookie-secret` and
   `redis-password` unchanged.
-. Restart only the workloads whose ConfigMap or Secret you changed. Wait for
-  each restarted workload to report Ready before retrying its route.
+. Restart only the workloads whose ConfigMap or Secret you changed
+  (**Workloads → Deployments →** _deployment_ **→ Actions → Restart rollout**).
+  Wait for each restarted workload to report Ready before retrying its route.
 
 == Check
 
