@@ -28,7 +28,12 @@ image::m05-spa-manager-created.png[SPA showing the manager's order created with 
   link:{bff_url}[BFF,window=_blank] and link:{proxy_url}[proxy,window=_blank].
   The proxy has no **Sign in** button: opening it sends you straight to the
   Keycloak sign-in page. Sign out between users; signing out also ends your
-  Keycloak session, so the next sign-in asks for a username again.
+  Keycloak session, so the next sign-in asks for a username again. If the
+  proxy page still shows **Sign out** after you click it, reload the page.
++
+The three apps share one Keycloak sign-in in your browser. If you are still
+signed in to one app, another app signs you in as that same user without
+asking. Sign out of the app you used last before you switch users.
 
 == Check
 

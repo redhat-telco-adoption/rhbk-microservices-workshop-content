@@ -55,8 +55,7 @@ image::m04-edit-secret.png[Edit Secret form for bff-client]
 
 . Restart the three workloads that read those Secrets: open **Workloads →
   Deployments →** `bff`, `proxy`, and `orders-api` in turn and choose **Actions →
-  Restart rollout**. Wait until each shows its pod as ready (1 of 1, or 2 of 2
-  for `proxy`).
+  Restart rollout**. Wait until each shows **1 of 1 pods**.
 +
 image::m04-restart-rollout.png[Restart rollout action on the bff Deployment]
 

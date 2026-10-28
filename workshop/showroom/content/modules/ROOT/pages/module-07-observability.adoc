@@ -13,8 +13,8 @@ not expose passwords, client secrets, session cookies, or bearer tokens.
 . In **Observe → Traces**, find the denied `POST /orders` trace. It stops at
   Orders with status 403 and never reaches Inventory or Notifications.
 . In **Observe → Logs**, search your namespace for `deny`. The Orders line shows
-  the decision, status 403, and the missing role, with no token or secret in
-  the log.
+  `decision` `deny`, status 403, and `reason` `missing_role`, with no token or
+  secret in the log.
 +
 image::m07-deny-log.png[Orders log line for the reader's denied write]
 

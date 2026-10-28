@@ -21,8 +21,9 @@ downstream calls demonstrate two distinct grants:
   manager`) and the accepted notification. This one request triggers both
   downstream calls.
 . In the OpenShift Console, open **Observe → Traces**, choose the `workshop`
-  Tempo instance and tenant, and search for service `orders-api`. Open the most
-  recent `POST /orders` trace. It shows one request crossing Orders, Inventory,
+  Tempo instance and tenant, and search for service `orders-api`. Set the time range to the last 15 minutes
+  so your newest traces are in the list, and open the most recent
+  `POST /orders` trace. It shows one request crossing Orders, Inventory,
   and Notifications, plus Orders' calls to Keycloak's token endpoint.
 +
 image::m06-trace.png[Trace of a manager order across Orders, Inventory, and Notifications]

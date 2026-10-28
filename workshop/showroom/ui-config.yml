@@ -7,4 +7,12 @@ antora:
 default_width: 45
 persist_url_state: true
 dev_mode: false
-# The OpenShift Console refuses to load in a frame; the guide links to it instead.
+# Start with the guide full width. The OpenShift Console refuses to load in a
+# frame, so its tab opens a new browser tab instead.
+view_switcher:
+  enabled: true
+  default_mode: instructions
+tabs:
+  - name: OpenShift Console
+    url: 'https://console-openshift-console.${DOMAIN}'
+    external: true
