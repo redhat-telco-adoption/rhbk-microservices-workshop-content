@@ -22,11 +22,15 @@ downstream calls demonstrate two distinct grants:
   downstream calls.
 . Open link:{openshift_console_url}/observe/traces?namespace=tracing&name=workshop&tenant={attendee_id}&start=15m&limit=100&q=%7B+resource.service.name+%3D+%22orders-api%22+%7D[your Orders traces,window=_blank] in the OpenShift Console
   (**Observe → Traces**, your own tenant `{attendee_id}`, service `orders-api`).
-  Only you can read this tenant. Open the most recent `orders-api: POST /orders`
+  Only you can read this tenant. If the page shows no Tempo instance or says
+  you don't have permission, select Tempo instance `tracing / workshop`, then
+  Tenant `{attendee_id}`; the list also names other attendees' tenants, which
+  you cannot open. Open the most recent `orders-api: POST /orders`
   trace. It shows one request crossing Orders, Inventory,
   and Notifications. The `orders-api: POST` spans with no other service below
-  them are Orders' calls to Keycloak's token endpoint: the token exchange and
-  the client-credentials request. Click one to see the Keycloak URL.
+  them are Orders' calls to Keycloak's token endpoint: the token exchange, and
+  on the first order the client-credentials request (Orders reuses that token
+  afterwards). Click one to see the Keycloak URL.
 +
 image::m06-trace.png[Trace of a manager order across Orders, Inventory, and Notifications]
 

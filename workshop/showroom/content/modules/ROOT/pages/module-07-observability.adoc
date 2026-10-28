@@ -11,8 +11,9 @@ not expose passwords, client secrets, session cookies, or bearer tokens.
 
 . Make one successful read and one denied write in your application copy.
 . Open link:{openshift_console_url}/observe/traces?namespace=tracing&name=workshop&tenant={attendee_id}&start=15m&limit=100&q=%7B+resource.service.name+%3D+%22orders-api%22+%7D[your Orders traces,window=_blank] again and find the
-  denied `POST /orders` trace. It stops at
-  Orders with status 403 and never reaches Inventory or Notifications.
+  denied `POST /orders` trace. Through the BFF or proxy the trace is named after
+  that app, for example `bff: POST orders-api`. It stops at Orders with status
+  403 and never reaches Inventory or Notifications.
 . In **Observe → Logs**, search for `deny` and click **Run Query**; if the old
   results stay, click the refresh button. The Orders line shows
   `decision` `deny`, status 403, and `reason` `missing_role`, with no token or

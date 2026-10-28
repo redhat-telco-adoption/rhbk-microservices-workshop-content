@@ -33,8 +33,8 @@ image::m05-spa-manager-created.png[SPA showing the manager's order created with 
 The three apps share one Keycloak sign-in in your browser. If you are still
 signed in to one app, another app signs you in as that same user without
 asking, and an app you already used keeps its own session until you sign out
-of it. Sign out of every app you used before you switch users. When the BFF's
-**Sign out** shows Keycloak's "Do you want to log out?" page, click **Logout**.
+of it. Sign out of every app you used before you switch users. If **Sign out**
+shows Keycloak's "Do you want to log out?" page, click **Logout**.
 
 == Check
 
