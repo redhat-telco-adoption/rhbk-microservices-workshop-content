@@ -1,55 +1,140 @@
-= Module 7: Observability and production tradeoffs
-:navtitle: 7. Observe and review
+= Module 7: Operate it
+:navtitle: 7. Operate it
 
-== Know
+== Why it matters
 
-Useful observability answers which operation failed, which service handled it,
-and which sanitized identity attributes were involved. Logs and traces should
-not expose passwords, client secrets, session cookies, or bearer tokens.
+A secure design still has to be run: someone gets a 403 they did not expect, a
+token ends up in a log, Keycloak has an outage. The evidence you have used so
+far (traces, log lines with a reason, and tokens you can inspect) is what lets
+you answer those calls quickly and without guessing. Each scenario below has a
+reference answer; write yours first.
 
-== Do
+== Do: follow a denial end to end
 
-. Make one successful read and one denied write in your application copy.
-. Open link:{openshift_console_url}/observe/traces?namespace=tracing&name=workshop&tenant={attendee_id}&start=15m&limit=100&q=%7B+resource.service.name+%3D+%22orders-api%22+%7D[your Orders traces,window=_blank] again and find the
-  denied `POST /orders` trace. Through the BFF or proxy the trace is named after
-  that app, for example `bff: POST orders-api`. It stops at Orders with status
-  403 and never reaches Inventory or Notifications.
-. In **Observe → Logs**, search for `deny` and click **Run Query**; if the old
-  results stay, click the refresh button. The Orders line shows
-  `decision` `deny`, status 403, and `reason` `missing_role`, with no token or
-  secret in the log. A denied write through the BFF also has a BFF line with
-  `roles: []`: the BFF logs its session's ID token, which carries no roles,
-  while Orders checks the access token.
+. Sign in to the link:{spa_url}[SPA,window=_blank] as `reader`, click **View
+  orders**, then **Create a sample order**.
+. Open
+  link:{openshift_console_url}/observe/traces?namespace=tracing&name=workshop&tenant={attendee_id}&start=15m&limit=100&q=%7B+resource.service.name+%3D+%22orders-api%22+%7D[your Orders traces,window=_blank]
+  and find the denied `POST /orders` trace. Through the BFF or proxy the trace
+  is named after that app, for example `bff: POST orders-api`. It stops at
+  Orders with status 403 and never reaches Inventory or Notifications.
+. In **Observe → Logs**, search for `missing_role` and click **Run Query**
+  (again if the old results stay). The Orders line shows `decision` `deny`,
+  status 403, and `reason` `missing_role`, with no token or secret in the log.
+  A denied write through the BFF also has a BFF line with `roles: []`: the BFF
+  logs its session's ID token, which carries no roles, while Orders checks the
+  access token.
 +
 image::m07-deny-log.png[Orders log line for the reader's denied write]
 
-. Write one sentence for each pattern describing where the browser session
-  lives, how logout works, and the main operational dependency.
-. Write down how you would handle client lifetime, role ownership, redirect URI
-  policy, token lifetime, secret rotation, and audit-event retention in
-  production. If you work with a partner, compare notes.
+== Scenario 1: "I can't create orders"
 
-== Check
+A colleague signed in as `reader` says the app is broken: creating an order
+fails. Using only the console and the logs, decide whether this is a bug or
+policy, and what would change it.
 
-Share a short production recommendation that names the pattern, threat or
-operational constraint it addresses, and a control you would add before
-production. Ensure your evidence contains no credentials or raw tokens.
+.Reference answer
+[%collapsible]
+====
+It is policy. The Orders log line says `status 403`, `reason missing_role`,
+`roles ["user"]`. Authentication worked; the user lacks `manager`. The fix, if
+the business agrees, is a role assignment in Keycloak, not a code change.
+Before granting it, check the client side too: if the client's scope did not
+include `manager`, the user could have the role and still not get it in the
+token, as the service account did in Module 6.
+====
 
-**Expected:** your recommendation accounts for browser token exposure, BFF or
-proxy availability, CSRF, exact redirects, audience restrictions, least
-privilege, audit data, and recovery.
+== Scenario 2: a token appears in a support ticket
 
-== Optional legacy API activity
+Someone pasted a request, including its `Authorization: Bearer ...` header,
+into a ticket.
 
-The project’s Legacy API depends on AWS, DNS, subnet, EC2, and publicly trusted
-TLS prerequisites. Use it only when your facilitator explicitly confirms it is
-available. Confirm the audience is `legacy-api`, test the prepared endpoint,
-and compare its identity evidence with the cluster APIs. Otherwise mark it
-skipped.
+. **Try it.** Sign in to the SPA as `reader`, then in Keycloak open **Users →
+  reader → Sessions** and sign out each session from its row menu.
+. In the SPA, click **View orders**. **Predict** first: it still returns 200.
+  Orders validates tokens locally with the realm's public keys and never asks
+  Keycloak whether the session still exists. The access token stays valid
+  until it expires, five minutes here.
 
-== If something is wrong
+What do you do about the ticket?
 
-Logs and traces can take up to a minute to appear; refresh the search. If
-**Observe → Logs** or **Observe → Traces** is missing, ask the facilitator to
-check the shared logging and tracing stack. Never request cluster-wide logging
-access for this exercise.
+.Reference answer
+[%collapsible]
+====
+. Treat it as an incident: restrict access to the ticket and remove the
+  token from it and any copies.
+. Find out what leaked. An access token expires on its own within minutes. A
+  refresh token, session cookie, or client secret lasts much longer and is the
+  real risk.
+. End the user's sessions in Keycloak. That stops refresh and new tokens
+  but, as you just saw, not an access token already issued.
+. If a client secret leaked, regenerate it in Keycloak (**Credentials →
+  Regenerate**) and update the Secret.
+. Check logs for use of that identity during the exposure window.
+. Prevent the next one: keep access tokens short-lived, and never log
+  `Authorization` headers or cookies.
+====
+
+== Scenario 3: Keycloak is down for ten minutes
+
+Complete row 5 of your Module 1 table: what happens to each pattern, and to an
+order, while Keycloak is unreachable?
+
+.Reference answer
+[%collapsible]
+====
+* **Existing users keep working briefly.** APIs check signatures with keys
+  they have already downloaded, so a valid access token keeps working until it
+  expires (five minutes here). New sign-ins fail everywhere.
+* **SPA:** when the token expires, the SPA cannot renew it and the user is
+  signed out.
+* **BFF and proxy:** same, at the next token refresh; the session cookie alone
+  is not enough.
+* **Orders:** reads keep working while the user's token is valid. Every
+  *write* fails at once, because Orders exchanges a token with Keycloak for
+  each Inventory call. Notifications would work until Orders' cached
+  service-account token expires.
+
+The design point: each call to Keycloak in a request path is a dependency.
+Token exchange per request buys precise identity at the price of
+availability. Run Keycloak highly available, and know which of your flows
+depend on it per request.
+====
+
+== Check your predictions
+
+Compare your completed Module 1 table with this one.
+
+.Reference table
+[%collapsible]
+====
+[cols="2,1,1,1",options="header"]
+|===
+|Question |SPA |BFF |Proxy
+|Where is the access token after sign-in? |Browser memory |BFF server |Proxy's Redis session
+|Can JavaScript on the page read the token? |Yes |No |No
+|What does the browser send to the API? |The token |A session cookie |A session cookie
+|Does the app need CSRF protection? |No |Yes |Yes
+|If Keycloak is down for ten minutes? |Works until the token expires |Works until the next refresh |Works until the next refresh
+|===
+====
+
+== Do: a production review
+
+Pick one application you work on. Write down, in one line each:
+
+. Which pattern it uses, or should use, and why.
+. Its redirect URIs and whether any contains a wildcard.
+. The audience its tokens carry, and whether its APIs check it.
+. Where its client secret lives and when it was last rotated.
+. What it logs on a denial, and whether any log can contain a token.
+. What happens to it during a Keycloak outage.
+
+xref:at-your-desk.adoc[] has the checklists to compare against.
+
+== Optional: the Legacy API
+
+The Legacy API depends on AWS, DNS, and public TLS prerequisites. Use it only
+when your facilitator confirms it is available: confirm the audience is
+`legacy-api`, call the prepared endpoint, and compare its log line with the
+cluster APIs. Otherwise skip it.

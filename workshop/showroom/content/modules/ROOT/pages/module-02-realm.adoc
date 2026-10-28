@@ -1,60 +1,111 @@
-= Module 2: Create your realm and users
-:navtitle: 2. Create a realm
+= Module 2: A realm is a trust boundary
+:navtitle: 2. Realm
 
-== Know
+== Why it matters
 
-The Keycloak `create-realm` permission permits a delegated user to create a
-realm and administer the realm it created. It does not require the global
-`admin` role. A realm is a separate identity boundary inside the shared
-Keycloak service.
+A realm is a separate identity world inside one Keycloak server: its own
+users, roles, clients, and signing keys. Every token a realm issues carries
+the realm's address as its *issuer* (`iss`) and is signed with the realm's
+private key. An API that trusts your realm checks both. A token from another
+realm, even on the same server, fails those checks.
 
-== Do
+That is why the issuer is the single most important configuration value in
+this lab. It tells every application where to find the realm's public keys and
+which tokens to accept.
+
+Your account can create a realm without being a Keycloak server administrator.
+This is *delegated administration*: the `create-realm` permission lets you
+create a realm and manage only the realms you create. Large organizations use
+the same model to let teams own their realms without touching each other's.
+
+== Do: create your realm
 
 . Open the
   link:{keycloak_origin}/admin/master/console/[Keycloak administration console,window=_blank]
   and sign in with your username and password from xref:details.adoc[]. This
-  account lives in the Keycloak `master` realm; keep its password unchanged.
-. In the left menu choose **Manage realms**, then **Create realm**. Enter the realm name `{realm_name}`, keep **Enabled** on,
-  and click **Create**.
+  account lives in Keycloak's `master` realm.
+. In the left menu choose **Manage realms**, then **Create realm**. Enter the
+  realm name `{realm_name}`, keep **Enabled** on, and click **Create**.
 +
 image::m02-create-realm.png[Create realm form]
 
-. Keycloak switches to your new realm. Open **Realm settings** and, next to
-  **Endpoints**, click **OpenID Endpoint Configuration**. Confirm that
-  `issuer` is exactly `pass:a[{issuer}]`.
-. Open **Users → Create new user** (or **Add user**). Enter username `reader`,
-  email `reader@example.invalid`, first name `Reader`, and last name `Lab`, then
-  click **Create**. Keycloak requires the first and last name; without them
-  the user sees an extra profile form at first sign-in.
+. Keycloak switches to your new realm. Open **Manage realms** again: you see
+  only `master` and your realm. You cannot see or change other attendees'
+  realms.
+
+== See it: the documents every application trusts
+
+. Open **Realm settings** and, next to **Endpoints**, click **OpenID Endpoint
+  Configuration**. This *discovery document* is public. Every application in
+  this lab reads it at startup.
+. Find these fields and note what each is for:
++
+[cols="1,3",options="header"]
+|===
+|Field |What applications use it for
+|`issuer` |The exact value every token's `iss` claim must match. It must be exactly `pass:a[{issuer}]`.
+|`authorization_endpoint` |Where apps send the browser to sign in.
+|`token_endpoint` |Where apps exchange a sign-in code, or their own credentials, for tokens.
+|`jwks_uri` |Where APIs download the realm's public keys to check token signatures.
+|`end_session_endpoint` |Where apps send the browser to sign out of Keycloak.
+|===
+
+. Open the `jwks_uri` address in a new tab. You see one or more public keys,
+  each with a key ID (`kid`). Every token names the `kid` it was signed with,
+  so an API can pick the right key without calling Keycloak for each request.
+
+== Do: create two lab users
+
+. Open **Users → Create new user**. Enter username `reader`, email
+  `reader@example.invalid`, first name `Reader`, and last name `Lab`, then
+  click **Create**. Keycloak's default user profile requires first and last
+  name; without them the user gets an extra form at first sign-in.
 +
 image::m02-create-user.png[Create user form for reader]
 
 . On the user's **Credentials** tab, click **Set password**. Enter a password
   you choose (not your attendee password), turn **Temporary** **Off**, and
-  click **Save**, then confirm **Save password** in the dialog that follows.
+  click **Save**, then confirm **Save password**.
 +
 image::m02-set-password.png[Set password dialog with Temporary turned off]
 
-. Repeat the last two steps for `manager` (`manager@example.invalid`, first
-  name `Manager`, last name `Lab`). Write down both lab passwords.
+. Repeat for `manager` (`manager@example.invalid`, first name `Manager`, last
+  name `Lab`). Write down both lab passwords.
 
-Leave both users without realm-role assignments for now. In Module 3, create
-the `user` and `manager` roles, make `manager` include `user`, then assign the
-roles to these users. Keycloak cannot assign a role before it exists.
+The users have no roles yet. You create roles in Module 3; Keycloak cannot
+assign a role before it exists.
 
-== Check
+== Explain
 
-Confirm both users appear under **Users**, are enabled, and have the expected
-synthetic email, and that realm administration works inside your realm. The proxy exercise accepts these
-unverified synthetic email claims. The role check happens after the roles are
-created in Module 3.
+. An attacker runs their own Keycloak and issues a token with
+  `"realm_access": {"roles": ["manager"]}` and your realm's name in `iss`. Why
+  does Orders reject it?
++
+.Answer
+[%collapsible]
+====
+The token is signed with the attacker's private key. Orders checks the
+signature with the public keys from your realm's `jwks_uri`, and none of them
+match. A correct-looking issuer string is not enough; the signature proves the
+token came from your realm.
+====
 
-**Expected:** your issuer is `pass:a[{keycloak_origin}/realms/{realm_name}]` and you
-cannot administer another attendee's realm or change server-wide settings.
+. Why do applications read the discovery document instead of having each
+  endpoint configured by hand?
++
+.Answer
+[%collapsible]
+====
+One value, the issuer, gives them everything else. Keycloak can change
+endpoint paths or rotate keys without every application being reconfigured.
+It also means a wrong issuer breaks everything at once, which you will see in
+Module 4.
+====
 
-== If something is wrong
+== At your desk
 
-If **Create realm** is missing, stop and ask the facilitator to check your
-delegated `create-realm` permission. If the realm name collides, do not rename
-another attendee's realm; request your exact assigned name. Do not grant
-yourself `admin` or add roles in the master realm.
+* Use one realm per trust boundary (for example per product or per customer),
+  not one per application. Applications that share users share a realm.
+* Give teams delegated realm administration rather than server-wide admin.
+* Treat the issuer as configuration that must be exact, including scheme,
+  host, and the absence of a trailing slash.

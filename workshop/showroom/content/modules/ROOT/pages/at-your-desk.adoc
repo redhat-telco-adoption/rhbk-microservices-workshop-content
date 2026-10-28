@@ -1,0 +1,98 @@
+= At your desk
+:navtitle: At your desk
+
+Use this page when you start securing your own application. Each section
+points back to the module where you saw it work.
+
+== Choose a sign-in pattern
+
+[cols="1,2,2,2",options="header"]
+|===
+| |SPA with PKCE |Backend-for-frontend |Reverse proxy
+|Tokens live |In browser memory |On your server |In the proxy's session store
+|Main risk |XSS can steal tokens |CSRF on cookie-authenticated writes |CSRF; the proxy is a shared dependency
+|You need |Short token lifetimes, a strict Content Security Policy, CORS on your API |A server session store, CSRF tokens |A proxy and session store you operate, CSRF checks
+|Good fit |Static front ends that call your own APIs, where you control the scripts on the page |New web apps with a server tier; the default for sensitive data |Existing or third-party apps you cannot change
+|===
+
+Start from the BFF unless you have a reason not to. Use an SPA when there is no
+server tier and the scripts on the page are tightly controlled. Use a proxy to
+protect an application without changing its code. (Modules 1 and 5)
+
+== Register clients
+
+* **Browser app:** public; standard flow only; PKCE `S256`; exact redirect,
+  post-logout, and web-origin values; full scope off; the audience of each API
+  it calls.
+* **Server-side web app:** confidential; standard flow only; PKCE `S256`;
+  exact URIs; full scope off; API audiences; secret in a vault, rotated.
+* **API:** confidential; no sign-in flows; turn on only the service-to-service
+  flows it uses.
+* Never: wildcard redirect URIs, direct access grants, implicit flow, full
+  scope left on by default.
+* Keep realm configuration in version control (a realm export or a
+  configuration tool) and review changes like code. (Module 3)
+
+== Connect an application
+
+* Signs users in: issuer, client ID, redirect URI, and a secret if
+  confidential.
+* Accepts tokens: issuer and its own audience.
+* Calls services as itself: issuer, client ID, secret.
+* Configuration per environment; secrets in a secret store. Check the issuer
+  first when anything fails. (Module 4)
+
+== Validate tokens in every API
+
+. Signature with the realm's JWKS, one allowed algorithm.
+. `iss` exactly equals your issuer.
+. `aud` includes this API.
+. `exp` in the future, small clock tolerance.
+. Access token, not an ID token.
+. Then the role for this operation, on the server, for every request.
+
+Use your framework's resource-server support rather than parsing tokens by
+hand: Spring Security's `oauth2ResourceServer`, PyJWT with `PyJWKClient`,
+`jose` in Node.js, `Microsoft.AspNetCore.Authentication.JwtBearer` in .NET.
+Return 401 for token problems and 403 for missing permissions. (Module 5)
+
+== Call other services
+
+* The downstream service decides about the user: **token exchange**, with the
+  target's audience as an optional scope, and the target checking `azp`.
+* The action belongs to the system: **client credentials**, with a client role
+  on the target and the caller's scope allowing it.
+* Never forward the user's token to a different API.
+* Cached service tokens keep old roles until they expire. (Module 6)
+
+== Operate it
+
+* Log the decision, the reason, the user, the client, and a trace ID. Never
+  log tokens, cookies, or secrets.
+* Ending a Keycloak session does not cancel access tokens already issued; keep
+  them short-lived.
+* Know which requests call Keycloak per request; those fail first during an
+  outage. (Module 7)
+
+== Errors you have now seen
+
+[cols="2,2,3",options="header"]
+|===
+|What you see |Where |Usual cause
+|`Invalid parameter: redirect_uri` |Keycloak error page |The app's callback address is not in the client's list exactly
+|`did not match the requested issuer` |App startup log |Issuer differs by a character, often a trailing slash
+|401, `invalid_token` |API log |Wrong issuer or audience, expired, forged, or missing token
+|403, `missing_role` |API log |The user lacks the role, or the client's scope does not include it
+|403 with no API log line |BFF or proxy |The CSRF proof is missing
+|502 from Orders |Orders |A downstream identity is not set up; follow the trace
+|Role change has no effect |Service-to-service |A cached token; wait for expiry or restart
+|===
+
+== Learn more
+
+* OAuth 2.0 for Browser-Based Applications (IETF draft): the SPA, BFF, and
+  proxy patterns in depth.
+* OAuth 2.0 Security Best Current Practice (RFC 9700).
+* OAuth 2.0 Token Exchange (RFC 8693).
+* Red Hat build of Keycloak documentation: *Server Administration Guide*,
+  chapters on clients, client scopes, and token exchange.

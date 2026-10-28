@@ -17,7 +17,7 @@ OpenShift Console. Keep the password to yourself.
 
 Open both consoles in their own browser tabs. In Module 2 you also create two
 lab users, `reader` and `manager`, with passwords you choose. Write them down;
-you need them in Modules 4–6.
+you need them from Module 3 on.
 
 == Your session values
 
@@ -31,6 +31,7 @@ you need them in Modules 4–6.
 |SPA URL |link:{spa_url}[{spa_url},window=_blank]
 |BFF URL |link:{bff_url}[{bff_url},window=_blank]
 |Proxy URL |link:{proxy_url}[{proxy_url},window=_blank]
+|Orders API URL |`pass:a[{orders_api_url}]`
 |===
 
 If a value shows `not-assigned`, `namespace-not-assigned`, or an
@@ -43,8 +44,9 @@ or reuse another attendee's realm.
   administer only the realms it creates.
 * Your OpenShift namespace with the SPA frontend, BFF, proxy, and three APIs
   already deployed. The BFF and proxy wait for the realm you create.
-* ConfigMaps already set to your realm's issuer, and three Secrets that hold a
-  placeholder until you paste the client secrets in Module 4.
+* ConfigMaps for the SPA, proxy, and APIs already set to your realm's issuer.
+  You connect the BFF yourself in Module 4. Three Secrets hold a placeholder
+  until you paste the client secrets.
 * Cluster logging and distributed tracing. Your applications send logs and
   traces automatically; you read them in the OpenShift Console under
   **Observe → Logs** and **Observe → Traces**. Both show only your own data:

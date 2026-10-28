@@ -1,59 +1,268 @@
-= Module 5: Verify authorization decisions
-:navtitle: 5. Allow and deny
+= Module 5: Prove where authorization happens
+:navtitle: 5. Prove it
 
-== Know
+== Why it matters
 
-Authentication identifies the caller. Authorization evaluates role, audience,
-issuer, and sometimes client identity for each protected API operation. A
-client-side button is not an authorization control.
+A button the UI hides or disables protects nothing. Anyone can send the
+request without the UI. The API that owns the data must decide on every
+request, from the token alone. You will prove that here, and check your
+Module 1 predictions about where each pattern keeps its tokens.
 
-== Do
+Two status codes matter:
 
-Each app page has the same two buttons: **View orders** sends `GET /orders` and
-**Create a sample order** sends `POST /orders`. The result and response code
-appear in the message below the buttons.
+* **401 Unauthorized** means the API does not know who you are: no token, an
+  expired one, a forged one, or one meant for another API.
+* **403 Forbidden** means the API knows who you are, and you are not allowed.
 
-. Open your link:{spa_url}[SPA,window=_blank] and click **Sign in**. A sign-in
-  popup opens; sign in as `reader` with the lab password you chose in Module 2.
-. Click **View orders**, then **Create a sample order**, and record both
-  response codes.
+Telling them apart tells you where to look: 401 is usually configuration or
+token handling, and 403 is usually role assignment.
+
+You need the browser's developer tools for this module: press **F12** (or
+**Cmd+Option+I** on a Mac). Use them only on your own lab apps.
+
+== Do: the SPA
+
+. Open your link:{spa_url}[SPA,window=_blank], click **Sign in**, and sign in
+  as `reader`. Click **View orders**, then **Create a sample order**. Note
+  both response codes.
 +
 image::m05-spa-reader-denied.png[SPA showing the reader's write denied with 403]
 
-. Click **Sign out**, then sign in as `manager` and repeat both buttons.
-+
-image::m05-spa-manager-created.png[SPA showing the manager's order created with 201]
+=== See it: where is the token?
 
-. Repeat the reader and manager checks through your
-  link:{bff_url}[BFF,window=_blank] and link:{proxy_url}[proxy,window=_blank].
-  The proxy has no **Sign in** button: opening it sends you straight to the
-  Keycloak sign-in page. Sign out between users; signing out also ends your
-  Keycloak session, so the next sign-in asks for a username again.
+. In developer tools, open the **Network** tab and click **View orders**
+  again. Select the `orders` request and look at its **Request Headers**:
+  `Authorization: Bearer eyJ...`. The browser itself sends the token.
+. Open the **Application** tab (**Storage** in Firefox) and look under
+  **Cookies** for your SPA address: there is no session cookie. (A cookie with
+  a long random name may appear on any of the three apps. It is OpenShift's
+  load-balancer cookie and holds no identity.)
+. In the app, expand **Where session data is stored**: **Access token in
+  JavaScript memory: Yes**.
+
+Compare with rows 1–4 of your Module 1 table for the SPA.
+
+=== Bypass the UI
+
+The reader's write was refused. Is that the button's doing, or the API's?
+
+. In the **Network** tab, right-click the `orders` request and copy the value
+  of its `Authorization` header (it starts with `Bearer`).
+. Open the **Console** tab. If the browser asks you to type `allow pasting`
+  first, do so. Then paste this, putting your copied value between the
+  quotes:
 +
-The three apps share one Keycloak sign-in in your browser. If you are still
-signed in to one app, another app signs you in as that same user without
-asking, and an app you already used keeps its own session until you sign out
-of it. Sign out of every app you used before you switch users. If **Sign out**
-shows Keycloak's "Do you want to log out?" page, click **Logout**.
+[source,javascript,subs="attributes+"]
+----
+const auth = 'Bearer ...';
+const order = { item: 'widget', quantity: 1 };
+await fetch('{orders_api_url}/orders', {
+  method: 'POST',
+  headers: { Authorization: auth, 'Content-Type': 'application/json' },
+  body: JSON.stringify(order),
+}).then((r) => r.status);
+----
++
+The result is `403`. No UI was involved: Orders read the `user` role from the
+token and refused.
+. Now remove the token and change one character of it:
++
+[source,javascript,subs="attributes+"]
+----
+await fetch('{orders_api_url}/orders').then((r) => r.status);
+await fetch('{orders_api_url}/orders', {
+  headers: { Authorization: auth.slice(0, -4) + 'AAAA' },
+}).then((r) => r.status);
+----
++
+Both return `401`. The forged one fails the signature check you saw in
+Module 2.
+
+Notice what you just did: any script running on this page could do the same,
+and send the token anywhere. That is why an SPA keeps tokens short-lived and in
+memory, never in `localStorage`, and why cross-site scripting (XSS) is the
+SPA's main risk.
+
+=== See it: the API's own record
+
+Open **Observe → Logs** in the OpenShift Console, search for `missing_role`,
+and click **Run Query** (again if the results do not change). Then search for
+`invalid_token`. You find the Orders lines for your attempts:
+
+* `"status":403`, `"reason":"missing_role"`, `"username":"reader"`,
+  `"roles":["user"]`: Orders knew who you were and said no.
+* `"status":401`, `"reason":"invalid_token"`: Orders could not establish who
+  you were. (Orders reports a missing token as `invalid_token` too.)
+
+No token appears in any line. The log records the decision, not the
+credential.
+
+=== The manager
+
+. Click **Sign out**, sign in as `manager`, and click **View orders**, then
+  **Create a sample order**.
+. Reading works. Creating returns **502** with `downstream_unavailable`. This
+  is expected. The manager passed Orders' role check (not a 403), but Orders
+  cannot yet get the tokens it needs to call Inventory and Notifications. You
+  give it those identities in Module 6.
+. Sign out.
+
+== Do: the BFF
+
+. Open your link:{bff_url}[BFF,window=_blank] and sign in as `manager`.
+. Expand **Where session data is stored**: **Access token in JavaScript
+  memory: No**, and the only cookie JavaScript can read is `XSRF-TOKEN`.
+. In **Application → Cookies**, find `SESSION`. Its **HttpOnly** box is
+  ticked: JavaScript cannot read it, and it holds only a session ID. The
+  tokens stay on the BFF server.
+. In **Network**, click **View orders** and select the `orders` request. It
+  carries a `Cookie` header and no `Authorization` header.
+
+=== Break it: a request without CSRF protection
+
+The browser attaches the session cookie to every request to the BFF, even one
+started by another website. That is *cross-site request forgery* (CSRF). The
+BFF therefore requires a second proof on every write.
+
+. In the **Console**, send a write the way a forged request would, without
+  the CSRF header:
++
+[source,javascript]
+----
+await fetch('/api/orders', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ item: 'widget', quantity: 1 }),
+}).then((r) => r.status);
+----
++
+The result is `403`, and Orders never sees the request.
+. Click **Create a sample order** with **Network** open. The app's own request
+  carries an `X-XSRF-TOKEN` header copied from the readable `XSRF-TOKEN`
+  cookie. A page on another site cannot read that cookie, so it cannot forge
+  the header.
+. Sign out, sign in as `reader`, and confirm **View orders** succeeds and
+  **Create a sample order** returns 403. Sign out.
+
+== Do: the proxy
+
+. Open your link:{proxy_url}[proxy,window=_blank] and sign in as `manager`.
+  Keycloak's page appears at once because the whole app sits behind the
+  proxy's sign-in.
+. In **Application → Cookies**, find `_oauth2_proxy` (HttpOnly). JavaScript
+  can read no cookies at all; **Where session data is stored** agrees.
+. Send the same unprotected write from the **Console** as you did on the BFF.
+  The proxy answers with its own `403 Forbidden` page before the request
+  reaches Orders. The app's own button sends `X-Workshop-CSRF: 1`, which a
+  page on another site cannot add to a cross-site request without the
+  proxy's permission.
+. Sign out, sign in as `reader`, and confirm 200 and 403. Sign out.
+
+The three apps share one Keycloak sign-in in your browser. An app you already
+used keeps its own session until you sign out of it, and a new app may sign
+you in as the last user without asking. Sign out of every app before you
+switch users. If **Sign out** shows Keycloak's "Do you want to log out?" page,
+click **Logout**.
 
 == Check
 
-Record the results:
-
-[cols="1,1,2",options="header"]
+[cols="2,1,1,1",options="header"]
 |===
-|Identity |Operation |Expected
-|reader with `user` |GET `/orders` |Success
-|reader with `user` |POST `/orders` |Denied
-|manager with `manager` and composite `user` |GET `/orders` |Success
-|manager with `manager` and composite `user` |POST `/orders` |Success (201)
+|Request |SPA |BFF |Proxy
+|reader views orders |200 |200 |200
+|reader creates an order |403 |403 |403
+|manager views orders |200 |200 |200
+|manager creates an order (until Module 6) |502 |502 |502
+|write without a token or CSRF proof |401 |403 |403
 |===
 
-**Expected:** the API enforces the decision. A reader cannot gain write access
-by editing the UI or changing a request in the browser.
+Now complete rows 1–4 of your Module 1 table with what you saw.
 
-== If something is wrong
+== Explain
 
-For an unexpected denial, check the token issuer, audience, role claim, and
-expiration before changing policy. For an unexpected success, stop and notify
-the facilitator; do not broaden the role or audience to make the test pass.
+. An attacker finds a cross-site scripting bug and runs JavaScript in each
+  app. What can they do in the SPA that they cannot do in the BFF or proxy?
++
+.Answer
+[%collapsible]
+====
+In the SPA they can read the access token and send it to their own server,
+then use it from anywhere until it expires. In the BFF and proxy there is no
+token in the page to steal. They can still make requests from the victim's
+open browser while the page is open, because those carry the session cookie
+and the app's own CSRF proof. Cookie patterns shrink the damage; they do not
+make XSS harmless.
+====
+
+. Why does the SPA not need CSRF protection?
++
+.Answer
+[%collapsible]
+====
+The SPA authenticates with an `Authorization` header that its own code adds.
+Browsers never add that header automatically to a request from another site,
+so a forged request arrives without credentials and gets 401.
+====
+
+. A user reports "403" after their account was moved to a new team. Where do
+  you look first, and where would you look for "401"?
++
+.Answer
+[%collapsible]
+====
+403: the user's role assignments, and the client's role scope (an app whose
+scope excludes a role never passes it on). The Orders log line shows exactly
+which roles the token carried. 401: the token itself and configuration:
+issuer, audience, expiry, clock skew, and whether the API can reach the
+realm's keys.
+====
+
+== At your desk
+
+Every API must make these checks on every request, in this order:
+
+. **Signature**, with keys from the realm's `jwks_uri`, allowing only the
+  expected algorithm (RS256 here).
+. **Issuer** (`iss`) equals your realm's issuer exactly.
+. **Audience** (`aud`) includes this API.
+. **Expiry** (`exp`) is in the future, with a small clock tolerance.
+. **Token type** is an access token, not an ID token.
+. Only then, **roles** for the operation.
+
+Orders (Spring Boot), `SecurityConfiguration.java` and `OrdersController.java`:
+
+[source,java]
+----
+decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(
+    timestamps, new JwtIssuerValidator(issuer), typ, expiry, subject,
+    new JwtAudienceValidator()));            // aud must contain "orders-api"
+
+@PostMapping("/orders") @PreAuthorize("hasRole('manager')")
+public Map<String, Object> createOrder(...) { ... }
+----
+
+Inventory (Python, PyJWT):
+
+[source,python]
+----
+claims = jwt.decode(
+    token, signing_key, algorithms=["RS256"], audience="inventory-api",
+    issuer=ISSUER, leeway=30,
+    options={"require": ["exp", "sub"]},
+)
+if "user" not in roles:
+    raise AuthenticationFailure("missing_role", 403)
+----
+
+Notifications (Node.js, jose):
+
+[source,javascript]
+----
+const jwks = createRemoteJWKSet(new URL(`${issuer}/protocol/openid-connect/certs`));
+const verified = await jwtVerify(token, jwks, {
+  issuer, audience: 'notifications-api', algorithms: ['RS256'], clockTolerance: 30,
+});
+----
+
+The full excerpts, with explanations, are in each application's README under
+"security-relevant lines".

@@ -1,74 +1,228 @@
-= Module 6: Compare login and service identities
-:navtitle: 6. Identity paths
+= Module 6: Service-to-service identities
+:navtitle: 6. Service identities
 
-== Know
+== Why it matters
 
-The SPA, BFF, and proxy are three ways to handle the same user-facing login.
-They differ in where tokens live and how the browser calls an API. The
-downstream calls demonstrate two distinct grants:
+Creating an order makes Orders call two other services, and they need
+different kinds of authority:
 
-* **Token exchange:** Orders exchanges a user token for an Inventory-audience
-  token. The user identity remains available, while the API checks that the
-  authorized client is `orders-api`.
-* **Client credentials:** Orders obtains a machine token for Notifications.
-  There is no end-user identity; the service account has only the
-  `notifier` client role.
+* **Inventory** reserves stock *for the user*. It should know which user, and
+  that the request came through Orders.
+* **Notifications** sends a message that the *system* decided to send. No user
+  asked for it directly.
 
-== Do
+Forwarding the user's token is the tempting shortcut, and it is wrong for
+both. The token's audience is Orders, so Inventory would have to accept tokens
+meant for someone else, and a leaked token would work everywhere. Notifications
+would record a user for an action the user never took.
 
-. Sign in as `manager` in any of the three apps and click **Create a sample
-  order**. The response shows the Inventory reservation (`reserved for
-  manager`) and the accepted notification. This one request triggers both
-  downstream calls.
-. Open link:{openshift_console_url}/observe/traces?namespace=tracing&name=workshop&tenant={attendee_id}&start=15m&limit=100&q=%7B+resource.service.name+%3D+%22orders-api%22+%7D[your Orders traces,window=_blank] in the OpenShift Console
-  (**Observe → Traces**, your own tenant `{attendee_id}`, service `orders-api`).
-  Only you can read this tenant. If the page shows no Tempo instance or says
-  you don't have permission, select Tempo instance `tracing / workshop`, then
-  Tenant `{attendee_id}`; the list also names other attendees' tenants, which
-  you cannot open. Open the most recent `orders-api: POST /orders`
-  trace. It shows one request crossing Orders, Inventory,
-  and Notifications. The `orders-api: POST` spans with no other service below
-  them are Orders' calls to Keycloak's token endpoint: the token exchange, and
-  on the first order the client-credentials request (Orders reuses that token
-  afterwards). Click one to see the Keycloak URL.
+OAuth has a tool for each case:
+
+* **Token exchange.** Orders hands the user's token to Keycloak and gets a new
+  one: same user, audience `inventory-api`, and `azp` (the authorized party)
+  `orders-api`. Inventory checks both.
+* **Client credentials.** Orders signs in as itself with its own secret and
+  gets a token for its *service account*. That account has exactly one
+  permission: the `notifier` role on Notifications.
+
+You will set these up one piece at a time and use traces and logs to find
+each missing piece, which is how you would debug them in your own work.
+
+Right now a manager's order fails with 502. Keep the
+link:{spa_url}[SPA,window=_blank] open and signed in as `manager`; you will
+click **Create a sample order** after each step.
+
+== Step 1: token exchange for Inventory
+
+. In Keycloak, open **Clients → orders-api**. Under **Capability config**,
+  turn **Standard Token Exchange** **On** and click **Save**.
+. Create a client scope `inventory-api-aud` as in Module 3: **Type** **None**,
+  **Include in token scope** On, and an **Audience** mapper with
+  `inventory-api` as the Included Client Audience (access token On, ID token
+  Off).
+. Open **Clients → orders-api → Client scopes → Add client scope**, select
+  `inventory-api-aud`, and choose **Add → Optional**. *Optional* means it is
+  added only when Orders asks for it by name, which it does during the
+  exchange. Ordinary tokens never carry the Inventory audience.
+. Open **Clients → orders-api → Client scopes → orders-api-dedicated →
+  Scope**, turn **Full scope allowed** **Off**, and assign the realm roles
+  `user` and `manager`. The exchanged token now carries only the roles
+  Inventory checks.
+. **Predict**, then click **Create a sample order** in the SPA.
+
+It still fails with 502. Find out how far it got.
+
+. Open
+  link:{openshift_console_url}/observe/traces?namespace=tracing&name=workshop&tenant={attendee_id}&start=15m&limit=100&q=%7B+resource.service.name+%3D+%22orders-api%22+%7D[your Orders traces,window=_blank]
+  (**Observe → Traces**, Tempo instance `tracing / workshop`, Tenant
+  `{attendee_id}`; only you can read this tenant, though the list names
+  others). Open the newest `POST /orders` trace. It now contains an
+  `inventory-api` span: the exchange worked. There is no `notifications-api`
+  span.
+. Open **Observe → Logs**, search for `/inventory/reserve`, and click **Run
+  Query** (again if the results do not change). The newest Inventory line shows
+  `"username":"manager"`, `"client_id":"orders-api"`, `"decision":"allow"`:
+  the user's identity arrived, and Inventory can see that Orders brought it.
+. Search for `/notify`. There is no line at all. Orders never reached
+  Notifications, because it has no identity of its own yet.
+
+== Step 2: a service account for Notifications
+
+. Open **Clients → orders-api**. Under **Capability config**, turn **Service
+  accounts roles** **On** and click **Save**. Orders can now request tokens
+  for itself (the *client credentials* grant).
+. Open **Clients → notifications-api → Roles → Create role**, enter
+  `notifier`, and save. This is a *client role*: it belongs to Notifications
+  and means nothing to any other API.
+. Open **Clients → orders-api → Service accounts roles → Assign role → Client
+  roles**, select `notifications-api` `notifier`, and click **Assign**.
++
+image::m03-service-account-roles.png[Service accounts roles tab for orders-api]
+
+. Create a client scope `notifications-api-aud` with an Audience mapper for
+  `notifications-api`, and add it to `orders-api` as **Default**.
+. **Predict**, then create an order again.
+
+Still 502. Search the logs for `/notify` again. Now there is a line:
+
+----
+"status":403, "decision":"deny", "reason":"missing_role",
+"username":"service-account-orders-api", "client_id":"orders-api", "roles":[]
+----
+
+Orders reached Notifications with its own identity, and Notifications refused
+it. The service account has `notifier`, yet the token carried no roles.
+
+.Why are the roles empty?
+[%collapsible]
+====
+In Step 1 you turned **Full scope allowed** off for `orders-api` and allowed
+only `user` and `manager`. That limit applies to every token issued to
+`orders-api`, including its own service-account token. A role that is assigned
+but not in the client's scope never reaches the token.
+====
+
+== Step 3: allow the role, then refresh the token
+
+. Open **Clients → orders-api → Client scopes → orders-api-dedicated → Scope →
+  Assign role → Client roles**, select `notifications-api` `notifier`, and
+  click **Assign**.
++
+image::m03-dedicated-scope.png[Scope tab of orders-api-dedicated with user, manager, and notifier]
+
+. Create an order again. **It still fails.** Orders reuses its service-account
+  token until it expires (five minutes here), so it is still sending the old
+  one without `notifier`.
+. Restart the `orders-api` rollout in the OpenShift Console (or wait five
+  minutes), then create an order. It returns **201**: `reserved for manager`
+  and the notification accepted.
+
+Remember this one. After you change a service's roles, it keeps working with
+its old permissions until it gets a new token.
+
+== See it: one order, three identities
+
+. Open your Orders traces again and open the newest `POST /orders` trace. One
+  request crosses Orders, Inventory, and Notifications. The `orders-api: POST`
+  spans with no service below them are Orders' calls to Keycloak's token
+  endpoint: the exchange, and the client-credentials request when it needs a
+  new token. Click one to see its Keycloak address.
 +
 image::m06-trace.png[Trace of a manager order across Orders, Inventory, and Notifications]
 
-. Copy the **Trace ID** shown at the top right of the trace page. Open
-  **Observe → Logs**, which shows only your namespace, search for that trace
-  ID, and click **Run Query**. If the old results stay, click **Run Query**
-  again or the refresh button. Scroll the results to
-  see the lines from all three APIs. Compare their `username`, `client_id` (the token's
-  `azp`), `roles`, and `decision` fields:
+. Copy the **Trace ID** from the top right of the trace page. In **Observe →
+  Logs**, search for it and click **Run Query** (again if the results do not
+  change). You get one line per API:
 +
-* **Orders:** `username` `manager`, `client_id` `spa` (or `bff`/`proxy`), roles
-  `manager` and `user`, decision `allow`.
+* **Orders:** `username` `manager`, `client_id` `spa`, roles `manager` and
+  `user`.
 * **Inventory:** `username` still `manager`, but `client_id` `orders-api`.
-  Orders exchanged the user's token for an Inventory token, so the user
-  identity is kept and the caller is Orders.
-* **Notifications:** `username` `service-account-orders-api` with role
-  `notifier`. Orders used its own client credentials, so no end-user identity
-  is involved.
+* **Notifications:** `username` `service-account-orders-api`, role
+  `notifier`. No user is involved.
 +
 Orders lines repeat `trace_id`, `span_id`, and `level`: the Java tracing agent
 adds them to every log line, and the application writes its own copy.
 +
 image::m06-logs.png[Logs for one trace ID across the three APIs]
 
-== Check
+. Run the full check from Module 5 again: in each app, the manager's order now
+  returns 201 and the reader's still returns 403.
 
-Explain why the Notifications request cannot be attributed to `reader`, and
-why an arbitrary client must not be allowed to exchange a token for Inventory.
+== Explain
 
-**Expected:** user login differs from machine authentication; Inventory
-receives the narrow exchanged user token, Notifications receives a narrow
-service-account token.
+. Inventory checks `azp` is `orders-api`. What attack does that stop?
++
+.Answer
+[%collapsible]
+====
+Any other client that obtained an Inventory-audience token for a user, for
+example by its own token exchange, would be refused. Inventory accepts the
+user only when Orders is the one asking, so the path into Inventory is a
+reviewed decision, not anything that can get a token.
+====
 
-== If something is wrong
+. A reader somehow calls Orders' create endpoint. Could Orders' service account
+  be used to reserve stock on their behalf?
++
+.Answer
+[%collapsible]
+====
+No. Orders checks the user's `manager` role before it calls either service.
+And Inventory receives the user's own exchanged token, so it sees the reader's
+roles, not the service account's. That is the point of keeping the user's
+identity on calls made for the user.
+====
 
-If a downstream call fails, inspect only sanitized logs in your own namespace.
-Check the configured issuer, the audiences in **Client scopes → Evaluate**,
-`client_id`/authorized party, and the service-account role. A 502 on every
-manager write usually means `orders-api-dedicated` does not allow
-`notifications-api notifier` (Module 3). Do not expose full
-tokens or secrets in logs or screenshots.
+. When would you use client credentials for a call made for a user?
++
+.Answer
+[%collapsible]
+====
+Only when the downstream action is genuinely the system's, such as sending a
+notification, writing an audit event, or a scheduled job, and the downstream
+service does not make decisions about the user. If the downstream service must
+know or check the user, use token exchange.
+====
+
+== At your desk
+
+Token exchange in Orders (`InventoryClient.java`), a plain HTTP form post to
+the token endpoint:
+
+[source,java]
+----
+form.add("grant_type", "urn:ietf:params:oauth:grant-type:token-exchange");
+form.add("subject_token", subject.getTokenValue());
+form.add("subject_token_type", "urn:ietf:params:oauth:token-type:access_token");
+form.add("scope", "inventory-api-aud");
+form.add("audience", "inventory-api");
+form.add("client_id", "orders-api");
+form.add("client_secret", clientSecret);
+----
+
+Client credentials in Orders, with Spring Security doing the token request and
+caching (`application.yml` and `NotificationsClient.java`):
+
+[source,yaml]
+----
+spring.security.oauth2.client.registration.notifications-api:
+  client-id: orders-api
+  client-secret: ${ORDERS_API_CLIENT_SECRET}
+  authorization-grant-type: client_credentials
+----
+
+[source,java]
+----
+var authorized = manager.authorize(OAuth2AuthorizeRequest
+    .withClientRegistrationId("notifications-api").principal("orders-api-machine").build());
+headers.setBearerAuth(authorized.getAccessToken().getTokenValue());
+----
+
+[cols="1,1,1",options="header"]
+|===
+| |Token exchange |Client credentials
+|Who is the subject |The user |The service itself
+|Use when |The downstream service decides about the user |The action belongs to the system
+|Keycloak setup |Standard Token Exchange on the caller; target audience as an optional scope |Service account on the caller; target's client role; target audience as a default scope
+|Watch out for |Exchanges add a Keycloak call per request |Cached tokens keep old roles until they expire
+|===

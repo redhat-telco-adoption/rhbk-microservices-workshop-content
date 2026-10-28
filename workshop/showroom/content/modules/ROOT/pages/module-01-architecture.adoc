@@ -1,75 +1,111 @@
-= Module 1: Explore the application architecture
-:navtitle: 1. Architecture
+= Module 1: The system and your predictions
+:navtitle: 1. The system
 
-== Know
+== Why it matters
 
-An identity provider authenticates the user and issues tokens. Each application
-and API still has to validate those tokens and make its own authorization
-decision. A valid login does not automatically authorize every API operation.
+Signing in tells an application who you are. It does not decide what you may
+do. That decision belongs to every API that receives a request, and each one
+must check the token itself. Most real incidents in this area come from a
+component that trusted something it should have checked: a button hidden in
+the UI, a token meant for a different API, or a token kept where a script can
+read it.
 
-The lab contains one frontend build configured at runtime for three patterns.
-Orders is the protected API. Inventory and notifications demonstrate two
-different service-to-service identities.
+Where a token lives decides who can steal it. Before you build anything, you
+will map where each pattern keeps its tokens and predict the consequences. You
+check your predictions with real evidence in Modules 5 and 7.
 
-== Do
+== The pieces
 
-. Record your SPA, BFF, and proxy URLs from xref:details.adoc[]. Do not expect
-  all three routes to be ready yet: the BFF and proxy need the realm you create
-  in Module 2, and their clients and runtime settings from Modules 3 and 4.
-. Study the three login patterns. In each, find which process receives the
-  browser callback and where the tokens are kept.
-+
+* **Keycloak** authenticates users and issues tokens. An *access token* is a
+  signed statement: who the user is, which application asked for it (`azp`),
+  which APIs may accept it (`aud`), what roles it carries, and when it
+  expires. Anyone holding it can use it until it expires.
+* **Orders** is the protected API. It checks every token and decides.
+* **Inventory** and **Notifications** are called by Orders, not by the
+  browser.
+* The **frontend** is one build deployed three times, once per sign-in
+  pattern.
+
+== Do: study the three sign-in patterns
+
+For each diagram, find two things: which component receives the browser's
+return from Keycloak (the *callback*), and where the tokens are kept
+afterwards.
+
 .SPA with PKCE: tokens stay in browser memory
 image::spa-auth-flow.svg[SPA authorization code flow with PKCE]
-+
+
 .BFF: tokens stay on the server
 image::bff-auth-flow.svg[BFF login and session flow]
-+
+
 .Reverse proxy: tokens stay in the proxy's Redis session
 image::proxy-auth-flow.svg[Reverse proxy login and session flow]
 
-. Trace the Orders → Inventory and Orders → Notifications calls.
-+
 .One order, two downstream identities
 image::service-auth-flow.svg[Token exchange to Inventory and client credentials to Notifications]
 
+== Predict
+
+Copy this table to your notes and fill in every cell. There is no penalty for
+being wrong; you will check each row against the running system.
+
+[cols="2,1,1,1",options="header"]
+|===
+|Question |SPA |BFF |Proxy
+|Where is the access token after sign-in? | | |
+|Can JavaScript on the page read the token? | | |
+|What does the browser send to the API: a token or a cookie? | | |
+|Does the app need protection against cross-site request forgery (CSRF)? | | |
+|If Keycloak is down for ten minutes, can a signed-in user keep working? | | |
+|===
+
+You check rows 1–4 in Module 5 and row 5 in Module 7.
+
+== Do: find your applications
+
 . Open the link:{openshift_console_url}[OpenShift Console,window=_blank] in a
-  new browser tab and sign in through **sso** (choose it if several login
-  options are shown) with your username and password from xref:details.adoc[]. If a welcome
-  tour opens, click **Skip tour**. Select your project
-  `{attendee_namespace}` and open **Workloads → Deployments**. You see seven
-  Deployments: `frontend`, `bff`, `proxy`, `proxy-redis`, `orders-api`,
-  `inventory-api`, and `notifications-api`. Under **Networking → Routes** you
-  see four Routes: `frontend` (the SPA), `bff`, `proxy`, and `orders-api`, which
-  the SPA calls directly.
+  new browser tab and sign in through **sso** with your username and password
+  from xref:details.adoc[]. If a welcome tour opens, click **Skip tour**.
+. Select your project `{attendee_namespace}` and open **Workloads →
+  Deployments**. You see seven: `frontend` (the SPA), `bff`, `proxy`,
+  `proxy-redis` (the proxy's session store), `orders-api`, `inventory-api`, and
+  `notifications-api`.
+. Open **Networking → Routes**. Only four components are reachable from the
+  internet: `frontend`, `bff`, `proxy`, and `orders-api`. Inventory and
+  Notifications have no Route.
 +
 image::m01-console-deployments.png[Your Deployments in the OpenShift Console]
 
-== Check
+`bff` and `proxy` are not ready yet. They need the realm you create next.
 
-Be able to answer:
+== Explain
 
-* Which pattern sends a bearer token directly from the browser to Orders?
-* Which patterns keep the token on the server and give the browser a session
-  cookie?
-* Which downstream call should retain the user identity, and which uses a
-  machine identity?
+. Why does `orders-api` need a public Route, but `inventory-api` does not?
++
+.Answer
+[%collapsible]
+====
+In the SPA pattern the browser calls Orders directly, so Orders must be
+reachable from the internet. Inventory and Notifications are only called by
+Orders inside the cluster. Every API still validates tokens: being internal
+reduces exposure, it does not replace authentication.
+====
 
-**Expected:** SPA PKCE sends a bearer token from browser memory; BFF and proxy
-use session cookies. Orders exchanges the user token for Inventory and uses
-client credentials for Notifications.
+. Orders calls Inventory "on the user's behalf" and Notifications "as itself".
+  What would go wrong if Orders simply forwarded the user's token to both?
++
+.Answer
+[%collapsible]
+====
+A forwarded token was issued for Orders, so Inventory would have to accept
+tokens meant for another API. Any service holding a user's token could then
+replay it anywhere. And Notifications would see a user identity for an action
+that the system performs, not the user. Module 6 builds the two correct
+alternatives.
+====
 
-== If something is wrong
+== At your desk
 
-Before you finish Modules 2–4, the BFF or proxy can be unavailable because its
-realm, client, or runtime configuration is not ready. The proxy can also show
-Keycloak's **Client not found** message before the `proxy` client exists in your
-realm. These are expected setup states; they do not mean that you should
-change a shared route.
-
-After Module 4, check that your own realm contains the matching client, the
-application configuration uses your exact issuer and client ID, and the
-application deployment is ready in your assigned namespace. Then retry the
-route. If those checks pass and the route still fails, ask the facilitator to
-check your reservation. Do not change routes or deployments in the shared
-`apps` namespace.
+Draw this map for your own application before choosing tools: which component
+receives the login callback, where tokens are stored, which components call
+which APIs, and which of those are reachable from the internet.

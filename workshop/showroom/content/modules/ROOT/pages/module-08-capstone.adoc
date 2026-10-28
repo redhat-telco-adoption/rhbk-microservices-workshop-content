@@ -1,0 +1,65 @@
+= Module 8: Capstone
+:navtitle: 8. Capstone
+
+== The requirement
+
+There are no click-paths in this module. You have used every setting it needs.
+
+The reporting team is building **reports**, a server-side web application at
+`pass:a[https://reports.example.invalid]`. It lets signed-in staff read orders. Register it
+in your realm `{realm_name}` so that:
+
+. Users sign in through Keycloak, and the application runs on a server.
+. Its tokens are accepted by Orders and by no other API.
+. Its tokens never carry `manager`, even for a manager. Reports must never be
+  able to create orders.
+. After sign-in, Keycloak may send users back only to
+  `pass:a[https://reports.example.invalid/callback]`. After sign-out, only to
+  `pass:a[https://reports.example.invalid/]`.
+. The application never handles a user's password and never acts on its own
+  behalf.
+
+Name the client `reports`.
+
+== Prove it
+
+Use **Client scopes → Evaluate** on your new client to generate the access
+token for `manager`. Before you look, write down what `aud` and
+`realm_access.roles` should be. If the token does not match your prediction,
+work out which setting causes the difference.
+
+When you are done, tell the facilitator. They run a check that reads your
+client's settings and generates the same token.
+
+.Hints, if you are stuck
+[%collapsible]
+====
+* Requirement 1 decides two things on the first wizard pages: the client type
+  and the flow.
+* Requirement 2 is one client scope you already have.
+* Requirement 3 is not about the user's roles. Think about Module 3's "limit
+  the roles each client receives".
+* Requirement 5 rules out two capabilities.
+====
+
+.Reference solution
+[%collapsible]
+====
+[cols="1,2,3",options="header"]
+|===
+|Setting |Value |From requirement
+|Client authentication |On (confidential) |1: runs on a server and can keep a secret
+|Standard flow |On, with PKCE `S256` |1: users sign in through Keycloak
+|Direct access grants |Off |5: never handles passwords
+|Service accounts roles |Off |5: never acts on its own behalf
+|Valid redirect URIs |`pass:a[https://reports.example.invalid/callback]` |4
+|Valid post logout redirect URIs |`pass:a[https://reports.example.invalid/]` |4
+|Client scopes |`orders-api-aud` as Default; no `inventory-api-aud` or `notifications-api-aud` |2
+|`reports-dedicated` → Scope |Full scope allowed Off; realm role `user` only |3
+|===
+
+The manager's token has `aud` `orders-api` and `realm_access.roles` `["user"]`.
+Orders accepts it for reads and returns 403 for writes. The manager still has
+the `manager` role; this client simply never receives it. That is least
+privilege at the client level.
+====

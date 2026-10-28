@@ -1,39 +1,45 @@
 = Module 4: Connect the applications
 :navtitle: 4. Connect apps
 
-== Know
+== Why it matters
 
-These applications were built before the lab. You will connect them by changing
-runtime configuration in your own namespace. The SPA reads `/config.json`;
-server-side components read environment values from ConfigMaps and Secrets.
-No source edit or rebuild is needed for this activity.
+Connecting an application to Keycloak takes very few values, and the
+discovery document you opened in Module 2 explains why: from the issuer, an
+application finds every endpoint and key it needs. What an application needs
+depends on its role:
 
-== Do
+[cols="1,3",options="header"]
+|===
+|Role |Values
+|Signs users in (SPA, BFF, proxy) |Issuer, client ID, redirect URI, and for a confidential client its secret.
+|Accepts tokens (Orders, Inventory, Notifications) |Issuer, and the audience it expects (its own name, usually fixed in code).
+|Calls other services as itself (Orders) |Issuer, client ID, and secret.
+|===
+
+These values change per environment, so they live in configuration, never in
+code. Secrets go in a secret store; everything else can sit in plain
+configuration. Because one value drives everything, the most common
+integration bug is an issuer that is almost right.
+
+In this lab the SPA, proxy, and APIs were prepared with your issuer. You
+connect the BFF yourself.
+
+== Do: read a prepared configuration
 
 . Open the link:{openshift_console_url}[OpenShift Console,window=_blank],
-  and sign in through **sso** with your username and password from
-  xref:details.adoc[]. Select your project `{attendee_namespace}`.
-. Open **Workloads → ConfigMaps** and check the fields below. The reservation
-  sets them to your realm already; correct any value that differs. Keep service
-  URLs and other values unchanged. Each row names the workload that reads it.
-+
-[cols="1,2,3,1",options="header"]
-|===
-|ConfigMap |Fields to set |Value |Consuming workload
-|`frontend-runtime-config` |In `config.json`, set `issuer` and `spaClientId` |Your exact realm issuer; `spa` |frontend
-|`bff-config` |`OIDC_ISSUER` |Your exact realm issuer; the Keycloak client ID remains `bff` |bff
-|`proxy-config` |`issuer`, `redirect-url` |Your exact realm issuer; `pass:a[{proxy_url}/oauth2/callback]` |proxy
-|`orders-api-config` |`ISSUER`, `WORKSHOP_ISSUER`, `SPA_ORIGIN` |Your exact realm issuer for both issuer fields; exact SPA origin |orders-api
-|`inventory-api-config` |`ISSUER` |Your exact realm issuer |inventory-api
-|`notifications-api-config` |`ISSUER` |Your exact realm issuer |notifications-api
-|===
+  select your project `{attendee_namespace}`, and open **Workloads →
+  ConfigMaps → frontend-runtime-config**. Its `config.json` holds `issuer` and
+  `spaClientId`: everything the SPA needs. No secret, because a public client
+  has none.
+. Open `proxy-config` and `orders-api-config`. Match each value to a row of the
+  table above. `orders-api-config` has two issuer values: `ISSUER` for
+  checking incoming tokens and `WORKSHOP_ISSUER` for requesting its own tokens.
 
-. Leave `INVENTORY_API_URL`, `NOTIFICATIONS_API_URL`, and
-  `proxy-runtime-config` as provided; they must continue to use the
-  namespace-local services and runtime settings.
-. Copy each confidential client's secret from Keycloak into its OpenShift
-  Secret. The Secrets hold a placeholder until you do this.
-+
+== Do: copy the client secrets
+
+The three confidential clients each need their secret in an OpenShift Secret.
+The Secrets hold a placeholder until you do this.
+
 [cols="1,1,1",options="header"]
 |===
 |Keycloak client |OpenShift Secret |Key
@@ -41,40 +47,133 @@ No source edit or rebuild is needed for this activity.
 |`proxy` |`proxy-secrets` |`client-secret`
 |`orders-api` |`orders-api-client` |`client-secret`
 |===
-+
-In Keycloak, open **Clients →** _client_ **→ Credentials** and use the copy
-button next to **Client Secret**.
+
+. In Keycloak, open **Clients →** _client_ **→ Credentials** and use the copy
+  button next to **Client Secret**.
 +
 image::m04-client-credentials.png[Credentials tab of the bff client]
-+
-In the OpenShift Console, open **Workloads → Secrets →** _secret_ and choose
-**Actions → Edit Secret** from the **Actions** menu at the top right of the page, replace the value of the listed key, and click **Save**. Keep
-`cookie-secret` and `redis-password` in `proxy-secrets` unchanged.
+
+. In the OpenShift Console, open **Workloads → Secrets →** _secret_ and choose
+  **Edit Secret** from the **Actions** menu at the top right of the page.
+  Replace the value of the listed key and click **Save**. In `proxy-secrets`,
+  leave `cookie-secret` and `redis-password` unchanged.
 +
 image::m04-edit-secret.png[Edit Secret form for bff-client]
 
-. Restart the three workloads that read those Secrets: open **Workloads →
-  Deployments →** `bff`, `proxy`, and `orders-api` in turn and choose **Restart rollout** from the
-  **Actions** menu at the top right of the page (not a volume row's menu). Wait until each shows **1 of 1 pods**.
+Never paste a client secret into chat, a ticket, or a screenshot. Anyone with
+it can act as that application.
+
+== Break it: connect the BFF with an issuer that is almost right
+
+. Open **Workloads → ConfigMaps → bff-config → Actions → Edit ConfigMap**.
+  `OIDC_ISSUER` says `set-your-realm-issuer-here`. Replace it with your issuer
+  **plus a trailing slash**, a common copy-and-paste slip:
+  `pass:a[{issuer}/]`. Click **Save**.
+. Open **Workloads → Deployments → bff** and choose **Restart rollout** from
+  the **Actions** menu at the top right of the page (not a volume row's menu).
 +
 image::m04-restart-rollout.png[Restart rollout action on the bff Deployment]
 
-== Check
+. **Predict:** the issuer is only one character off. Will the BFF start?
+. Wait a minute, then open **Observe → Logs**, search for
+  `did not match the requested issuer`, and click **Run Query** (click it again
+  if the results do not change). The BFF refused to start:
++
+[subs="attributes+"]
+----
+The Issuer "{issuer}" provided in the configuration metadata did not match
+the requested issuer "{issuer}/"
+----
++
+The BFF compared the issuer in the discovery document with the one it was
+given. They differ by one character, so it stopped rather than trust tokens
+from an issuer it cannot match exactly.
+. Edit `bff-config` again, remove the trailing slash so `OIDC_ISSUER` is
+  exactly `pass:a[{issuer}]`, and save.
 
-Reload `/config.json` from your SPA route. It should show your exact realm
-issuer and `spa` client ID, with no secrets. Then retry sign-in as the reader
-through each configured route: SPA, BFF, and proxy. Each must return to its
-own approved callback.
+== Do: restart and sign in
 
-**Expected:** login succeeds against your realm and each app stays within your
-namespace. The client secret does not appear in browser configuration.
+. Restart the rollout of `bff`, `proxy`, and `orders-api` the same way, so
+  they read the new secrets and configuration. Wait until each shows **1 of 1
+  pods** (`proxy` shows **2 of 2**: the gateway and its sign-in component).
+. Open `pass:a[{spa_url}/config.json]` in a new tab. It shows your issuer and
+  `spa`, and no secret.
+. Sign in as `reader` through each app, then sign out: the
+  link:{spa_url}[SPA,window=_blank] (a popup),
+  link:{bff_url}[BFF,window=_blank] (the page goes to Keycloak and back), and
+  link:{proxy_url}[proxy,window=_blank] (Keycloak appears immediately; the
+  whole app is behind the sign-in). Each returns to its own callback address.
 
-== If something is wrong
+== Explain
 
-Check issuer character-for-character, callback scheme/path, client ID, and
-Secret key names: `BFF_CLIENT_SECRET` in `bff-client`, `client-secret` in
-`proxy-secrets` and `orders-api-client`. A stale pod may need a rollout restart
-after a ConfigMap or Secret change. A BFF or proxy route can return 503
-before the realm and clients exist; after this module, verify the issuer and
-pod readiness if it persists. If the pod reports `ImagePullBackOff`, pause:
-this is a reservation image-pull setup issue, not a learner task.
+. Why did the BFF refuse to start, rather than start and reject tokens later?
++
+.Answer
+[%collapsible]
+====
+Spring Security checks the discovery document's `issuer` against the
+configured one at startup. Failing fast turns a configuration mistake into an
+obvious startup error. An API that only fails per request, like Orders,
+returns 401 to every caller instead, which is harder to trace back to
+configuration.
+====
+
+. Which of these values could safely be committed to Git: the issuer, the
+  client ID, the redirect URI, the client secret?
++
+.Answer
+[%collapsible]
+====
+The issuer, client ID, and redirect URI are not secrets; they appear in every
+browser sign-in. The client secret is. It belongs in a Secret or a vault,
+injected at runtime, and rotated if it leaks.
+====
+
+== At your desk
+
+The BFF's whole Keycloak connection is this Spring Boot configuration
+(`apps/bff/src/main/resources/application.yml`):
+
+[source,yaml]
+----
+spring.security.oauth2.client:
+  registration:
+    keycloak:
+      client-id: bff
+      client-secret: ${BFF_CLIENT_SECRET}
+      authorization-grant-type: authorization_code
+      client-settings:
+        require-proof-key: true          # PKCE
+      scope: openid,profile,email
+      redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+  provider:
+    keycloak:
+      issuer-uri: ${OIDC_ISSUER}         # everything else comes from discovery
+----
+
+The proxy uses the same values as oauth2-proxy flags:
+
+[source,text]
+----
+--provider=keycloak-oidc
+--oidc-issuer-url=$(OIDC_ISSUER)
+--client-id=proxy
+--client-secret-file=/var/run/proxy-secrets/client-secret
+--redirect-url=$(REDIRECT_URL)
+--code-challenge-method=S256
+----
+
+And the SPA, with oidc-client-ts, needs no secret at all:
+
+[source,typescript]
+----
+new UserManager({
+  authority: config.issuer,
+  client_id: config.spaClientId,
+  redirect_uri: `${origin}/auth/popup-callback`,
+  response_type: 'code',                 // PKCE is automatic
+  userStore: new WebStorageStateStore({ store: new InMemoryWebStorage() }),
+});
+----
+
+When an integration fails, check the issuer first, character by character.

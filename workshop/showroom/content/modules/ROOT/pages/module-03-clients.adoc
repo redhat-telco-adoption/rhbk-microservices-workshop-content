@@ -1,54 +1,48 @@
-= Module 3: Configure clients, roles, and audiences
+= Module 3: Clients, roles, and audiences
 :navtitle: 3. Clients and tokens
 
-== Know
+== Why it matters
 
-An OIDC client describes an application. Public browser clients cannot keep a
-secret; confidential server-side clients can. Authorization code with PKCE
-protects the browser login flow. Exact redirect URIs prevent a token response
-from being sent to an untrusted callback. An audience identifies the API that
-should accept a token.
+A *client* is Keycloak's record of an application: how it may sign users in,
+where Keycloak may send the browser back to, and what goes into its tokens.
+Three settings carry most of the security:
 
-All steps below happen in the Keycloak administration console with your realm
-`{realm_name}` selected in the realm list. Lists show 10 rows per page; once
-you have more clients, users, or roles, type the name in the list's search box
-instead of looking on page 1.
+* **Redirect URIs.** After sign-in, Keycloak sends a one-time code to the
+  redirect URI. If an attacker can choose that address, they receive the code
+  and can turn it into tokens. Exact URIs close that door.
+* **Audience (`aud`).** A token says which APIs may accept it. Without it, a
+  token issued for one API can be replayed against every other API that trusts
+  the realm.
+* **Roles in the token.** A token should carry only the roles the receiving
+  API needs. Extra roles turn a stolen token into a bigger problem.
 
-== Do: create clients
+Browser apps are *public* clients: anything shipped to a browser can be read,
+so they cannot keep a secret. They use PKCE instead, a one-time secret created
+for each sign-in, so a stolen code is useless without it. Server-side apps are
+*confidential* clients with a client secret.
 
-Create each client from **Clients → Create client**. The wizard has three
-pages: **General settings** (client type OpenID Connect and the client ID),
-**Capability config**, and **Login settings**. Click **Next** between pages and
-**Save** on the last one. Leave every setting not listed here at its default.
+All steps happen in the Keycloak administration console with your realm
+`{realm_name}` selected. Lists show 10 rows per page; use each list's search
+box when an item is not on page 1.
 
-[cols="1,3,3",options="header"]
+== Do: register the SPA
+
+Open **Clients → Create client**. The wizard has three pages: **General
+settings** (keep OpenID Connect; enter the client ID), **Capability config**,
+and **Login settings**. Click **Next** between pages and **Save** at the end.
+Leave anything not listed at its default.
+
+[cols="2,2,3",options="header"]
 |===
-|Client ID |Capability config |Login settings
-|`spa`
-|Client authentication **Off**; Standard flow **On**; Direct access grants
-**Off**; PKCE Method `S256`
-|Valid redirect URIs `pass:a[{spa_url}/auth/popup-callback]`; Valid post logout
-redirect URIs `pass:a[{spa_url}/auth/logout-callback]`; Web origins `pass:a[{spa_url}]`
-|`bff`
-|Client authentication **On**; Standard flow **On**; Direct access grants
-**Off**; PKCE Method `S256`
-|Valid redirect URIs `pass:a[{bff_url}/login/oauth2/code/keycloak]`; Valid post logout
-redirect URIs `pass:a[{bff_url}/]`
-|`proxy`
-|Client authentication **On**; Standard flow **On**; Direct access grants
-**Off**; PKCE Method `S256`
-|Valid redirect URIs `pass:a[{proxy_url}/oauth2/callback]`; Valid post logout redirect
-URIs `pass:a[{proxy_url}/]`
-|`orders-api`
-|Client authentication **On**; Standard flow **Off**; Direct access grants
-**Off**; Service accounts roles **On**; Standard Token Exchange **On**
-|none
-|`inventory-api`
-|Client authentication **On**; all flows **Off**
-|none
-|`notifications-api`
-|Client authentication **On**; all flows **Off**
-|none
+|Setting |Value for `spa` |Why
+|Client ID |`spa` |The name the app sends when it asks Keycloak to sign a user in.
+|Client authentication |**Off** |A browser app cannot hide a secret, so it is a public client.
+|Standard flow |**On** |The authorization code flow: the browser signs in at Keycloak and returns with a one-time code.
+|Direct access grants |**Off** |This flow lets an app collect the user's password itself. An app should never see a user's password.
+|PKCE Method |`S256` |Requires a fresh proof with every code exchange, so a stolen code cannot be redeemed.
+|Valid redirect URIs |`pass:a[{spa_url}/auth/popup-callback]` |The only address Keycloak may send the code to. No wildcards.
+|Valid post logout redirect URIs |`pass:a[{spa_url}/auth/logout-callback]` |Prevents sign-out from being used to redirect users to an attacker's site.
+|Web origins |`pass:a[{spa_url}]` |Lets this one origin call Keycloak's token endpoint from JavaScript (CORS).
 |===
 
 .Capability config for `spa`
@@ -57,118 +51,199 @@ image::m03-spa-capability.png[Capability config page for the spa client]
 .Login settings for `spa`
 image::m03-spa-login-settings.png[Login settings page for the spa client]
 
-Then add the Notifications client role: open **Clients → notifications-api →
-Roles → Create role**, enter `notifier`, and save.
+=== See it: your first sign-in
 
-**Check:** reopen `spa`, `bff`, and `proxy` and confirm the exact URIs and
-PKCE method persisted. Only `orders-api` has service accounts and Standard
-Token Exchange turned on.
+The SPA is already configured for your realm. Open your
+link:{spa_url}[SPA,window=_blank], click **Sign in**, and sign in as `reader`
+in the popup. Open **Identity and access details**: **Intended APIs** shows
+`account` (Keycloak's own account console), not the Orders API, and the reader
+has no roles yet. Keep this in mind; it changes by the end of this
+module. Click **Sign out**.
 
-== Do: create realm roles and assign them
+=== Break it: a redirect URI that does not match
+
+. In Keycloak, open **Clients → spa → Settings** and change the valid redirect
+  URI to `pass:a[{spa_url}/auth/callback]`. Click **Save**.
+. In the SPA, click **Sign in**. The popup shows Keycloak's error page:
+  **Invalid parameter: redirect_uri**. Keycloak refused to send a code to an
+  address it does not know.
+. Change the redirect URI back to `pass:a[{spa_url}/auth/popup-callback]` and
+  save. Sign in again to confirm it works, then sign out.
+
+.Why not just allow `pass:a[{spa_url}/*]`?
+[%collapsible]
+====
+A wildcard lets any page under that address receive codes. If any page on the
+site has an open redirect or can be influenced by an attacker, codes leak.
+Exact URIs leave nothing to guess. When you see `Invalid parameter:
+redirect_uri` in your own work, compare the app's callback address with the
+client's list character by character: scheme, host, path, trailing slash.
+====
+
+== Do: register the server-side clients
+
+Create these clients the same way. The BFF and proxy sign users in on a
+server, so they are confidential. The three API clients represent the APIs
+themselves: they let tokens name an API as their audience and, for Orders,
+give it its own identity in Module 6.
+
+[cols="1,3,3,3",options="header"]
+|===
+|Client ID |Capability config |Login settings |Why
+|`bff`
+|Client authentication **On**; Standard flow **On**; Direct access grants **Off**; PKCE Method `S256`
+|Valid redirect URIs `pass:a[{bff_url}/login/oauth2/code/keycloak]`; Valid post logout redirect URIs `pass:a[{bff_url}/]`
+|A server can keep a secret, so Keycloak also checks the client secret when the BFF redeems a code. PKCE still protects the code in transit.
+|`proxy`
+|Client authentication **On**; Standard flow **On**; Direct access grants **Off**; PKCE Method `S256`
+|Valid redirect URIs `pass:a[{proxy_url}/oauth2/callback]`; Valid post logout redirect URIs `pass:a[{proxy_url}/]`
+|Same reasoning as the BFF; the proxy's sign-in component is a server.
+|`orders-api`
+|Client authentication **On**; all flows **Off**
+|none
+|An API does not sign users in. It gets a secret now; Module 6 turns on the two flows it needs to call other services.
+|`inventory-api`
+|Client authentication **On**; all flows **Off**
+|none
+|Exists so tokens can name Inventory as their audience.
+|`notifications-api`
+|Client authentication **On**; all flows **Off**
+|none
+|Exists so tokens can name Notifications as their audience, and to hold its role in Module 6.
+|===
+
+**Check:** reopen `spa`, `bff`, and `proxy` and confirm the URIs and PKCE
+method were saved.
+
+== Do: create roles
 
 . Open **Realm roles → Create role**, enter `user`, and save. Do the same for
   `manager`.
 . Open the `manager` role, go to its **Associated roles** tab, click **Assign
-  role**, and choose **Realm roles** from its menu. Select `user` and click
-  **Assign**. `manager` is now a composite role that includes `user`.
-. Open **Users → reader → Role mapping → Assign role → Realm roles**,
-  select `user`, and click **Assign**. For `manager`, assign `manager` (it
-  includes `user`).
+  role → Realm roles**, select `user`, and click **Assign**. `manager` is now
+  a *composite* role: anyone with `manager` also has `user`.
+. Open **Users → reader → Role mapping → Assign role → Realm roles**, select
+  `user`, and click **Assign**. For `manager`, assign `manager` only.
 +
 image::m03-role-mapping.png[Role mapping tab for the manager user]
 
-**Check:** the reader's **Role mapping** tab shows `user`; the manager's shows
-`manager` (and `user` when you clear **Hide inherited roles**). Both also show
-Keycloak's own `default-roles-{realm_name}`.
+**Why a composite?** Orders checks for `user` on reads and `manager` on writes.
+With a composite, a manager can read without a second assignment, and you
+change what "manager" includes in one place.
 
-== Do: give the Orders service account its role
+== Do: limit the roles each client receives
 
-Open **Clients → orders-api → Service accounts roles → Assign role → Client
-roles**, select `notifications-api` `notifier`, and
-click **Assign**. This is a
-machine role for the Orders workload, separate from the users' realm roles.
+. Open **Clients → spa → Client scopes → Evaluate**. Click the **Users** field
+  and pick `manager` from the list (typing alone does not select). Click
+  **Effective role scope mappings**, then **Generated access token**; the
+  token appears only after you switch tabs like this.
+. **Predict:** which roles does a manager's SPA token contain? Then look at
+  `realm_access.roles`. Besides `manager` and `user`, it carries Keycloak's
+  default roles (`offline_access`, `uma_authorization`,
+  `default-roles-{realm_name}`), because the client is allowed every role in
+  the realm (*Full scope allowed*). Note the `aud` claim too: `account`.
+. For each of `spa`, `bff`, and `proxy`: open **Clients →** _client_ **→
+  Client scopes →** _client_**-dedicated → Scope**, turn **Full scope
+  allowed** **Off**, then click **Assign role → Realm roles**, select `user`
+  and `manager`, and click **Assign**.
+. Generate the manager's `spa` token again (switch tabs to refresh it). Only
+  `manager` and `user` remain, and `aud` has disappeared: the `account`
+  audience came from roles the client may no longer include.
 
-image::m03-service-account-roles.png[Service accounts roles tab for orders-api]
+**Why:** a token is a bearer credential. Whoever holds it gets every role in
+it. Limiting a client's scope keeps each token to what its APIs check, even
+when a user has many more roles for other applications.
 
-== Do: limit which roles each client can receive
+== Do: constrain the audience
 
-For each of `spa`, `bff`, `proxy`, and `orders-api`:
-
-. Open **Clients →** _client_ **→ Client scopes →** _client_**-dedicated →
-  Scope**.
-. Turn **Full scope allowed** **Off**.
-. Click **Assign role → Realm roles**, select `user` and `manager`, and click
-  **Assign**.
-
-For `orders-api` only, also click **Assign role → Client roles** and assign `notifications-api` `notifier`. With full scope off, the Orders service-account
-token carries only the roles allowed here; without `notifier`, every manager
-write later fails with a 502.
-
-image::m03-dedicated-scope.png[Scope tab of orders-api-dedicated with user, manager, and notifier]
-
-**Check:** `orders-api-dedicated` lists `user`, `manager`, and
-`notifications-api notifier`; the other three list `user` and `manager`.
-
-== Do: constrain token audiences
-
-Create three client scopes, each with one Audience mapper:
-
-. Open **Client scopes → Create client scope**. Enter the name, set **Type** to
-  **None**, turn **Include in token scope** On (it starts Off), and save.
-. On its **Mappers** tab choose **Configure a new mapper → Audience**. Enter the
-  scope name as the mapper name, select the **Included Client Audience**, turn
-  **Add to access token** On and **Add to ID token** Off, and save.
+. **Predict:** the manager's `spa` token now has no `aud` at all. What would
+  Orders do with it? Orders rejects any token whose `aud` does not include
+  `orders-api`, with a 401.
+. Open **Client scopes → Create client scope**. Name it `orders-api-aud`, set
+  **Type** to **None**, turn **Include in token scope** **On**, and save.
+. On its **Mappers** tab choose **Configure a new mapper → Audience**. Name it
+  `orders-api-aud`, select `orders-api` as the **Included Client Audience**,
+  turn **Add to access token** **On** and **Add to ID token** **Off**, and
+  save.
 +
 image::m03-audience-mapper.png[Audience mapper for orders-api-aud]
 
-[cols="1,1,2",options="header"]
-|===
-|Client scope |Included Client Audience |Attach to
-|`orders-api-aud` |`orders-api` |`spa`, `bff`, `proxy` as **Default**
-|`notifications-api-aud` |`notifications-api` |`orders-api` as **Default**
-|`inventory-api-aud` |`inventory-api` |`orders-api` as **Optional**
-|===
-
-Attach each scope from **Clients →** _client_ **→ Client scopes → Add client
-scope**: select the scope, then choose **Add → Default** or **Add → Optional**.
-Keep the exact scope names; Orders requests `inventory-api-aud` by name when it
-exchanges a token. Do not give browser clients the `inventory-api` audience.
-
-Finally, the proxy validates tokens issued to itself. Open **Clients → proxy →
-Client scopes → proxy-dedicated → Configure a new mapper** (or **Add mapper →
-By configuration**), choose **Audience**, name it `proxy-audience`, select
-`proxy` as the Included Client Audience, turn **Add to access token** On, and
-save.
-
-Legacy is excluded when the facilitator has not enabled it. Add
-`legacy-api-aud` as a default scope on `spa`, `bff`, and `proxy` only when the
-facilitator confirms that the Legacy API is available.
+. Attach it to `spa`, `bff`, and `proxy`: open **Clients →** _client_ **→
+  Client scopes → Add client scope**, select `orders-api-aud`, and choose
+  **Add → Default**. *Default* means it is in every token for that client.
+. The proxy also checks that tokens were issued to itself. Open **Clients →
+  proxy → Client scopes → proxy-dedicated → Configure a new mapper** (or **Add
+  mapper → By configuration**), choose **Audience**, name it
+  `proxy-audience`, select `proxy` as the Included Client Audience, turn **Add
+  to access token** On, and save.
 
 == Check
 
-Keycloak can show the token a client would receive. Open **Clients → spa →
-Client scopes → Evaluate**, click the **Users** field and pick `reader` from
-the list (typing alone does not select). Click **Effective role scope
-mappings**, then **Generated access token**; the token appears only after
-you switch tabs like this. Confirm:
-
-* `iss` is `pass:a[{issuer}]`;
-* `aud` includes `orders-api` and not `inventory-api`;
-* `realm_access.roles` includes `user` but not `manager`.
-
-Repeat for user `manager`: `realm_access.roles` includes `manager` and `user`.
-After you change the user, switch tabs the same way so the token refreshes.
-This view is for your own lab users only; do not copy or share the token.
-
+. Generate the `spa` token for `reader`, then for `manager`. Confirm:
+** `iss` is `pass:a[{issuer}]`;
+** `aud` is `orders-api`;
+** `realm_access.roles` is `user` for the reader, and `manager`, `user` for
+   the manager.
++
 image::m03-evaluate.png[Generated access token for reader on the spa client]
 
-**Expected:** browser clients use authorization code plus PKCE; server-side
-clients have exact callbacks; tokens contain only their intended audiences;
-and the service account has only the machine role required for Notifications.
+. In the SPA, sign in as `reader` and open **Identity and access details**
+  again. **Intended APIs** now shows the Orders API and your role is `user`.
+  Compare with what you saw at the start of the module. Sign out.
 
-== If something is wrong
+The token view is for your own lab users only; do not copy or share tokens.
 
-Check for a missing scheme, path, or trailing slash in a redirect URI. Avoid
-wildcards. If `orders-api` is missing from the Included Client Audience list,
-check that the `orders-api` client exists in your realm. Never paste a client
-secret into the guide or chat.
+If the facilitator has enabled the Legacy API, also create `legacy-api-aud` the
+same way (audience `legacy-api`) and add it to `spa`, `bff`, and `proxy` as a
+default scope. Otherwise skip it.
+
+== Explain
+
+. A token issued to the SPA for Orders is stolen. Why can the attacker not use
+  it against Inventory?
++
+.Answer
+[%collapsible]
+====
+Its `aud` is `orders-api`. Inventory accepts only tokens whose audience is
+`inventory-api`, so it rejects this one with 401, even though the signature
+and issuer are valid.
+====
+
+. Why is PKCE required even for the BFF, which also has a client secret?
++
+.Answer
+[%collapsible]
+====
+They protect different things. The secret proves which application redeems
+the code. PKCE ties the code to the specific sign-in that started it, so a code
+intercepted in the browser or a log cannot be injected into another session.
+Current OAuth guidance recommends PKCE for every client.
+====
+
+. A colleague turns Direct access grants on "to make testing easier". What
+  changes?
++
+.Answer
+[%collapsible]
+====
+Any holder of the client's credentials (for a public client, anyone) can send
+a username and password straight to the token endpoint. That bypasses the
+Keycloak sign-in page, so multi-factor authentication, brute-force protection
+screens, and identity-provider redirects no longer apply, and the application
+handles raw passwords. Use a separate test client if you need it, and never
+in production.
+====
+
+== At your desk
+
+[cols="1,3",options="header"]
+|===
+|Client type |Settings checklist
+|Browser app (SPA) |Public; standard flow only; PKCE `S256`; exact redirect and post-logout URIs; exact web origin; full scope off; audience of the API it calls.
+|Server-side web app (BFF, proxy) |Confidential; standard flow only; PKCE `S256`; exact URIs; full scope off; audience of the APIs it calls; rotate the secret.
+|API |Confidential; no sign-in flows; exists as an audience; turn on only the service-to-service flows it uses.
+|===
+
+Keep these settings in version control, for example as a realm export or
+with a configuration tool, so changes are reviewed like code.

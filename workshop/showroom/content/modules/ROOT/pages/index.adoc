@@ -1,38 +1,55 @@
 = Secure microservices with Red Hat Build of Keycloak
 :navtitle: Welcome
 
-Welcome to this hands-on lab. You will create an isolated Keycloak realm and
-connect it to three existing application login patterns: a browser SPA, a
-server-side backend-for-frontend (BFF), and a reverse proxy.
+Welcome to this hands-on lab. You will secure a small order system from an
+empty Keycloak realm to a working, observable application: three ways to sign
+users in to a browser app, an API that makes its own access decisions, and two
+service-to-service calls with different identities.
 
-You will work in your own OpenShift namespace and realm. The Keycloak server is
-shared, but the realm you create and the application copy you use are yours.
-Never paste credentials into shared chat, a terminal recording, or another
-attendee's namespace.
+You will not only follow steps. Each module asks you to predict what will
+happen, look at the evidence (tokens, cookies, traces, and logs), and break
+something on purpose so you recognize the error when you meet it in your own
+work. You leave with a checklist and the code each application needs.
 
-== Learning outcomes
+== What you will be able to do
 
-By the end of the lab, you can:
+By the end of the lab you can:
 
-* create a realm using realm-scoped delegation without server-wide admin;
-* configure users, realm roles, OIDC clients, redirect URIs, PKCE, and API
-  audiences;
-* connect existing apps by changing runtime configuration and credentials;
-* explain why reader and manager requests produce different authorization
-  results;
-* distinguish a user's token from a service account and an exchanged token;
-* identify the operational and production tradeoffs in each login pattern.
+* choose between a browser single-page app (SPA), a backend-for-frontend (BFF),
+  and a reverse proxy for a new application, and explain the tradeoff;
+* register OIDC clients with the settings that matter and say why each one is
+  set the way it is;
+* connect an application to Keycloak with three or four configuration values;
+* list the checks an API must make on every token, and find them in Java,
+  Python, and JavaScript code;
+* decide when a downstream call must carry the user's identity and when it
+  should use its own;
+* read a trace and a log line to tell an authorization denial from a
+  configuration problem.
+
+== How each module works
+
+Most activities follow the same loop:
+
+[cols="1,4"]
+|===
+|*Why it matters* |The failure or attack the setting prevents.
+|*Predict* |Write down what you expect before you look.
+|*Do* |Make the change. Every setting comes with its reason.
+|*See it* |Look at the token, the cookie, the trace, or the log.
+|*Break it* |Make one deliberate mistake and read the error.
+|*Explain* |Answer a question; open the answer to compare.
+|*At your desk* |The code or checklist item to take home.
+|===
+
+Answers are hidden behind a click so you can try first.
 
 == Start here
 
-. Open xref:overview.adoc[] to see the seven modules and time estimate.
+. Open xref:overview.adoc[] for the modules and timing.
 . Open xref:details.adoc[] for your username, password, console links, and
-  app URLs. Everything you need is on that page.
-. Keep your password private. Do not reuse another attendee's values.
+  application URLs. Everything you need is on that page.
+. Keep paper or a text file handy for your predictions.
 
-The BFF and proxy depend on your realm's OIDC discovery endpoint. Before you
-create the realm in Module 2, they can return **503** or a missing-realm page.
-This is expected during setup; they start working after Module 4.
-
-The activities follow a Know–Do–Check rhythm: learn a concept, make a change,
-then verify the result before moving on.
+The BFF and proxy show **503** or an error page until you create your realm and
+connect them in Modules 2–4. That is expected.

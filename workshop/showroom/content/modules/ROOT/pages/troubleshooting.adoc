@@ -1,0 +1,55 @@
+= Troubleshooting
+:navtitle: Troubleshooting
+
+Most problems in this lab have one of a few causes. Check these first, then ask
+the facilitator.
+
+== Before Module 4
+
+* **BFF or proxy shows 503, `Client not found`, or an error page.** Expected
+  until your realm, its clients, and Module 4 are done.
+* **Create realm is missing.** Your account lacks the delegated
+  `create-realm` permission. Ask the facilitator; do not change roles in the
+  `master` realm.
+* **A user gets an extra profile form at first sign-in.** First name, last
+  name, or email is missing on the user.
+
+== Sign-in problems
+
+* **`Invalid parameter: redirect_uri`.** Compare the client's redirect URI
+  with the app's callback address: scheme, host, path, trailing slash.
+* **Signed in as the wrong user.** The apps share one Keycloak session. Sign out
+  of every app you used, then sign in again.
+* **The proxy loops back to Keycloak.** Check the `proxy-audience` mapper
+  (Module 3) and the `client-secret` key in `proxy-secrets`.
+
+== Application problems
+
+* **A pod restarts after you change configuration.** Read its log in
+  **Workloads → Pods →** _pod_ **→ Logs**, or search **Observe → Logs**. A
+  wrong issuer stops the BFF at startup (Module 4).
+* **Changes have no effect.** Pods read ConfigMaps and Secrets at startup;
+  restart the rollout.
+* **Every request returns 401.** Check the issuer character by character, and
+  the `orders-api-aud` scope on the client you signed in with.
+* **Manager writes return 502.** Expected until Module 6. After Module 6,
+  follow the trace and search the logs for `/inventory/reserve` and `/notify`.
+* **`ImagePullBackOff`.** A reservation problem, not a lab task; tell the
+  facilitator.
+
+== Logs and traces
+
+* Results can take up to a minute to appear. If **Run Query** shows old
+  results, click it again or use the refresh button.
+* **Traces page shows no Tempo instance or no permission.** Select Tempo
+  instance `tracing / workshop`, then Tenant `{attendee_id}`. Other tenant names
+  are listed but only yours opens.
+* **Observe → Logs or Traces is missing.** Ask the facilitator to check the
+  logging and tracing setup.
+
+== Ground rules
+
+Work only in your realm `{realm_name}` and namespace `{attendee_namespace}`.
+Never paste passwords, client secrets, tokens, or cookies into chat, tickets,
+or screenshots. If an app URL or realm belongs to someone else, stop and tell
+the facilitator.
