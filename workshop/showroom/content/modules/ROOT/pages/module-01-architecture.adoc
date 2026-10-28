@@ -76,7 +76,8 @@ You check rows 1–4 in Module 5 and row 5 in Module 7.
 +
 image::m01-console-deployments.png[Your Deployments in the OpenShift Console]
 
-`bff` and `proxy` are not ready yet. They need the realm you create next.
+`bff` and `proxy` may show as running, but they restart or fail requests until
+you connect them to your realm in Modules 2–4.
 
 == Explain
 

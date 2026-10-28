@@ -34,9 +34,11 @@ image::m05-spa-reader-denied.png[SPA showing the reader's write denied with 403]
   again. Select the `orders` request and look at its **Request Headers**:
   `Authorization: Bearer eyJ...`. The browser itself sends the token.
 . Open the **Application** tab (**Storage** in Firefox) and look under
-  **Cookies** for your SPA address: there is no session cookie. (A cookie with
-  a long random name may appear on any of the three apps. It is OpenShift's
-  load-balancer cookie and holds no identity.)
+  **Cookies** for your SPA address: there is no session cookie. You may see
+  other cookies on all three apps that hold no identity: one with a long
+  random name (OpenShift's load-balancer cookie) and analytics cookies such as
+  `ajs_anonymous_id` that the OpenShift Console sets for the shared cluster
+  domain.
 . In the app, expand **Where session data is stored**: **Access token in
   JavaScript memory: Yes**.
 
@@ -78,8 +80,10 @@ await fetch('{orders_api_url}/orders', {
 Both return `401`. The forged one fails the signature check you saw in
 Module 2.
 
-Notice what you just did: any script running on this page could do the same,
-and send the token anywhere. That is why an SPA keeps tokens short-lived and in
+Notice what you just did: you read the token and used it outside the app. A
+malicious script on the page can do the same without you, for example by
+wrapping `fetch` to capture the `Authorization` header, and send the token
+anywhere. That is why an SPA keeps tokens short-lived and in
 memory, never in `localStorage`, and why cross-site scripting (XSS) is the
 SPA's main risk.
 
@@ -155,14 +159,17 @@ The result is `403`, and Orders never sees the request.
   The proxy answers with its own `403 Forbidden` page before the request
   reaches Orders. The app's own button sends `X-Workshop-CSRF: 1`, which a
   page on another site cannot add to a cross-site request without the
-  proxy's permission.
+  proxy's permission. This check is a rule in this lab's NGINX gateway
+  configuration, not something oauth2-proxy provides. If you put a proxy in
+  front of your own app, you must add an equivalent rule.
 . Sign out, sign in as `reader`, and confirm 200 and 403. Sign out.
 
 The three apps share one Keycloak sign-in in your browser. An app you already
 used keeps its own session until you sign out of it, and a new app may sign
 you in as the last user without asking. Sign out of every app before you
 switch users. If **Sign out** shows Keycloak's "Do you want to log out?" page,
-click **Logout**.
+click **Logout**. The BFF and proxy pages do not show who is signed in; the
+newest Orders log line's `username` and `client_id` tell you.
 
 == Check
 
@@ -250,8 +257,12 @@ claims = jwt.decode(
     issuer=ISSUER, leeway=30,
     options={"require": ["exp", "sub"]},
 )
+if claims.get("typ") != "Bearer":            # an access token, not an ID token
+    raise AuthenticationFailure("invalid_token")
 if "user" not in roles:
     raise AuthenticationFailure("missing_role", 403)
+if claims.get("azp") != "orders-api":         # only Orders may call Inventory
+    raise AuthenticationFailure("wrong_client", 403)
 ----
 
 Notifications (Node.js, jose):
@@ -262,6 +273,10 @@ const jwks = createRemoteJWKSet(new URL(`${issuer}/protocol/openid-connect/certs
 const verified = await jwtVerify(token, jwks, {
   issuer, audience: 'notifications-api', algorithms: ['RS256'], clockTolerance: 30,
 });
+const claims = verified.payload;
+if (claims.typ !== 'Bearer' || !claims.exp || !claims.sub) status = 401;   // access tokens only
+else if (claims.azp !== 'orders-api') status = 403;                         // only Orders may call
+else if (!claims.resource_access?.['notifications-api']?.roles?.includes('notifier')) status = 403;
 ----
 
 The full excerpts, with explanations, are in each application's README under

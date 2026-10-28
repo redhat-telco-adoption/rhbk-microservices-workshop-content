@@ -14,10 +14,11 @@ reference answer; write yours first.
 . Sign in to the link:{spa_url}[SPA,window=_blank] as `reader`, click **View
   orders**, then **Create a sample order**.
 . Open
-  link:{openshift_console_url}/observe/traces?namespace=tracing&name=workshop&tenant={attendee_id}&start=15m&limit=100&q=%7B+resource.service.name+%3D+%22orders-api%22+%7D[your Orders traces,window=_blank]
+  link:{openshift_console_url}/observe/traces?namespace=tracing&name=workshop&tenant={attendee_id}&start=15m&limit=100&q=%7B+resource.service.name+%3D+%22orders-api%22+%26%26+name+%3D+%22POST+%2Forders%22+%7D[your Orders traces,window=_blank]
   and find the denied `POST /orders` trace. Through the BFF or proxy the trace
-  is named after that app, for example `bff: POST orders-api`. It stops at
-  Orders with status 403 and never reaches Inventory or Notifications.
+  is named after that app, for example `bff: POST orders-api`. The list does
+  not mark it as an error; open it and click the Orders span to see the 403
+  status. It never reaches Inventory or Notifications.
 . In **Observe → Logs**, search for `missing_role` and click **Run Query**
   (again if the old results stay). The Orders line shows `decision` `deny`,
   status 403, and `reason` `missing_role`, with no token or secret in the log.
@@ -51,10 +52,16 @@ into a ticket.
 
 . **Try it.** Sign in to the SPA as `reader`, then in Keycloak open **Users →
   reader → Sessions** and sign out each session from its row menu.
-. In the SPA, click **View orders**. **Predict** first: it still returns 200.
-  Orders validates tokens locally with the realm's public keys and never asks
-  Keycloak whether the session still exists. The access token stays valid
-  until it expires, five minutes here.
+. **Predict:** the user's sessions are gone. What will **View orders** in the
+  SPA return now? Write it down, then click it.
++
+.What happened
+[%collapsible]
+====
+It still returns 200. Orders validates tokens locally with the realm's public
+keys and never asks Keycloak whether the session still exists. The access
+token stays valid until it expires, five minutes here.
+====
 
 What do you do about the ticket?
 
@@ -115,7 +122,7 @@ Compare your completed Module 1 table with this one.
 |Can JavaScript on the page read the token? |Yes |No |No
 |What does the browser send to the API? |The token |A session cookie |A session cookie
 |Does the app need CSRF protection? |No |Yes |Yes
-|If Keycloak is down for ten minutes? |Works until the token expires |Works until the next refresh |Works until the next refresh
+|If Keycloak is down for ten minutes? (reasoned in Scenario 3) |Reads work until the token expires; writes fail at once |Reads work until the next refresh; writes fail at once |Reads work until the next refresh; writes fail at once
 |===
 ====
 
@@ -130,7 +137,9 @@ Pick one application you work on. Write down, in one line each:
 . What it logs on a denial, and whether any log can contain a token.
 . What happens to it during a Keycloak outage.
 
-xref:at-your-desk.adoc[] has the checklists to compare against.
+Compare your answers with the checklists in xref:at-your-desk.adoc[], then
+discuss one gap with a neighbour or the facilitator: what would you change
+first, and what would it take?
 
 == Optional: the Legacy API
 

@@ -20,7 +20,10 @@ OAuth has a tool for each case:
 
 * **Token exchange.** Orders hands the user's token to Keycloak and gets a new
   one: same user, audience `inventory-api`, and `azp` (the authorized party)
-  `orders-api`. Inventory checks both.
+  `orders-api`. Inventory checks both. Keycloak allows the exchange only
+  because the user's token lists `orders-api` in its `aud` (from Module 3): a
+  client may exchange only tokens that were issued for it. When an exchange
+  fails in your own work, check this first.
 * **Client credentials.** Orders signs in as itself with its own secret and
   gets a token for its *service account*. That account has exactly one
   permission: the `notifier` role on Notifications.
@@ -48,21 +51,26 @@ click **Create a sample order** after each step.
   Scope**, turn **Full scope allowed** **Off**, and assign the realm roles
   `user` and `manager`. The exchanged token now carries only the roles
   Inventory checks.
-. **Predict**, then click **Create a sample order** in the SPA.
+. **Predict:** will the order succeed now? If not, how far will it get?
+  Write it down, then click **Create a sample order** in the SPA.
 
-It still fails with 502. Find out how far it got.
+Check the response, then find out how far the request got.
 
 . Open
-  link:{openshift_console_url}/observe/traces?namespace=tracing&name=workshop&tenant={attendee_id}&start=15m&limit=100&q=%7B+resource.service.name+%3D+%22orders-api%22+%7D[your Orders traces,window=_blank]
+  link:{openshift_console_url}/observe/traces?namespace=tracing&name=workshop&tenant={attendee_id}&start=15m&limit=100&q=%7B+resource.service.name+%3D+%22orders-api%22+%26%26+name+%3D+%22POST+%2Forders%22+%7D[your Orders traces,window=_blank]
   (**Observe → Traces**, Tempo instance `tracing / workshop`, Tenant
-  `{attendee_id}`; only you can read this tenant, though the list names
-  others). Open the newest `POST /orders` trace. It now contains an
+  `{attendee_id}`, Service Name `orders-api`, Max traces 100, and the link's query for `POST /orders` spans; only you can
+  read this tenant, though the list names others). If you open Traces from the
+  menu instead of the link, set those values yourself: the Tenant starts on
+  `workshop`, which you cannot read. Open the newest `POST /orders` trace. It now contains an
   `inventory-api` span: the exchange worked. There is no `notifications-api`
   span.
 . Open **Observe → Logs**, search for `/inventory/reserve`, and click **Run
   Query** (again if the results do not change). The newest Inventory line shows
   `"username":"manager"`, `"client_id":"orders-api"`, `"decision":"allow"`:
   the user's identity arrived, and Inventory can see that Orders brought it.
++
+image::m06-inventory-log.png[Inventory log line for the manager, called by orders-api]
 . Search for `/notify`. There is no line at all. Orders never reached
   Notifications, because it has no identity of its own yet.
 
@@ -81,14 +89,17 @@ image::m03-service-account-roles.png[Service accounts roles tab for orders-api]
 
 . Create a client scope `notifications-api-aud` with an Audience mapper for
   `notifications-api`, and add it to `orders-api` as **Default**.
-. **Predict**, then create an order again.
+. **Predict:** Orders now has its own identity, and its service account has
+  `notifier`. Will the order succeed? Write it down, then create an order.
 
-Still 502. Search the logs for `/notify` again. Now there is a line:
+Check the response, then search the logs for `/notify` again:
 
 ----
 "status":403, "decision":"deny", "reason":"missing_role",
 "username":"service-account-orders-api", "client_id":"orders-api", "roles":[]
 ----
+
+image::m06-notify-denied.png[Notifications log line refusing the Orders service account]
 
 Orders reached Notifications with its own identity, and Notifications refused
 it. The service account has `notifier`, yet the token carried no roles.
@@ -110,12 +121,22 @@ but not in the client's scope never reaches the token.
 +
 image::m03-dedicated-scope.png[Scope tab of orders-api-dedicated with user, manager, and notifier]
 
-. Create an order again. **It still fails.** Orders reuses its service-account
-  token until it expires (five minutes here), so it is still sending the old
-  one without `notifier`.
+. **Predict:** the scope now allows `notifier`. Will the next order succeed?
+  Write it down, then create an order.
++
+.What happened
+[%collapsible]
+====
+It still fails. Orders reuses its service-account token until it expires (five
+minutes here), so it is still sending the old one without `notifier`.
+====
 . Restart the `orders-api` rollout in the OpenShift Console (or wait five
   minutes), then create an order. It returns **201**: `reserved for manager`
   and the notification accepted.
+
+If it fails with `Token exchange rejected` in the Orders log after a restart,
+check that the new pod really started (Module 4) and that the `orders-api-client`
+Secret has the current client secret.
 
 Remember this one. After you change a service's roles, it keeps working with
 its old permissions until it gets a new token.
@@ -145,8 +166,8 @@ adds them to every log line, and the application writes its own copy.
 +
 image::m06-logs.png[Logs for one trace ID across the three APIs]
 
-. Run the full check from Module 5 again: in each app, the manager's order now
-  returns 201 and the reader's still returns 403.
+. Create an order as `manager` through the BFF or the proxy too: it now
+  returns 201 there as well, and the reader's still returns 403.
 
 == Explain
 

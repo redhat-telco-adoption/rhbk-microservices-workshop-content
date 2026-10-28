@@ -57,7 +57,8 @@ The SPA is already configured for your realm. Open your
 link:{spa_url}[SPA,window=_blank], click **Sign in**, and sign in as `reader`
 in the popup. Open **Identity and access details**: **Intended APIs** shows
 `account` (Keycloak's own account console), not the Orders API, and the reader
-has no roles yet. Keep this in mind; it changes by the end of this
+has only Keycloak's default roles (`offline_access`, `uma_authorization`,
+`default-roles-{realm_name}`). Keep this in mind; it changes by the end of this
 module. Click **Sign out**.
 
 === Break it: a redirect URI that does not match
@@ -66,7 +67,7 @@ module. Click **Sign out**.
   URI to `pass:a[{spa_url}/auth/callback]`. Click **Save**.
 . In the SPA, click **Sign in**. The popup shows Keycloak's error page:
   **Invalid parameter: redirect_uri**. Keycloak refused to send a code to an
-  address it does not know.
+  address it does not know. Close the popup and reload the SPA page.
 . Change the redirect URI back to `pass:a[{spa_url}/auth/popup-callback]` and
   save. Sign in again to confirm it works, then sign out.
 
@@ -113,7 +114,8 @@ give it its own identity in Module 6.
 |===
 
 **Check:** reopen `spa`, `bff`, and `proxy` and confirm the URIs and PKCE
-method were saved.
+method were saved. Keycloak may fill in **Web origins** for a confidential
+client from its redirect URI; that is harmless for a server-side app.
 
 == Do: create roles
 
@@ -137,11 +139,20 @@ change what "manager" includes in one place.
   and pick `manager` from the list (typing alone does not select). Click
   **Effective role scope mappings**, then **Generated access token**; the
   token appears only after you switch tabs like this.
-. **Predict:** which roles does a manager's SPA token contain? Then look at
-  `realm_access.roles`. Besides `manager` and `user`, it carries Keycloak's
-  default roles (`offline_access`, `uma_authorization`,
-  `default-roles-{realm_name}`), because the client is allowed every role in
-  the realm (*Full scope allowed*). Note the `aud` claim too: `account`.
+. **Predict:** the manager has `manager` (which includes `user`). Will the
+  token carry any other roles? Write down your answer, then look at
+  `realm_access.roles` and `aud`.
++
+.What you should see
+[%collapsible]
+====
+Besides `manager` and `user`, the token carries Keycloak's default roles
+(`offline_access`, `uma_authorization`, `default-roles-{realm_name}`), because
+the client is allowed every role in the realm (*Full scope allowed*). `aud` is
+`account`, Keycloak's account console, which comes from those extra roles.
+====
++
+image::m03-evaluate-full-scope.png[Manager's spa token with Full scope allowed on, including Keycloak's default roles]
 . For each of `spa`, `bff`, and `proxy`: open **Clients →** _client_ **→
   Client scopes →** _client_**-dedicated → Scope**, turn **Full scope
   allowed** **Off**, then click **Assign role → Realm roles**, select `user`
@@ -156,9 +167,17 @@ when a user has many more roles for other applications.
 
 == Do: constrain the audience
 
-. **Predict:** the manager's `spa` token now has no `aud` at all. What would
-  Orders do with it? Orders rejects any token whose `aud` does not include
-  `orders-api`, with a 401.
+. **Predict:** what is in the `aud` claim of the manager's `spa` token now,
+  and what would Orders do with that token? Write it down, then generate the
+  token again.
++
+.What you should see
+[%collapsible]
+====
+There is no `aud` at all. Orders rejects any token whose `aud` does not
+include `orders-api`, with a 401. The next steps give the SPA's tokens that
+audience.
+====
 . Open **Client scopes → Create client scope**. Name it `orders-api-aud`, set
   **Type** to **None**, turn **Include in token scope** **On**, and save.
 . On its **Mappers** tab choose **Configure a new mapper → Audience**. Name it

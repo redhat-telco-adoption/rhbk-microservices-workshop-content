@@ -65,8 +65,8 @@ it can act as that application.
 
 == Break it: connect the BFF with an issuer that is almost right
 
-. Open **Workloads → ConfigMaps → bff-config → Actions → Edit ConfigMap**.
-  `OIDC_ISSUER` says `set-your-realm-issuer-here`. Replace it with your issuer
+. Open **Workloads → ConfigMaps → bff-config → Actions → Edit ConfigMap**. It
+  opens a YAML editor; `OIDC_ISSUER` under `data` says `set-your-realm-issuer-here`. Replace it with your issuer
   **plus a trailing slash**, a common copy-and-paste slip:
   `pass:a[{issuer}/]`. Click **Save**.
 . Open **Workloads → Deployments → bff** and choose **Restart rollout** from
@@ -77,7 +77,8 @@ image::m04-restart-rollout.png[Restart rollout action on the bff Deployment]
 . **Predict:** the issuer is only one character off. Will the BFF start?
 . Wait a minute, then open **Observe → Logs**, search for
   `did not match the requested issuer`, and click **Run Query** (click it again
-  if the results do not change). The BFF refused to start:
+  if the results do not change). The BFF refused to start. The line is long;
+  the part that matters is near the middle:
 +
 [subs="attributes+"]
 ----
@@ -88,6 +89,8 @@ the requested issuer "{issuer}/"
 The BFF compared the issuer in the discovery document with the one it was
 given. They differ by one character, so it stopped rather than trust tokens
 from an issuer it cannot match exactly.
++
+image::m04-issuer-log.png[The BFF's startup error in Observe → Logs]
 . Edit `bff-config` again, remove the trailing slash so `OIDC_ISSUER` is
   exactly `pass:a[{issuer}]`, and save.
 
@@ -95,7 +98,10 @@ from an issuer it cannot match exactly.
 
 . Restart the rollout of `bff`, `proxy`, and `orders-api` the same way, so
   they read the new secrets and configuration. Wait until each shows **1 of 1
-  pods** (`proxy` shows **2 of 2**: the gateway and its sign-in component).
+  pods**, and check that the pod's age under **Workloads → Pods** is
+  minutes, not hours: an old pod means the restart did not happen. (The
+  proxy's pod shows **2/2** containers: the gateway and its sign-in
+  component.)
 . Open `pass:a[{spa_url}/config.json]` in a new tab. It shows your issuer and
   `spa`, and no secret.
 . Sign in as `reader` through each app, then sign out: the

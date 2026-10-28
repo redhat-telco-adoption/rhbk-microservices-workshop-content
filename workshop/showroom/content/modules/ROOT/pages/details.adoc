@@ -15,7 +15,8 @@ OpenShift Console. Keep the password to yourself.
 |OpenShift Console |link:{openshift_console_url}[{openshift_console_url},window=_blank] (sign in through **sso**)
 |===
 
-Open both consoles in their own browser tabs. In Module 2 you also create two
+Open both consoles in their own browser tabs. The OpenShift Console cannot
+be shown inside this guide's split view. In Module 2 you also create two
 lab users, `reader` and `manager`, with passwords you choose. Write them down;
 you need them from Module 3 on.
 
