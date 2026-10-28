@@ -47,10 +47,8 @@ or reuse another attendee's realm.
   placeholder until you paste the client secrets in Module 4.
 * Cluster logging and distributed tracing. Your applications send logs and
   traces automatically; you read them in the OpenShift Console under
-  **Observe → Logs** (only your namespace) and **Observe → Traces**. The trace
-  store is shared: other attendees' traces can appear in an unfiltered list,
-  but their details are hidden. The guide links you to traces filtered to your
-  namespace.
+  **Observe → Logs** and **Observe → Traces**. Both show only your own data:
+  logs from your namespace, and traces in your own tenant, `{attendee_id}`.
 
 == Stop conditions
 
