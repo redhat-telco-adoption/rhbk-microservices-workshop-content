@@ -13,6 +13,9 @@ view_switcher:
   enabled: true
   default_mode: instructions
 tabs:
+  - name: Terminal
+    path: /terminal
+    port: 443
   - name: OpenShift Console
     url: 'https://console-openshift-console.${DOMAIN}'
     external: true

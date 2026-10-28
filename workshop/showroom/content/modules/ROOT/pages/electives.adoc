@@ -1,0 +1,58 @@
+= Electives
+:navtitle: Electives
+
+The electives go deeper into questions that come up when Keycloak becomes the
+central identity platform: groups, signing keys, token introspection,
+fine-grained authorization, and tokens from other issuers. They are
+self-paced. Your environment stays available after the session, so you can
+finish them later.
+
+Each elective starts from a realm completed through Module 6 and is
+independent of the others. Each one ends by leaving your realm in a state
+where Modules 5 and 6 still work.
+
+[cols="3,5,1",options="header"]
+|===
+|Elective |You will |Time
+|xref:elective-a-groups.adoc[A. Groups and roles] |Grant a role through a group, put group membership in a token, and see why APIs still check roles |20 min
+|xref:elective-b-signing-keys.adoc[B. Signing keys and rotation] |Rotate the realm's signing key without downtime, then break the algorithm allowlist |30 min
+|xref:elective-c-introspection.adoc[C. Local validation or introspection] |Compare what an API's local check and Keycloak's introspection endpoint say about a revoked session |20 min
+|xref:elective-d-authorization-services.adoc[D. Authorization Services] |Model a resource, attribute-based policies, and pushed claims, then ask Keycloak for decisions |40 min
+|xref:elective-e-external-tokens.adoc[E. Tokens from another issuer] |See Orders reject a foreign token, then design how to accept a partner's tokens without exposing your realm |20 min
+|===
+
+== The terminal
+
+Open the **Terminal** tab at the top of this guide's right-hand pane. It is a
+shell in your own Showroom pod with `curl` and `jq`. Electives B, C, D, and E
+use it.
+
+Run this setup block each time you open a new terminal. It asks for the
+`orders-api` client secret, which you find in Keycloak under **Clients →
+orders-api → Credentials**. `read -s` keeps the secret off the screen and out
+of the shell history.
+
+[source,bash,subs="attributes+"]
+----
+export ISSUER='{issuer}'
+export ORDERS_API='{orders_api_url}'
+read -rsp 'orders-api client secret: ' ORDERS_SECRET; echo
+# A fresh access token for the orders-api service account.
+sa_token() { curl -s -u "orders-api:$ORDERS_SECRET" -d grant_type=client_credentials "$ISSUER/protocol/openid-connect/token" | jq -r .access_token; }
+# Store a user's access token copied from the browser, with or without "Bearer ".
+paste_token() { read -rsp 'Access token: ' TOKEN; echo; TOKEN=${TOKEN#Bearer }; }
+# Show one part of a JWT: 1 is the header, 2 is the payload.
+jwt_part() { local p; p=$(cut -d. -f"$2" <<<"$1" | tr '_-' '/+'); while (( ${#p} % 4 )); do p+='='; done; base64 -d <<<"$p" | jq .; }
+----
+
+Check it: `jwt_part "$(sa_token)" 2 | jq '{iss, azp}'` prints your issuer and
+`orders-api`. If it prints `null` values, the secret is wrong; run the
+`read` line again.
+
+To copy a user's token, use the browser's **Network** tab as in Module 5:
+select an `orders` request and copy the `Authorization` header value. Then run
+`paste_token` and paste it. Access tokens expire after five minutes; copy a
+fresh one when a step says the token expired.
+
+Treat every token and secret in this terminal as a credential. Do not paste
+them into tickets, chat, or files.

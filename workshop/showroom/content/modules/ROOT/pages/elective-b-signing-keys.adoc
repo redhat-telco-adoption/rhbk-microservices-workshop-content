@@ -1,0 +1,162 @@
+= Elective B: Signing keys and rotation
+:navtitle: B. Signing keys
+
+== Why it matters
+
+Every access token from your realm is a JSON Web Token (JWT) signed with the
+realm's private key. APIs verify it with the matching public key from the
+realm's JSON Web Key Set (JWKS), the `jwks_uri` you opened in Module 2. Keys
+must be replaced from time to time: on a schedule, when an algorithm or key
+size policy changes, or when a key may have leaked. Done carelessly, rotation
+logs everyone out or makes every API reject valid tokens.
+
+You will rotate your realm's key while the applications keep working, and then
+break the algorithm rule the APIs enforce.
+
+Before you start, run the setup block from xref:electives.adoc#_the_terminal[Electives]
+in the **Terminal** tab.
+
+== See it: keys, key IDs, and the JWKS
+
+. In Keycloak, open **Realm settings → Keys**. The **Keys list** shows several
+  keys. Only the `RS256` key signs access tokens. The `HS512` key signs
+  Keycloak's own internal tokens, such as refresh tokens, and the `RSA-OAEP`
+  and `AES` keys are for encryption. Note the **Kid** of the `RS256` key.
+. In the terminal, list the published keys:
++
+[source,bash]
+----
+curl -s "$ISSUER/protocol/openid-connect/certs" | jq '.keys[] | {kid, alg, use}'
+----
++
+Only asymmetric public keys appear. The HMAC and AES keys are secrets and are
+never published.
+. Look at the header of a fresh token:
++
+[source,bash]
+----
+jwt_part "$(sa_token)" 1
+----
++
+`kid` matches the `RS256` key. An API uses it to pick the right public key
+from the JWKS without calling Keycloak for each request.
+
+== Do: rotate without downtime
+
+. Open **Realm settings → Keys → Providers** and click **Add provider →
+  rsa-generated**. Name it `rsa-rotated`, set
+  **Priority** to `200` (higher than the existing `rsa-generated` provider's
+  `100`), keep **Algorithm** `RS256`, and save.
+. **Predict:** which `kid` will the next token carry? And will the SPA's next
+  **View orders** work without restarting any API? Write it down.
+. Check:
++
+[source,bash]
+----
+jwt_part "$(sa_token)" 1 | jq -r .kid
+curl -s "$ISSUER/protocol/openid-connect/certs" | jq -r '.keys[] | select(.alg == "RS256") | .kid'
+----
++
+New tokens carry the new key's `kid`, and the JWKS lists both RS256 keys.
+. In the link:{spa_url}[SPA,window=_blank], sign out, sign in as `manager`,
+  and click **View orders** and **Create a sample order**.
++
+.What happened
+[%collapsible]
+====
+Both work. Each API caches the JWKS for up to five minutes, but when a token
+names a `kid` that is not in its cache, it downloads the JWKS again. Orders
+(Spring Security), Inventory (PyJWT), and Notifications (`jose`) all do this.
+Tokens signed with the old key also keep working, because the old key is still
+published.
+====
+. Open the `rsa-generated` provider (the original one), turn **Active**
+  **Off**, and save. The key is now *passive*: Keycloak no longer signs with it
+  but still publishes it, so tokens it signed earlier still verify.
+. Wait at least five minutes, the access-token lifetime. Every token signed
+  with the old key has now expired. Open the provider again, turn **Enabled**
+  **Off**, and save. Run the JWKS command again: the old key is gone.
+
+== Break it: an algorithm the APIs do not accept
+
+. Open **Realm settings → Keys → Providers → Add provider →
+  ecdsa-generated**. Name it `ec-p256`, set **Elliptic Curve** to `P-256`,
+  and save. This key signs with `ES256`.
+. Open **Clients → spa → Advanced → Fine grain OpenID Connect
+  configuration**, set **Access token signature algorithm** to `ES256`, and
+  click **Save** in that section.
+. **Predict:** the token is properly signed, and the key is in the JWKS. What
+  will **View orders** return? Write it down, then sign out of the SPA, sign
+  in as `manager`, and click **View orders**.
++
+.What happened
+[%collapsible]
+====
+It returns 401. Each API accepts only `RS256`, whatever the token header says. An
+algorithm allowlist stops an attacker from choosing a weaker algorithm, or
+`none`, in a token they forged. The side effect is that changing the algorithm
+is a coordinated change: update and deploy every API's allowlist first, then
+switch Keycloak.
+====
+. Restore it: set **Access token signature algorithm** for `spa` back to
+  empty (the realm default, `RS256`), save, and sign in again. **View orders**
+  returns 200. Delete the `ec-p256` provider.
+
+== Explain
+
+. You need to replace a key that may have leaked. What do you change about
+  the procedure above?
++
+.Answer
+[%collapsible]
+====
+Speed. Add the new key with a higher priority and disable the leaked key at
+once, without a passive period: tokens it signed must stop being accepted,
+even if some users have to sign in again. APIs drop the key from their cache
+within their JWKS cache lifetime (five minutes here). Then find out how the
+key leaked.
+====
+. An API caches the JWKS for 24 hours and does not download it again for an
+  unknown `kid`. How do you rotate safely?
++
+.Answer
+[%collapsible]
+====
+Publish the new key before using it. Add it with **Active** **Off**, so it
+appears in the JWKS but signs nothing, wait longer than the API's cache
+lifetime, and only then make it active with the higher priority. Better,
+change the API to refresh on an unknown `kid`, as these APIs do.
+====
+. Why does an API never need Keycloak's private key?
++
+.Answer
+[%collapsible]
+====
+Only Keycloak signs; everyone else verifies. Verification needs only the
+public key, which can be published openly. If any API held the private key, a
+compromise of that API would let an attacker mint tokens for every API that
+trusts the realm.
+====
+
+== At your desk
+
+* Rotate on a schedule your security policy sets: add a new key with a
+  higher priority, make the old one passive, and disable it after the longest
+  token lifetime it might have signed.
+* For keys from your own PKI or a hardware security module, Keycloak's
+  `java-keystore` and `rsa` (imported) providers use your key material instead
+  of generating it.
+* Pin the accepted algorithms in every API. The APIs in this lab do it in one
+  line each:
++
+[source,java]
+----
+NimbusJwtDecoder.withJwkSetUri(jwkSetUri).jwsAlgorithm(SignatureAlgorithm.RS256)
+----
++
+[source,python]
+----
+jwt.decode(token, signing_key, algorithms=["RS256"], audience="inventory-api", issuer=ISSUER)
+----
+* Check that each JWKS client refreshes on an unknown `kid` and has a bounded
+  cache lifetime. Both are defaults in the libraries used here.

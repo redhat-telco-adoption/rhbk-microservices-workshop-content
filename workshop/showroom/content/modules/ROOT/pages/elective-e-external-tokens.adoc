@@ -1,0 +1,142 @@
+= Elective E: Tokens from another issuer
+:navtitle: E. External tokens
+
+== Why it matters
+
+A partner, Acme Logistics, runs its own identity provider. Its batch system
+needs to read your orders, and it already has tokens from its own issuer. Your
+security team adds one constraint: the realm that issues tokens for your
+internal APIs must not be reachable from outside.
+
+In Module 2 you reasoned that Orders rejects a token from any other issuer. In
+this elective you see it happen, then design how to accept the partner's
+tokens anyway.
+
+Before you start, run the setup block from xref:electives.adoc#_the_terminal[Electives]
+in the **Terminal** tab.
+
+== See it: a token from another issuer
+
+Your own Keycloak account lives in the `master` realm, a different issuer. The
+administration console holds a `master` access token for you, which makes a
+convenient foreign token. It is a powerful token: send it only to your own
+Orders API, as below, and to nothing else.
+
+. In the Keycloak administration console tab, open developer tools, select any
+  request to `/admin/realms/...` in the **Network** tab, and copy its
+  `Authorization` value. Run `paste_token` and paste it. `master` tokens expire
+  after about a minute, so continue at once.
+. Look at its issuer, then send it to Orders:
++
+[source,bash]
+----
+jwt_part "$TOKEN" 2 | jq '{iss, azp, aud}'
+curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $TOKEN" "$ORDERS_API/orders"
+----
++
+The issuer ends in `/realms/master`, and Orders returns `401`. The signature
+is genuine, made by the same Keycloak server, but Orders trusts only your
+realm's issuer and keys.
+
+== Choose: five ways to accept a partner's token
+
+[cols="1,2,2,2",options="header"]
+|===
+|Pattern |How it works |Exposes your realm? |Fits when
+
+|**Trust the partner issuer in the API**
+|The API accepts a second issuer and fetches the partner's JWKS. It maps the
+partner's claims to its own permissions.
+|No. The API calls out to the partner.
+|One API and one partner. Each further API repeats the mapping.
+
+|**Validating gateway**
+|A gateway in front of your APIs validates the partner token (issuer,
+audience, signature from the partner's JWKS, scopes). It then calls your APIs
+with an internal token, for example from its own client credentials in your
+realm.
+|No. Only the gateway is public, and it reaches Keycloak internally.
+|Several partners or APIs. Partner policy, quotas, and auditing stay in one
+place.
+
+|**Token exchange in Keycloak**
+|The partner, or your gateway, sends the partner token to your realm's token
+endpoint and receives a token from your realm.
+|Yes, if the partner calls it. No, if your gateway calls it from inside.
+|You need tokens from your realm downstream. In RHBK 26.4, exchanging an
+*external* token is a preview feature, not supported for production; check
+the current release before relying on it.
+
+|**Identity brokering**
+|Your realm lists the partner's identity provider. Partner *people* sign in
+through your realm's login page and receive your realm's tokens.
+|The browser login endpoints must be public; the admin console and backchannel
+need not be.
+|Interactive partner users of your web applications. Not machine-to-machine.
+
+|**Introspection**
+|The receiver asks the issuer whether a token is active.
+|Not applicable: you would call the *partner's* introspection endpoint.
+|The partner issues opaque tokens. Usually done by the gateway.
+|===
+
+.Decide: which pattern for Acme's batch system?
+[%collapsible]
+====
+The validating gateway. The batch system is a machine, so brokering does not
+apply. The gateway validates Acme's tokens against Acme's published keys, so
+nothing about your realm is exposed. Your internal APIs keep trusting exactly
+one issuer, and the gateway's own client in your realm gets only the role
+the partner needs (for example `user`, not `manager`). Red Hat Connectivity
+Link and Red Hat 3scale API Management can play this gateway role; a small
+validating proxy you operate also works.
+====
+
+== Explain
+
+. Acme's employees will also use your order portal in a browser. Does that
+  change your answer?
++
+.Answer
+[%collapsible]
+====
+Add identity brokering for the people: Acme becomes an identity provider in
+your realm, and its employees sign in through your login page. Browsers must
+reach your login endpoints, so those are public; keep the administration
+console on a separate internal hostname (Keycloak's `hostname-admin` option)
+and let confidential clients reach the token endpoint through an internal
+address (`hostname-backchannel-dynamic`). The batch system still goes through
+the gateway.
+====
+. Why is "add Acme's issuer to every API" risky over time?
++
+.Answer
+[%collapsible]
+====
+Every API must now validate two issuers correctly, map two claim formats to
+permissions, and follow Acme's key rotation. A mistake in any one of them,
+such as accepting Acme tokens for a manager-only operation, is a breach, and
+offboarding Acme means changing every API.
+====
+. The gateway calls Orders with its own client-credentials token. What does
+  Orders lose, and how do you get it back?
++
+.Answer
+[%collapsible]
+====
+Orders no longer sees which Acme user or system made the request; every call
+looks like the gateway. If Orders needs that, have the gateway pass the
+partner subject in a signed form, for example by exchanging for a token that
+carries it, or log it at the gateway with a correlation ID that Orders also
+logs.
+====
+
+== At your desk
+
+* Each API should trust as few issuers as possible, ideally one.
+* Translate external identities at a boundary you operate (a gateway or
+  Keycloak), not in every API.
+* Browser sign-in endpoints must be public. The administration console,
+  introspection, and other backchannel endpoints can stay internal.
+* Write down which partner identity maps to which internal client and roles,
+  and how to revoke a partner.

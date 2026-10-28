@@ -1,0 +1,121 @@
+= Elective A: Groups and roles
+:navtitle: A. Groups and roles
+
+== Why it matters
+
+Organizations manage people in groups: departments, teams, and, from a
+corporate directory, Active Directory groups. APIs make decisions with roles.
+Keycloak connects the two: a group can carry roles, and every member receives
+them. Assigning roles to groups instead of individual users keeps the
+permission model readable when the realm has thousands of users.
+
+You will move the manager's permission from a direct role assignment to a
+group, and then decide whether APIs should see the group itself.
+
+== Do: grant a role through a group
+
+. In Keycloak, open **Groups → Create group**, name it `order-managers`, and
+  click **Create**.
+. Open `order-managers` → **Role mapping → Assign role → Realm roles**, select
+  `manager`, and click **Assign**.
+. Open **Users → manager → Role mapping**, select `manager`, and click
+  **Unassign**. Keep `user`.
+. Open **Users → manager → Groups → Join Group**, select `order-managers`, and
+  click **Join**.
+. **Predict:** the manager no longer has `manager` assigned directly. Will the
+  manager's next order succeed? Write it down.
+. In the link:{spa_url}[SPA,window=_blank], sign out, sign in as `manager`,
+  and click **Create a sample order**.
++
+.What happened
+[%collapsible]
+====
+It returns 201. Open **Identity and access details**: the roles still include
+`manager`. Keycloak puts the roles a user gets through a group into the token
+just like direct assignments. Orders sees no difference, because it checks the
+role, not how the user got it.
+====
+
+== Do: put group membership in the token
+
+. Open **Clients → spa → Client scopes → spa-dedicated → Configure a new
+  mapper** (or **Add mapper → By configuration**) and choose **Group
+  membership**.
+. Name it `groups`, set **Token Claim Name** to `groups`, leave **Full group
+  path** **On**, turn **Add to access token** **On**, turn **Add to ID token**
+  **Off**, and save.
+. Open **Clients → spa → Client scopes → Evaluate**, pick `manager`, and open
+  **Generated access token**. The token has `"groups": ["/order-managers"]`
+  next to `realm_access.roles`.
+
+== Break it: a membership change and a live token
+
+. Stay signed in to the SPA as `manager`. In another browser window, sign in
+  as `reader` (a private window keeps the two sessions apart).
+. In Keycloak, add `reader` to `order-managers`.
+. **Predict:** will the reader's next order, in the session that is already
+  open, succeed? Write it down, then click **Create a sample order** as
+  `reader`.
++
+.What happened
+[%collapsible]
+====
+It is refused with 403, at first. The reader's access token was issued before
+the change and keeps its old roles until it expires. The SPA refreshes its
+token within five minutes, and the new token carries `manager`; from then on
+the reader can create orders. Group changes, like role changes in Module 6,
+take effect when a new token is issued.
+====
+. Remove `reader` from `order-managers` (**Users → reader → Groups**, select
+  the group, **Leave**). Sign the reader out of the SPA.
+
+Leave the manager in `order-managers`. The other modules and electives work
+with either assignment.
+
+== Explain
+
+. Orders checks the role `manager`. Why not check the group `/order-managers`
+  instead?
++
+.Answer
+[%collapsible]
+====
+Groups describe how the organization is arranged; roles describe what a person
+may do. Teams get renamed and reorganized, and a group path such as
+`/emea/sales/order-managers` changes when they do. If APIs check roles, those
+changes stay in Keycloak, where an administrator maps the new group to the
+same role. Code changes only when the permission model changes.
+====
+. When is a `groups` claim worth sending?
++
+.Answer
+[%collapsible]
+====
+When a receiving application makes its own group-based decisions, for example
+a packaged application that expects group names, or a policy that depends on
+membership (Elective D can use a Group policy). Send groups only to the
+clients that need them: each claim makes every token larger and tells every
+holder of the token about your organization.
+====
+. Your company keeps people in Active Directory groups. Where would those
+  groups go in this model?
++
+.Answer
+[%collapsible]
+====
+Keycloak's LDAP user federation reads users from the directory, and its group
+mapper imports the directory groups as Keycloak groups. You then map each
+imported group to roles, exactly as you mapped `order-managers` here. The APIs
+do not change.
+====
+
+== At your desk
+
+* Assign roles to groups, and people to groups. Assign roles directly only
+  for exceptions you can name.
+* Use composite roles for "this permission includes that one" (as `manager`
+  includes `user`), and groups for "these people".
+* Keep group claims out of access tokens unless a receiver needs them, and
+  then add the mapper only to that receiver's client.
+* Membership changes apply at the next token. Short access-token lifetimes
+  bound that delay.

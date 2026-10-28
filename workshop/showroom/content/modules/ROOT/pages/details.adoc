@@ -16,7 +16,8 @@ OpenShift Console. Keep the password to yourself.
 |===
 
 Open both consoles in their own browser tabs. The OpenShift Console cannot
-be shown inside this guide's split view. In Module 2 you also create two
+be shown inside this guide's split view. The **Terminal** tab in the split view is a
+shell with `curl` and `jq`; only the electives use it. In Module 2 you also create two
 lab users, `reader` and `manager`, with passwords you choose. Write them down;
 you need them from Module 3 on.
 

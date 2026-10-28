@@ -24,6 +24,11 @@ tracing. You create and own your realm; nobody else can change it.
 |Breaks and questions | |30 min
 |===
 
+After the core path, five self-paced xref:electives.adoc[electives] cover
+groups, signing-key rotation, token introspection, Authorization Services,
+and tokens from other issuers, in about two and a half hours. Your environment
+stays available after the session so you can finish them.
+
 The times are estimates for a first run with people and will be adjusted after
 a pilot.
 

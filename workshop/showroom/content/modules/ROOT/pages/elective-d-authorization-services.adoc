@@ -1,0 +1,230 @@
+= Elective D: Authorization Services
+:navtitle: D. Authorization Services
+
+== Why it matters
+
+So far each API decides with roles from the token: `manager` may create
+orders. Real rules are often finer: *a manager may approve an order only for
+their own region, and only from a branch office*. That rule depends on an
+attribute of the user (their region) and on facts about the request that the
+token does not contain (where it came from). This is attribute-based access
+control (ABAC).
+
+Keycloak Authorization Services can hold such rules centrally. An API, the
+*resource server*, describes what it protects (resources and scopes), an
+administrator writes *policies*, and *permissions* combine them. The API asks
+Keycloak for a decision and can *push claims*, facts from the request or from
+other systems, for the policies to use. The component that collects those
+facts is a *Claim Information Point* (CIP).
+
+You will model order approval for Orders, test it in the console, and then ask
+Keycloak for decisions from the terminal, with and without pushed claims.
+
+Before you start, run the setup block from xref:electives.adoc#_the_terminal[Electives]
+in the **Terminal** tab.
+
+== Do: give the user an attribute
+
+. Open **Realm settings → User profile → Create attribute**. Set **Attribute
+  [Name]** to `region` and **Display name** to `Region`. Under **Who can
+  edit?** select **Admin** only, and click **Create**.
+. Open **Users → manager**, set **Region** to `north`, and save.
+. Put it in the SPA's tokens: open **Clients → spa → Client scopes →
+  spa-dedicated → Configure a new mapper** (or **Add mapper → By
+  configuration**), choose **User Attribute**, name it `region`, set **User
+  Attribute** to `region` and **Token Claim Name** to `region`, turn **Add to
+  access token** **On** and **Add to ID token** **Off**, and save.
+
+== Do: describe what Orders protects
+
+. Open **Clients → orders-api**. Under **Capability config**, turn
+  **Authorization** **On** and click **Save**. An **Authorization** tab
+  appears. Keycloak creates a sample *Default Resource*, *Default Policy*, and
+  *Default Permission*; leave them, they cover a different resource.
+. On **Authorization → Scopes**, click **Create authorization scope** twice:
+  `order:read` and `order:approve`.
+. On **Authorization → Resources**, click **Create resource**: name `order`,
+  **Display name** `Order`, **Resource type** `urn:orders-api:order`, **URIs**
+  `/orders/*`, and **Authorization scopes** `order:read` and `order:approve`.
+  Save.
+
+== Do: write the policies
+
+On **Authorization → Policies**, click **Create policy** for each row. Leave
+**Logic** **Positive**.
+
+[cols="1,1,3",options="header"]
+|===
+|Type |Name |Settings
+|Role |`is-manager` |Realm role `manager`
+|Role |`is-user` |Realm role `user`
+|Regex |`region-north` |**Target claim** `region`, **Regex pattern** `^north$`
+|Regex |`from-branch` |**Target claim** `channel`, **Regex pattern** `^branch$`, **Target Context Attributes** **On**
+|===
+
+`region-north` reads a claim from the user's token. `from-branch` reads a
+*context attribute*: a claim pushed with the request, not one in the token.
+
+== Do: combine them into permissions
+
+On **Authorization → Permissions**, choose **Create permission → Create
+scope-based permission** for each:
+
+[cols="1,1,2,1",options="header"]
+|===
+|Name |Resource and scope |Policies |Decision strategy
+|`read-order` |`order`, `order:read` |`is-user` |Unanimous
+|`approve-order` |`order`, `order:approve` |`is-manager`, `region-north`, `from-branch` |Unanimous
+|===
+
+*Unanimous* means every policy must grant.
+
+== See it: the Evaluate tab
+
+. Open **Authorization → Evaluate**. Select client `spa` and user `manager`.
+  Under **Resources and Authorization scopes**, select resource `order` and
+  scope `order:approve`. Click **Evaluate**.
+. **Predict:** permit or deny? Write it down, then read the result. Expand it
+  to see how each policy voted.
++
+.What happened
+[%collapsible]
+====
+Deny. `is-manager` and `region-north` grant, but `from-branch` has nothing to
+match: no `channel` was provided.
+====
+. Click **Back**. Under **Contextual Information**, add a contextual attribute
+  with key `channel` and value `branch`, and evaluate again: **Permit**.
+. Evaluate the same request for user `reader`, and for the manager with
+  **Region** changed to `south`. Both are denied, by different policies. Set
+  the manager's region back to `north`.
+
+== Do: ask Keycloak for a decision
+
+An API asks with the *UMA* grant (User-Managed Access, the protocol behind
+Authorization Services) at the token endpoint. `response_mode=decision`
+returns only the verdict.
+
+. In the link:{spa_url}[SPA,window=_blank], sign out, sign in as `manager` (so
+  the token carries `region`), click **View orders**, copy the token, and run
+  `paste_token` in the terminal.
+. Ask as Orders, with its own credentials, on behalf of the user
+  (`subject_token`), without pushed claims:
++
+[source,bash]
+----
+decide() {
+  curl -s -u "orders-api:$ORDERS_SECRET" \
+    -d grant_type=urn:ietf:params:oauth:grant-type:uma-ticket \
+    -d audience=orders-api -d subject_token="$TOKEN" \
+    -d 'permission=order#order:approve' -d response_mode=decision "$@" \
+    "$ISSUER/protocol/openid-connect/token"; echo
+}
+decide
+----
++
+Keycloak answers with an `access_denied` error.
+. Push the `channel` claim. Pushed claims are a base64-encoded JSON object
+  whose values are arrays of strings:
++
+[source,bash]
+----
+CLAIMS=$(printf '{"channel":["branch"]}' | base64 -w0)
+decide -d claim_token="$CLAIMS" -d claim_token_format=urn:ietf:params:oauth:token-type:jwt
+----
++
+`{"result":true}`.
+
+== Break it: who may push claims
+
+Pushing `channel=branch` from your terminal made you look like a branch
+office. Could the browser do the same?
+
+. Send the same request as the SPA would: with the user's token as a bearer
+  credential and no client secret.
++
+[source,bash]
+----
+curl -s -H "Authorization: Bearer $TOKEN" \
+  -d grant_type=urn:ietf:params:oauth:grant-type:uma-ticket \
+  -d audience=orders-api -d 'permission=order#order:approve' -d response_mode=decision \
+  -d claim_token="$CLAIMS" -d claim_token_format=urn:ietf:params:oauth:token-type:jwt \
+  "$ISSUER/protocol/openid-connect/token"; echo
+----
+. **Predict**, then run it.
++
+.What happened
+[%collapsible]
+====
+Keycloak refuses: public clients are not allowed to send claims. A browser
+application cannot keep a secret, so anything it pushes could be forged.
+Only an authenticated, confidential client, normally the resource server
+itself, may push claims. That client is then responsible for their truth.
+====
+
+Orders' own role checks from Module 5 still apply; Authorization Services adds
+decisions on top of them. Leave the configuration in place; it does not
+change the tokens the other modules use.
+
+== Explain
+
+. Orders pushes `channel`. Where should Orders get that value from?
++
+.Answer
+[%collapsible]
+====
+From a source the user cannot set: the network zone a gateway or mutual TLS
+connection established, a device-management system, or Orders' own records.
+Never from a request header or body field the browser controls. A Claim
+Information Point is only as trustworthy as its inputs.
+====
+. Why put the `approve-order` rule in Keycloak instead of in Orders' code?
++
+.Answer
+[%collapsible]
+====
+The rule can be reviewed, tested with **Evaluate**, and changed by the people
+responsible for access policy, without a release of Orders, and several
+services can share it. The cost is a Keycloak call per decision (cacheable)
+and a policy model your team must learn. Coarse checks that rarely change,
+such as "needs `user`", are simpler as roles in the token.
+====
+. When would a JavaScript policy be needed, and how should it be deployed?
++
+.Answer
+[%collapsible]
+====
+When a rule compares values with logic that Role, Group, Time, Client, Client
+scope, User, Regex, and Aggregated policies cannot express, such as "the order
+amount is below the user's approval limit". Package JavaScript policies in a
+JAR deployed with Keycloak. Uploading scripts through the admin API is
+disabled by default, and should stay disabled.
+====
+
+== At your desk
+
+In an application, the Keycloak policy enforcer does what you did by hand: it
+maps request paths to resources and scopes, collects claims through its CIP,
+and asks Keycloak for the decision. A Quarkus service using
+`quarkus-keycloak-authorization` would configure it like this:
+
+[source,properties]
+----
+quarkus.keycloak.policy-enforcer.enable=true
+quarkus.keycloak.policy-enforcer.paths.approve.name=order
+quarkus.keycloak.policy-enforcer.paths.approve.paths=/orders/{id}/approve
+quarkus.keycloak.policy-enforcer.paths.approve.methods.post.method=POST
+quarkus.keycloak.policy-enforcer.paths.approve.methods.post.scopes=order:approve
+# The CIP: push a claim taken from a header that your gateway sets, never one the browser sets.
+quarkus.keycloak.policy-enforcer.paths.approve.claim-information-point.claims.channel={request.header['X-Network-Zone']}
+----
+
+Choosing where authorization lives:
+
+[cols="1,2",options="header"]
+|===
+|Rule |Where
+|"Needs the `user` role" |Role in the token, checked locally by the API
+|"Only the owner may change this order" |The API's own code, which knows the order's owner
+|"Managers in the order's region, from a branch, during business hours" |Authorization Services, or a policy engine you already run
+|===
