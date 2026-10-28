@@ -25,18 +25,18 @@ pages: **General settings** (client type OpenID Connect and the client ID),
 |`spa`
 |Client authentication **Off**; Standard flow **On**; Direct access grants
 **Off**; PKCE Method `S256`
-|Valid redirect URIs `{spa_url}/auth/popup-callback`; Valid post logout
-redirect URIs `{spa_url}/auth/logout-callback`; Web origins `{spa_url}`
+|Valid redirect URIs `pass:a[{spa_url}/auth/popup-callback]`; Valid post logout
+redirect URIs `pass:a[{spa_url}/auth/logout-callback]`; Web origins `pass:a[{spa_url}]`
 |`bff`
 |Client authentication **On**; Standard flow **On**; Direct access grants
 **Off**; PKCE Method `S256`
-|Valid redirect URIs `{bff_url}/login/oauth2/code/keycloak`; Valid post logout
-redirect URIs `{bff_url}/`
+|Valid redirect URIs `pass:a[{bff_url}/login/oauth2/code/keycloak]`; Valid post logout
+redirect URIs `pass:a[{bff_url}/]`
 |`proxy`
 |Client authentication **On**; Standard flow **On**; Direct access grants
 **Off**; PKCE Method `S256`
-|Valid redirect URIs `{proxy_url}/oauth2/callback`; Valid post logout redirect
-URIs `{proxy_url}/`
+|Valid redirect URIs `pass:a[{proxy_url}/oauth2/callback]`; Valid post logout redirect
+URIs `pass:a[{proxy_url}/]`
 |`orders-api`
 |Client authentication **On**; Standard flow **Off**; Direct access grants
 **Off**; Service accounts roles **On**; Standard Token Exchange **On**
@@ -66,11 +66,12 @@ Token Exchange turned on.
 
 . Open **Realm roles → Create role**, enter `user`, and save. Do the same for
   `manager`.
-. Open the `manager` role, choose **Action → Add associated roles**, filter by
-  realm roles, select `user`, and click **Assign**. `manager` is now a
+. Open the `manager` role, go to its **Associated roles** tab, click **Assign
+  role**, choose **Realm roles** from the dropdown, select `user`, and click
+  **Assign**. `manager` is now a
   composite role that includes `user`.
-. Open **Users → reader → Role mapping → Assign role**, filter by realm roles,
-  select `user`, and click **Assign**. For `manager`, assign `manager` (it
+. Open **Users → reader → Role mapping → Assign role**, choose **Realm roles**
+  from the dropdown, select `user`, and click **Assign**. For `manager`, assign `manager` (it
   includes `user`).
 +
 image::m03-role-mapping.png[Role mapping tab for the manager user]
@@ -80,8 +81,9 @@ image::m03-role-mapping.png[Role mapping tab for the manager user]
 
 == Do: give the Orders service account its role
 
-Open **Clients → orders-api → Service accounts roles → Assign role**, filter by
-clients, select `notifications-api` `notifier`, and click **Assign**. This is a
+Open **Clients → orders-api → Service accounts roles → Assign role**, choose
+**Client roles** from the dropdown, select `notifications-api` `notifier`, and
+click **Assign**. This is a
 machine role for the Orders workload, separate from the users' realm roles.
 
 image::m03-service-account-roles.png[Service accounts roles tab for orders-api]
@@ -93,11 +95,11 @@ For each of `spa`, `bff`, `proxy`, and `orders-api`:
 . Open **Clients →** _client_ **→ Client scopes →** _client_**-dedicated →
   Scope**.
 . Turn **Full scope allowed** **Off**.
-. Click **Assign role**, filter by realm roles, select `user` and `manager`, and
-  click **Assign**.
+. Click **Assign role**, choose **Realm roles** from the dropdown, select
+  `user` and `manager`, and click **Assign**.
 
-For `orders-api` only, also click **Assign role**, filter by clients, and assign
-`notifications-api` `notifier`. With full scope off, the Orders service-account
+For `orders-api` only, also click **Assign role**, choose **Client roles** from the
+dropdown, and assign `notifications-api` `notifier`. With full scope off, the Orders service-account
 token carries only the roles allowed here; without `notifier`, every manager
 write later fails with a 502.
 
@@ -111,7 +113,7 @@ image::m03-dedicated-scope.png[Scope tab of orders-api-dedicated with user, mana
 Create three client scopes, each with one Audience mapper:
 
 . Open **Client scopes → Create client scope**. Enter the name, set **Type** to
-  **None**, keep **Include in token scope** On, and save.
+  **None**, turn **Include in token scope** On (it starts Off), and save.
 . On its **Mappers** tab choose **Configure a new mapper → Audience**. Enter the
   scope name as the mapper name, select the **Included Client Audience**, turn
   **Add to access token** On and **Add to ID token** Off, and save.
@@ -147,11 +149,13 @@ Keycloak can show the token a client would receive. Open **Clients → spa →
 Client scopes → Evaluate**, select user `reader`, and open **Generated access
 token**. Confirm:
 
-* `iss` is `{issuer}`;
+* `iss` is `pass:a[{issuer}]`;
 * `aud` includes `orders-api` and not `inventory-api`;
 * `realm_access.roles` includes `user` but not `manager`.
 
 Repeat for user `manager`: `realm_access.roles` includes `manager` and `user`.
+After you change the user, open another token view and come back to
+**Generated access token** so it refreshes.
 This view is for your own lab users only; do not copy or share the token.
 
 image::m03-evaluate.png[Generated access token for reader on the spa client]

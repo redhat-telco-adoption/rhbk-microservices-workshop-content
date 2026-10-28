@@ -10,9 +10,14 @@ not expose passwords, client secrets, session cookies, or bearer tokens.
 == Do
 
 . Make one successful read and one denied write in your application copy.
-. In the OpenShift Console, open the `orders-api` pod logs and find both
-  requests by time. The denied write shows `decision` `deny` with status 403.
-  Tracing is off in this lab, so there is no trace to follow.
+. In **Observe → Traces**, find the denied `POST /orders` trace. It stops at
+  Orders with status 403 and never reaches Inventory or Notifications.
+. In **Observe → Logs**, search your namespace for `deny`. The Orders line shows
+  the decision, status 403, and the missing role, with no token or secret in
+  the log.
++
+image::m07-deny-log.png[Orders log line for the reader's denied write]
+
 . Write one sentence for each pattern describing where the browser session
   lives, how logout works, and the main operational dependency.
 . Write down how you would handle client lifetime, role ownership, redirect URI
@@ -39,6 +44,7 @@ skipped.
 
 == If something is wrong
 
-If logs or traces are unavailable, record that as a reservation dependency and
-finish the production review from the architecture and API responses. Never
-request cluster-wide logging access for this exercise.
+Logs and traces can take up to a minute to appear; refresh the search. If
+**Observe → Logs** or **Observe → Traces** is missing, ask the facilitator to
+check the shared logging and tracing stack. Never request cluster-wide logging
+access for this exercise.

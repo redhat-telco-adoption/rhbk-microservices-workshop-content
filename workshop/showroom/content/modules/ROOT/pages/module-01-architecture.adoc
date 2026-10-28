@@ -34,8 +34,8 @@ image::proxy-auth-flow.svg[Reverse proxy login and session flow]
 image::service-auth-flow.svg[Token exchange to Inventory and client credentials to Notifications]
 
 . Open the link:{openshift_console_url}[OpenShift Console,window=_blank] in a
-  new browser tab and choose the **sso** login option. Sign in with your
-  username and password from xref:details.adoc[]. Select your project
+  new browser tab and sign in through **sso** (choose it if several login
+  options are shown) with your username and password from xref:details.adoc[]. Select your project
   `{attendee_namespace}` and open **Workloads → Deployments**. You see seven
   Deployments: `frontend`, `bff`, `proxy`, `proxy-redis`, `orders-api`,
   `inventory-api`, and `notifications-api`. Under **Networking → Routes** you

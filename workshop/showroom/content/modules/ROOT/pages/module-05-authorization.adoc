@@ -26,8 +26,9 @@ image::m05-spa-manager-created.png[SPA showing the manager's order created with 
 
 . Repeat the reader and manager checks through your
   link:{bff_url}[BFF,window=_blank] and link:{proxy_url}[proxy,window=_blank].
-  Sign out between users; signing out also ends your Keycloak session, so the
-  next sign-in asks for a username again.
+  The proxy has no **Sign in** button: opening it sends you straight to the
+  Keycloak sign-in page. Sign out between users; signing out also ends your
+  Keycloak session, so the next sign-in asks for a username again.
 
 == Check
 

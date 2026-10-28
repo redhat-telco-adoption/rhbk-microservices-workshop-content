@@ -20,23 +20,28 @@ downstream calls demonstrate two distinct grants:
   order**. The response shows the Inventory reservation (`reserved for
   manager`) and the accepted notification. This one request triggers both
   downstream calls.
-. In the OpenShift Console, keep your project selected and open **Workloads →
-  Pods**. Open the `orders-api` pod's **Logs** tab and use the search box to
-  find `/orders`. Health checks also write log lines, so search rather than
-  scroll. Note the `username`, `client_id` (the token's `azp`), `roles`, and
-  `decision` for your request.
+. In the OpenShift Console, open **Observe → Traces**, choose the `workshop`
+  Tempo instance and tenant, and search for service `orders-api`. Open the most
+  recent `POST /orders` trace. It shows one request crossing Orders, Inventory,
+  and Notifications, plus Orders' calls to Keycloak's token endpoint.
 +
-image::m06-orders-log.png[Orders pod log line for the manager's order]
+image::m06-trace.png[Trace of a manager order across Orders, Inventory, and Notifications]
 
-. Open the `inventory-api` pod's logs and find the matching `/inventory/reserve`
-  line by time. The `username` is still `manager`, but `client_id` is
-  `orders-api`: Orders exchanged the user's token for an Inventory token, so
-  the user identity is kept and the caller is Orders.
-. Open the `notifications-api` pod's logs and find the matching `/notify` line.
-  The `username` is `service-account-orders-api` with role `notifier`: Orders
-  used its own client credentials, so no end-user identity is involved.
-. Tracing is off in this lab, so `trace_id` is empty; match related lines by
-  their time.
+. Copy the trace ID from the trace page. Open **Observe → Logs**, keep your
+  namespace selected, and search for that trace ID. You see the matching log
+  lines from all three APIs. Compare their `username`, `client_id` (the token's
+  `azp`), `roles`, and `decision` fields:
++
+* **Orders:** `username` `manager`, `client_id` `spa` (or `bff`/`proxy`), roles
+  `manager` and `user`, decision `allow`.
+* **Inventory:** `username` still `manager`, but `client_id` `orders-api`.
+  Orders exchanged the user's token for an Inventory token, so the user
+  identity is kept and the caller is Orders.
+* **Notifications:** `username` `service-account-orders-api` with role
+  `notifier`. Orders used its own client credentials, so no end-user identity
+  is involved.
++
+image::m06-logs.png[Logs for one trace ID across the three APIs]
 
 == Check
 

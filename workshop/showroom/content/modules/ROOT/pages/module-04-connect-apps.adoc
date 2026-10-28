@@ -11,8 +11,8 @@ No source edit or rebuild is needed for this activity.
 == Do
 
 . Open the link:{openshift_console_url}[OpenShift Console,window=_blank],
-  choose the **sso** login option, and sign in with your username and password
-  from xref:details.adoc[]. Select your project `{attendee_namespace}`.
+  and sign in through **sso** with your username and password from
+  xref:details.adoc[]. Select your project `{attendee_namespace}`.
 . Open **Workloads → ConfigMaps** and check the fields below. The reservation
   sets them to your realm already; correct any value that differs. Keep service
   URLs and other values unchanged. Each row names the workload that reads it.
@@ -22,7 +22,7 @@ No source edit or rebuild is needed for this activity.
 |ConfigMap |Fields to set |Value |Consuming workload
 |`frontend-runtime-config` |In `config.json`, set `issuer` and `spaClientId` |Your exact realm issuer; `spa` |frontend
 |`bff-config` |`OIDC_ISSUER` |Your exact realm issuer; the Keycloak client ID remains `bff` |bff
-|`proxy-config` |`issuer`, `redirect-url` |Your exact realm issuer; `{proxy_url}/oauth2/callback` |proxy
+|`proxy-config` |`issuer`, `redirect-url` |Your exact realm issuer; `pass:a[{proxy_url}/oauth2/callback]` |proxy
 |`orders-api-config` |`ISSUER`, `WORKSHOP_ISSUER`, `SPA_ORIGIN` |Your exact realm issuer for both issuer fields; exact SPA origin |orders-api
 |`inventory-api-config` |`ISSUER` |Your exact realm issuer |inventory-api
 |`notifications-api-config` |`ISSUER` |Your exact realm issuer |notifications-api

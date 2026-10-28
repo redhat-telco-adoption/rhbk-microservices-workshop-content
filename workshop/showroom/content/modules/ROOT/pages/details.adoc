@@ -12,7 +12,7 @@ OpenShift Console. Keep the password to yourself.
 |Username |`{user}`
 |Password |`{password}`
 |Keycloak administration console |link:{keycloak_origin}/admin/master/console/[{keycloak_origin}/admin/master/console/,window=_blank]
-|OpenShift Console |link:{openshift_console_url}[{openshift_console_url},window=_blank] (choose the **sso** login option)
+|OpenShift Console |link:{openshift_console_url}[{openshift_console_url},window=_blank] (sign in through **sso**)
 |===
 
 Open both consoles in their own browser tabs. In Module 2 you also create two
@@ -27,7 +27,7 @@ you need them in Modules 4–6.
 |Attendee ID |{attendee_id}
 |OpenShift namespace |{attendee_namespace}
 |Realm name (you create it in Module 2) |{realm_name}
-|Expected issuer |{issuer}
+|Expected issuer |`pass:a[{issuer}]`
 |SPA URL |link:{spa_url}[{spa_url},window=_blank]
 |BFF URL |link:{bff_url}[{bff_url},window=_blank]
 |Proxy URL |link:{proxy_url}[{proxy_url},window=_blank]
@@ -45,6 +45,9 @@ or reuse another attendee's realm.
   already deployed. The BFF and proxy wait for the realm you create.
 * ConfigMaps already set to your realm's issuer, and three Secrets that hold a
   placeholder until you paste the client secrets in Module 4.
+* Cluster logging and distributed tracing. Your applications send logs and
+  traces automatically; you read them in the OpenShift Console under
+  **Observe → Logs** and **Observe → Traces**, limited to your own namespace.
 
 == Stop conditions
 

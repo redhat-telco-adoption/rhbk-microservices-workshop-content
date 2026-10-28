@@ -15,7 +15,7 @@ between learners.
 |4. Connect applications |Check runtime settings and copy client secrets |50 min
 |5. Authorization decisions |Verify allowed and denied reader/manager actions |35 min
 |6. Login patterns and service identities |Compare SPA, BFF, proxy, token exchange, and client credentials |45 min
-|7. Observability and production tradeoffs |Follow a request in the logs and make a production review |30 min
+|7. Observability and production tradeoffs |Follow a request in traces and logs, then make a production review |30 min
 |Breaks and troubleshooting |Facilitated buffer |20–45 min
 |===
 

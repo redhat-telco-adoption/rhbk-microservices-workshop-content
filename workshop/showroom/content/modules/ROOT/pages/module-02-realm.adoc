@@ -14,15 +14,14 @@ Keycloak service.
   link:{keycloak_origin}/admin/master/console/[Keycloak administration console,window=_blank]
   and sign in with your username and password from xref:details.adoc[]. This
   account lives in the Keycloak `master` realm; keep its password unchanged.
-. Open the realm list at the top of the left menu and choose **Manage realms →
-  Create realm**. Enter the realm name `{realm_name}`, keep **Enabled** on,
+. In the left menu choose **Manage realms**, then **Create realm**. Enter the realm name `{realm_name}`, keep **Enabled** on,
   and click **Create**.
 +
 image::m02-create-realm.png[Create realm form]
 
 . Keycloak switches to your new realm. Open **Realm settings** and, next to
   **Endpoints**, click **OpenID Endpoint Configuration**. Confirm that
-  `issuer` is exactly `{issuer}`.
+  `issuer` is exactly `pass:a[{issuer}]`.
 . Open **Users → Create new user** (or **Add user**). Enter username `reader`,
   email `reader@example.invalid`, first name `Reader`, and last name `Lab`, then
   click **Create**. Keycloak requires the first and last name; without them
@@ -50,7 +49,7 @@ synthetic email, and that realm administration works inside your realm. The prox
 unverified synthetic email claims. The role check happens after the roles are
 created in Module 3.
 
-**Expected:** your issuer is `{keycloak_origin}/realms/{realm_name}` and you
+**Expected:** your issuer is `pass:a[{keycloak_origin}/realms/{realm_name}]` and you
 cannot administer another attendee's realm or change server-wide settings.
 
 == If something is wrong
