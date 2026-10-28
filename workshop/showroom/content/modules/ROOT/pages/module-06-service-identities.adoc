@@ -20,10 +20,11 @@ downstream calls demonstrate two distinct grants:
   order**. The response shows the Inventory reservation (`reserved for
   manager`) and the accepted notification. This one request triggers both
   downstream calls.
-. In the OpenShift Console, open **Observe → Traces**, choose the `workshop`
-  Tempo instance and tenant, and search for service `orders-api`. Set the time range to the last 15 minutes
-  so your newest traces are in the list, and open the most recent
-  `POST /orders` trace. It shows one request crossing Orders, Inventory,
+. Open link:{openshift_console_url}/observe/traces?namespace=tracing&name=workshop&tenant=workshop&start=15m&limit=100&q=%7B+resource.k8s.namespace.name+%3D+%22{attendee_namespace}%22+%26%26+resource.service.name+%3D+%22orders-api%22+%7D[your Orders traces,window=_blank] in the OpenShift Console
+  (**Observe → Traces**, filtered to your namespace and `orders-api`). The
+  trace store is shared by all attendees; this query shows only yours, and
+  spans from other namespaces have their details hidden. Open the most recent
+  `orders-api: POST /orders` trace. It shows one request crossing Orders, Inventory,
   and Notifications, plus Orders' calls to Keycloak's token endpoint.
 +
 image::m06-trace.png[Trace of a manager order across Orders, Inventory, and Notifications]

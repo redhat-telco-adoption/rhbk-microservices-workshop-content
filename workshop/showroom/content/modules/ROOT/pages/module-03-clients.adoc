@@ -68,7 +68,8 @@ Token Exchange turned on.
   `manager`.
 . Open the `manager` role, go to its **Associated roles** tab, click **Assign
   role**, choose **Realm roles** from the dropdown, select `user`, and click
-  **Assign**. `manager` is now a
+  **Assign**. If the dialog says no roles exist, it is still showing client
+  roles; switch the dropdown to **Realm roles**. `manager` is now a
   composite role that includes `user`.
 . Open **Users → reader → Role mapping → Assign role**, choose **Realm roles**
   from the dropdown, select `user`, and click **Assign**. For `manager`, assign `manager` (it
@@ -77,7 +78,8 @@ Token Exchange turned on.
 image::m03-role-mapping.png[Role mapping tab for the manager user]
 
 **Check:** the reader's **Role mapping** tab shows `user`; the manager's shows
-`manager` (and `user` when you clear **Hide inherited roles**).
+`manager` (and `user` when you clear **Hide inherited roles**). Both also show
+Keycloak's own `default-roles-{realm_name}`.
 
 == Do: give the Orders service account its role
 

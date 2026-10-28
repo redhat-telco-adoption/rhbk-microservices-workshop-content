@@ -10,7 +10,8 @@ not expose passwords, client secrets, session cookies, or bearer tokens.
 == Do
 
 . Make one successful read and one denied write in your application copy.
-. In **Observe → Traces**, find the denied `POST /orders` trace. It stops at
+. Open link:{openshift_console_url}/observe/traces?namespace=tracing&name=workshop&tenant=workshop&start=15m&limit=100&q=%7B+resource.k8s.namespace.name+%3D+%22{attendee_namespace}%22+%26%26+resource.service.name+%3D+%22orders-api%22+%7D[your Orders traces,window=_blank] again and find the
+  denied `POST /orders` trace. It stops at
   Orders with status 403 and never reaches Inventory or Notifications.
 . In **Observe → Logs**, search your namespace for `deny`. The Orders line shows
   `decision` `deny`, status 403, and `reason` `missing_role`, with no token or

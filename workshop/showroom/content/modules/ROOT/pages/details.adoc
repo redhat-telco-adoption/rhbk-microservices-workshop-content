@@ -56,5 +56,5 @@ to you, the realm name is already owned by someone else, an app URL belongs to
 another attendee, or the Keycloak UI offers server-wide administration. Do not
 try to fix shared cluster or Keycloak settings yourself.
 
-The legacy API activity is optional ({legacy-status}). Skipping it does not
-prevent completion of the main workshop.
+Legacy API activity: {legacy-status} Skipping it does not prevent completion
+of the main workshop.
