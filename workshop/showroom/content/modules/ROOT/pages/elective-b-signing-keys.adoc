@@ -84,7 +84,8 @@ published.
   and save. This key signs with `ES256`.
 . Open **Clients → spa → Advanced → Fine grain OpenID Connect
   configuration**, set **Access token signature algorithm** to `ES256`, and
-  click **Save** in that section.
+  click the **Save** button directly below that section (the tab has one
+  per section).
 . **Predict:** the token is properly signed, and the key is in the JWKS. What
   will **View orders** return? Write it down, then sign out of the SPA, sign
   in as `manager`, and click **View orders**.
@@ -100,7 +101,8 @@ switch Keycloak.
 ====
 . Restore it: set **Access token signature algorithm** for `spa` back to
   empty (the realm default, `RS256`), save, and sign in again. **View orders**
-  returns 200. Delete the `ec-p256` provider.
+  returns 200. Delete the `ec-p256` provider: **Realm settings → Keys →
+  Providers**, its row menu (⋮), **Delete**.
 
 == Explain
 

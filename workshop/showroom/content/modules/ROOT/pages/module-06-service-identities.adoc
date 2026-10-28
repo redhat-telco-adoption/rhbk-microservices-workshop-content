@@ -62,7 +62,9 @@ Check the response, then find out how far the request got.
   `{attendee_id}`, Service Name `orders-api`, Max traces 100, and the link's query for `POST /orders` spans; only you can
   read this tenant, though the list names others). If you open Traces from the
   menu instead of the link, set those values yourself: the Tenant starts on
-  `workshop`, which you cannot read. Open the newest `POST /orders` trace. It now contains an
+  `workshop`, which you cannot read. A trace can take a minute to appear:
+  check that the newest `POST /orders` trace started after your click, and
+  reload if it did not. Open it. It now contains an
   `inventory-api` span: the exchange worked. There is no `notifications-api`
   span.
 . Open **Observe → Logs**, search for `/inventory/reserve`, and click **Run

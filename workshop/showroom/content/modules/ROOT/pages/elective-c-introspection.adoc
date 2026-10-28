@@ -3,8 +3,8 @@
 
 == Why it matters
 
-In Module 7 you ended the reader's sessions, and Orders still accepted the
-reader's token. Orders validates tokens *locally*: it checks the signature
+When a user's sessions end, Orders keeps accepting the tokens they already
+hold (Module 7 shows this as an incident). Orders validates tokens *locally*: it checks the signature
 with cached public keys and never asks Keycloak whether the session still
 exists. That is fast and keeps working when Keycloak is briefly unreachable.
 
@@ -50,16 +50,22 @@ curl -s -u "orders-api:$ORDERS_SECRET" -d "token=$TOKEN" \
 .What happened
 [%collapsible]
 ====
-Orders still returns `200`. Introspection returns `{"active": false}` and
-nothing else. Keycloak knows the session is gone; Orders cannot know without
+Orders still returns `200`. Introspection returns only `{"active": false}`,
+so the other fields `jq` asked for print as `null`. Keycloak knows the session is gone; Orders cannot know without
 asking. If both commands fail, the token expired; start again from step 1.
 ====
 
 == Break it: who may ask
 
-. Run the introspection command with a wrong secret, for example
-  `-u "orders-api:wrong"`. Keycloak refuses with 401: only an authenticated
-  client may introspect.
+. Introspect with a wrong secret, printing only the status code:
++
+[source,bash]
+----
+curl -s -o /dev/null -w '%{http_code}\n' -u 'orders-api:wrong' -d "token=$TOKEN" \
+  "$ISSUER/protocol/openid-connect/token/introspect"
+----
++
+Keycloak refuses with `401`: only an authenticated client may introspect.
 . Now consider the answer from step 3. `orders-api` introspected a token that
   was issued to `spa`. In Keycloak, any confidential client of the realm can
   introspect any of the realm's tokens and learn whose they are.

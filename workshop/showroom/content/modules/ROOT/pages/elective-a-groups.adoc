@@ -19,7 +19,8 @@ group, and then decide whether APIs should see the group itself.
 . Open `order-managers` → **Role mapping → Assign role → Realm roles**, select
   `manager`, and click **Assign**.
 . Open **Users → manager → Role mapping**, select `manager`, and click
-  **Unassign**. Keep `user`.
+  **Unassign**. The manager now has no role of its own beyond Keycloak's
+  defaults.
 . Open **Users → manager → Groups → Join Group**, select `order-managers`, and
   click **Join**.
 . **Predict:** the manager no longer has `manager` assigned directly. Will the

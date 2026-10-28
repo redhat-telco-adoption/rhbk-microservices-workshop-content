@@ -29,11 +29,16 @@ in the **Terminal** tab.
   [Name]** to `region` and **Display name** to `Region`. Under **Who can
   edit?** select **Admin** only, and click **Create**.
 . Open **Users → manager**, set **Region** to `north`, and save.
-. Put it in the SPA's tokens: open **Clients → spa → Client scopes →
-  spa-dedicated → Configure a new mapper** (or **Add mapper → By
-  configuration**), choose **User Attribute**, name it `region`, set **User
-  Attribute** to `region` and **Token Claim Name** to `region`, turn **Add to
-  access token** **On** and **Add to ID token** **Off**, and save.
+. Put it in tokens with a shared client scope, so it reaches every token
+  Keycloak evaluates for this user. Open **Client scopes → Create client
+  scope**, name it `region`, set **Type** to **None**, and save. On its
+  **Mappers** tab choose **Configure a new mapper → User Attribute**, name it
+  `region`, set **User Attribute** to `region` and **Token Claim Name** to
+  `region`, turn **Add to access token** **On** and **Add to ID token**
+  **Off**, and save.
+. Add the scope to `spa` and to `orders-api`: open **Clients →** _client_ **→
+  Client scopes → Add client scope**, select `region`, and choose **Add →
+  Default**.
 
 == Do: describe what Orders protects
 
@@ -81,23 +86,23 @@ scope-based permission** for each:
 
 == See it: the Evaluate tab
 
-. Open **Authorization → Evaluate**. Select client `spa` and user `manager`.
-  Under **Resources and Authorization scopes**, select resource `order` and
-  scope `order:approve`. Click **Evaluate**.
-. **Predict:** permit or deny? Write it down, then read the result. Expand it
-  to see how each policy voted.
+. Open **Authorization → Evaluate**. Select user `manager` and, under
+  **Roles**, `manager` (the **Evaluate** button stays disabled until a role
+  is selected). Under the resources and scopes section, select resource
+  `order` and scope `order:approve`. Click **Evaluate**.
+. **Predict:** permit or deny? Write it down, then read the result. Expand
+  `approve-order` to see how each policy voted.
 +
 .What happened
 [%collapsible]
 ====
 Deny. `is-manager` and `region-north` grant, but `from-branch` has nothing to
-match: no `channel` was provided.
+match: no `channel` was provided. The Evaluate tab cannot push a custom claim
+such as `channel`, so you will supply it from the terminal next.
 ====
-. Click **Back**. Under **Contextual Information**, add a contextual attribute
-  with key `channel` and value `branch`, and evaluate again: **Permit**.
-. Evaluate the same request for user `reader`, and for the manager with
-  **Region** changed to `south`. Both are denied, by different policies. Set
-  the manager's region back to `north`.
+. Click **Back** and evaluate the same request for user `reader` with role
+  `user`. Now `is-manager` and `region-north` vote deny as well: the reader
+  has neither the role nor a region.
 
 == Do: ask Keycloak for a decision
 

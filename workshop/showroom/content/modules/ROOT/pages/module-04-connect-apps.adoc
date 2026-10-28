@@ -32,7 +32,8 @@ connect the BFF yourself.
   `spaClientId`: everything the SPA needs. No secret, because a public client
   has none.
 . Open `proxy-config` and `orders-api-config`. Match each value to a row of the
-  table above. `orders-api-config` has two issuer values: `ISSUER` for
+  table above; a ConfigMap may hold only some of the rows (neither holds a
+  client ID, for example). `orders-api-config` has two issuer values: `ISSUER` for
   checking incoming tokens and `WORKSHOP_ISSUER` for requesting its own tokens.
 
 == Do: copy the client secrets

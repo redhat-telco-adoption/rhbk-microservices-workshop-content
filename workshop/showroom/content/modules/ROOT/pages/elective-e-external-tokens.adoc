@@ -36,7 +36,9 @@ curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $TOKEN" "$ORD
 +
 The issuer ends in `/realms/master`, and Orders returns `401`. The signature
 is genuine, made by the same Keycloak server, but Orders trusts only your
-realm's issuer and keys.
+realm's issuer and keys. The token also lacks `orders-api` in `aud`, so Orders
+would refuse it twice over: a partner's token must be meant for your API as
+well as come from an issuer you trust.
 
 == Choose: five ways to accept a partner's token
 

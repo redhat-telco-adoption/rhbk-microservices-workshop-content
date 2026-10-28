@@ -123,7 +123,9 @@ switch users. If you open the BFF or proxy and Keycloak's sign-in page does not
 appear, you are already signed in as someone: sign out first. If **Sign out**
 shows Keycloak's "Do you want to log out?" page, click **Logout**. The BFF and
 proxy pages do not show who is signed in; the newest Orders log line's
-`username` and `client_id` tell you.
+`username` and `client_id` tell you. After you sign out of the proxy, close
+any tab left on Keycloak's sign-in page: a later sign-in in another tab can
+complete it and sign you in to the proxy as the wrong user.
 
 == Do: the BFF
 
@@ -168,7 +170,8 @@ The result is `403`, and Orders never sees the request.
   Keycloak's page appears at once because the whole app sits behind the
   proxy's sign-in.
 . In **Application → Cookies**, find `_oauth2_proxy` (HttpOnly). JavaScript
-  can read no cookies at all; **Where session data is stored** agrees.
+  can read no session cookie; **Where session data is stored** agrees. The
+  analytics cookies you may see hold no identity.
 . Send the same unprotected write from the **Console** as you did on the BFF.
   The proxy answers with its own `403 Forbidden` page before the request
   reaches Orders. The app's own button sends `X-Workshop-CSRF: 1`, which a
