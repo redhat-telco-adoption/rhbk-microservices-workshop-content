@@ -112,8 +112,8 @@ Ignore the `read-order` row: it is a different permission, for `order:read`.
 
 == Do: ask Keycloak for a decision
 
-An API asks with the *UMA* grant (User-Managed Access, the protocol behind
-Authorization Services) at the token endpoint. `response_mode=decision`
+An API asks with the User-Managed Access (UMA) grant, the protocol behind
+Authorization Services, at the token endpoint. `response_mode=decision`
 returns only the verdict.
 
 . In the link:{spa_url}[SPA,window=_blank], sign out, sign in as `manager` (so
@@ -210,7 +210,7 @@ such as "needs `user`", are simpler as roles in the token.
 When a rule compares values with logic that Role, Group, Time, Client, Client
 scope, User, Regex, and Aggregated policies cannot express, such as "the order
 amount is below the user's approval limit". Package JavaScript policies in a
-JAR deployed with Keycloak. Uploading scripts through the admin API is
+Java archive (JAR) deployed with Keycloak. Uploading scripts through the admin API is
 disabled by default, and should stay disabled.
 ====
 

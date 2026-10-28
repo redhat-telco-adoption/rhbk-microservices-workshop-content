@@ -1,0 +1,97 @@
+= Glossary
+:navtitle: Glossary
+
+Each acronym is also spelled out the first time the guide uses it. Terms in
+*italics* inside a definition have their own entry.
+
+== Acronyms
+
+[cols="1,2,4",options="header"]
+|===
+|Acronym |Stands for |Meaning in this workshop
+
+|**ABAC** |Attribute-based access control |Deciding access from attributes of the user, the resource, and the request (such as region or network), not only from roles. Elective D.
+|**AES** |Advanced Encryption Standard |A symmetric encryption algorithm. Keycloak keeps an AES key for its own internal use; it is never published.
+|**API** |Application programming interface |A service that other programs call over HTTP. Orders, Inventory, and Notifications are APIs.
+|**AWS** |Amazon Web Services |The cloud provider that hosts the optional Legacy API.
+|**BFF** |Backend for frontend |A server that signs users in for a browser application, keeps their tokens, and gives the browser only a session cookie.
+|**CDN** |Content delivery network |A service that serves static files, such as a website's pages and scripts, from servers close to the user.
+|**CIP** |Claim Information Point |The part of a policy enforcer that collects facts from a request or another system and *pushes* them as *claims* for policies to use. Elective D.
+|**CORS** |Cross-Origin Resource Sharing |Browser rules that decide whether JavaScript on one site may read responses from another. It is not an authorization check.
+|**CSP** |Content Security Policy |A response header that limits which scripts and resources a page may load, reducing the damage of XSS.
+|**CSRF** |Cross-site request forgery |An attack where another site makes the browser send a request with the user's cookies. The BFF and proxy block it on writes.
+|**DNS** |Domain Name System |The system that turns names such as `example.com` into network addresses.
+|**ES256** |ECDSA signature with SHA-256 |An elliptic-curve signature algorithm. Elective B uses it to show the APIs' algorithm allowlist.
+|**HMAC** |Hash-based message authentication code |A signature made with a shared secret key. Keycloak signs its internal tokens, such as refresh tokens, with an HMAC key (`HS512`).
+|**HTTP** |Hypertext Transfer Protocol |The protocol browsers and APIs use for requests and responses. HTTPS is HTTP over TLS.
+|**ID** |Identifier |A name or number that identifies something, as in client ID or trace ID. An *ID token* is a different thing; see Terms.
+|**IETF** |Internet Engineering Task Force |The body that publishes Internet standards, including OAuth, as RFCs.
+|**JAR** |Java archive |A packaged Java library or application file.
+|**JSON** |JavaScript Object Notation |A text format for structured data, used for tokens, API responses, and configuration.
+|**JWKS** |JSON Web Key Set |The list of a realm's public keys, published at its `jwks_uri`. APIs use it to check token signatures.
+|**JWT** |JSON Web Token |A signed token in three base64 parts separated by dots: header, payload, signature. Keycloak's access and ID tokens are JWTs.
+|**LDAP** |Lightweight Directory Access Protocol |The protocol for reading corporate directories such as Active Directory. Keycloak's user federation uses it.
+|**OIDC** |OpenID Connect |The sign-in layer on top of OAuth 2.0. It adds the *ID token* and standard user information.
+|**PKCE** |Proof Key for Code Exchange |A one-time secret the client creates for each sign-in, so a stolen authorization code cannot be redeemed. Every client in this lab requires it (method `S256`).
+|**PKI** |Public key infrastructure |An organization's system for issuing and managing certificates and keys.
+|**RFC** |Request for Comments |The numbered documents in which the IETF publishes Internet standards, such as RFC 7662 for token introspection.
+|**RHBK** |Red Hat build of Keycloak |Red Hat's supported distribution of Keycloak, the identity server in this lab.
+|**RS256** |RSA signature with SHA-256 |The algorithm Keycloak signs access tokens with by default. Every API in this lab accepts only `RS256`.
+|**RSA** |Rivest–Shamir–Adleman |A public-key algorithm used for signatures and encryption. `RS256` is an RSA signature with SHA-256.
+|**SHA** |Secure Hash Algorithm |A family of hash functions; SHA-256 is the one used in `RS256` and `ES256`.
+|**SPA** |Single-page application |A browser application that runs as JavaScript in one page. In the SPA pattern, the browser itself holds the tokens.
+|**SSO** |Single sign-on |Signing in once and using several applications without signing in again. Keycloak keeps an SSO session for this.
+|**TLS** |Transport Layer Security |Encryption for network connections, the "S" in HTTPS.
+|**UI** |User interface |The screens and buttons a person uses.
+|**UMA** |User-Managed Access |The protocol behind Keycloak Authorization Services, used to ask Keycloak for permission decisions. Elective D.
+|**URI** |Uniform resource identifier |A string that names a resource; a URL is one kind. Redirect URIs are where Keycloak may send users after sign-in.
+|**URL** |Uniform resource locator |A web address, such as your SPA's address.
+|**XSS** |Cross-site scripting |An attack that runs the attacker's script inside your page, where it can use anything the page can, including tokens in memory.
+|**YAML** |YAML Ain't Markup Language |A plain-text configuration format, used by Kubernetes and OpenShift resources.
+|===
+
+== Terms
+
+[cols="1,4",options="header"]
+|===
+|Term |Meaning in this workshop
+
+|**Access token** |The token an application sends to an API to call it. It names the user (`sub`), the intended APIs (`aud`), and the roles. Short-lived: five minutes here.
+|**Audience (`aud`)** |The claim listing the APIs a token is meant for. Each API rejects tokens that do not name it.
+|**Authorization code flow** |The sign-in flow where the browser signs in at Keycloak and returns with a one-time code, which the client redeems for tokens.
+|**Authorization Services** |Keycloak's optional policy engine: *resources*, *scopes*, *policies*, and *permissions* evaluated centrally. Elective D.
+|**Authorized party (`azp`)** |The claim naming the client a token was issued to.
+|**Bearer token** |A token that works for whoever presents it, like cash. That is why tokens must not leak.
+|**Claim** |One named value inside a token, such as `sub`, `aud`, or `realm_access.roles`.
+|**Client** |An application registered in Keycloak. *Public* clients (such as the SPA) cannot keep a secret; *confidential* clients (such as the BFF) can.
+|**Client credentials** |A flow where a service signs in as itself with its own secret, with no user. Orders uses it to call Notifications.
+|**Client role** |A role that belongs to one client, such as `notifications-api:notifier`.
+|**Client scope** |Reusable token settings, such as an audience mapper, that you attach to clients as *Default* (always) or *Optional* (on request).
+|**Composite role** |A role that includes other roles. `manager` includes `user`.
+|**Context attribute** |A fact supplied with an authorization request rather than read from the token, such as a *pushed claim*.
+|**Group** |A set of users. Roles assigned to a group apply to every member. Elective A.
+|**ID token** |The token that tells the application who signed in. It is meant for the application, never sent to APIs.
+|**Introspection** |Asking Keycloak whether a token is still active, instead of checking it locally. Elective C.
+|**Issuer (`iss`)** |The realm that issued a token, as a URL. APIs accept tokens only from the issuer they trust.
+|**Key ID (`kid`)** |The token header value naming the key that signed it, so an API can pick the right key from the JWKS.
+|**Mapper** |A Keycloak setting that adds a claim to tokens, such as an audience or a user attribute.
+|**oauth2-proxy** |The open-source component that signs users in for the reverse-proxy pattern in this lab.
+|**OAuth 2.0** |The standard for delegated access with tokens that Keycloak implements. OIDC builds on it.
+|**Permission** |In Authorization Services, the rule that combines policies for a resource or scope, with a decision strategy.
+|**Policy** |In Authorization Services, one condition, such as "has role `manager`" or "claim `region` matches `north`".
+|**Pushed claim** |A claim a confidential client sends with an authorization request for policies to evaluate. Elective D.
+|**Realm** |An isolated set of users, roles, clients, and keys in Keycloak. You created one named after your attendee ID.
+|**Realm role** |A role defined for the whole realm, such as `user` and `manager`.
+|**Redis** |The in-memory store that holds the reverse proxy's sessions in this lab.
+|**Refresh token** |A longer-lived token a client uses to get new access tokens without another sign-in. It never goes to APIs.
+|**Resource** |In Authorization Services, the thing being protected, such as `order`.
+|**Reverse proxy** |A server in front of an application that handles sign-in for it. The application never sees the sign-in.
+|**Scope (authorization)** |In Authorization Services, an action on a resource, such as `order:approve`.
+|**Service account** |The identity a client uses when it signs in as itself with client credentials.
+|**Session** |The record that a user is signed in: in Keycloak, and separately in the BFF or proxy.
+|**Showroom** |The lab environment that shows this guide, with its Terminal and Console tabs.
+|**Signing key** |The realm's private key that signs tokens. APIs verify with the matching public key from the JWKS. Elective B.
+|**Subject (`sub`)** |The claim identifying the user (or service account) a token is about.
+|**Token exchange** |A flow where a service trades a user's token for a new one meant for another API, keeping the user's identity. Orders uses it to call Inventory.
+|**Trace** |The record of one request as it crosses services, shown in the OpenShift Console under Observe → Traces.
+|===

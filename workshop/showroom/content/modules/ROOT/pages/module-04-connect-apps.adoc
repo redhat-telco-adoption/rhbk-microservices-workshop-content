@@ -67,7 +67,7 @@ it can act as that application.
 == Break it: connect the BFF with an issuer that is almost right
 
 . Open **Workloads → ConfigMaps → bff-config → Actions → Edit ConfigMap**. It
-  opens a YAML editor; `OIDC_ISSUER` under `data` says `set-your-realm-issuer-here`. Replace it with your issuer
+  opens a YAML (a plain-text configuration format) editor; `OIDC_ISSUER` under `data` says `set-your-realm-issuer-here`. Replace it with your issuer
   **plus a trailing slash**, a common copy-and-paste slip:
   `pass:a[{issuer}/]`. Click **Save**.
 . Open **Workloads → Deployments → bff** and choose **Restart rollout** from

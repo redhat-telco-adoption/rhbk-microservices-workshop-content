@@ -143,7 +143,7 @@ first, and what would it take?
 
 == Optional: the Legacy API
 
-The Legacy API depends on AWS, DNS, and public TLS prerequisites. Use it only
+The Legacy API depends on Amazon Web Services (AWS), Domain Name System (DNS), and public Transport Layer Security (TLS) prerequisites. Use it only
 when your facilitator confirms it is available: confirm the audience is
 `legacy-api`, call the prepared endpoint, and compare its log line with the
 cluster APIs. Otherwise skip it.

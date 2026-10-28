@@ -8,7 +8,8 @@ hold (Module 7 shows this as an incident). Orders validates tokens *locally*: it
 with cached public keys and never asks Keycloak whether the session still
 exists. That is fast and keeps working when Keycloak is briefly unreachable.
 
-*Token introspection* (RFC 7662) is the alternative. The API sends the token
+*Token introspection*, defined in Request for Comments (RFC) 7662, is the
+alternative. The API sends the token
 to Keycloak's introspection endpoint and asks whether it is still active. You
 will compare the two answers for the same token, then decide when each one is
 the right choice.

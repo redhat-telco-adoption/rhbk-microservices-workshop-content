@@ -39,7 +39,7 @@ mixing them up causes real bugs.
 |*Refresh token* |Getting a new access token without asking the user to sign in again. Longer-lived. |Only Keycloak. The app sends it back to Keycloak and never to an API; it must be kept as carefully as a password.
 |===
 
-All three are JSON Web Tokens (JWTs): three base64 parts separated by dots,
+All three are JavaScript Object Notation (JSON) Web Tokens (JWTs): three base64 parts separated by dots,
 starting with `eyJ`, and signed by Keycloak. Signed means anyone can read
 them and nobody can change them; never put secrets in claims.
 
@@ -49,7 +49,7 @@ For each diagram, find two things: which component receives the browser's
 return from Keycloak (the *callback*), and where the tokens are kept
 afterwards.
 
-.SPA with PKCE: tokens stay in browser memory
+.SPA with Proof Key for Code Exchange (PKCE): tokens stay in browser memory
 image::spa-auth-flow.svg[SPA authorization code flow with PKCE]
 
 .BFF: tokens stay on the server

@@ -100,15 +100,15 @@ production:
 * **Secret rotation:** regenerate a client secret and roll it out without
   downtime, for example by updating the secret store and restarting the app.
 * **Session and token lifetimes:** realm settings for access-token lifespan,
-  SSO session idle and maximum, and refresh-token reuse. Shorter lifetimes
+  single sign-on (SSO) session idle and maximum, and refresh-token reuse. Shorter lifetimes
   limit stolen tokens; longer ones reduce Keycloak load.
 * **Multi-factor authentication and identity brokering**, configured in
   Keycloak's authentication flows and identity providers.
 
 == Learn more
 
-* OAuth 2.0 for Browser-Based Applications (IETF draft): the SPA, BFF, and
-  proxy patterns in depth.
+* OAuth 2.0 for Browser-Based Applications, a draft from the Internet
+  Engineering Task Force (IETF): the SPA, BFF, and proxy patterns in depth.
 * OAuth 2.0 Security Best Current Practice (RFC 9700).
 * OAuth 2.0 Token Exchange (RFC 8693).
 * Red Hat build of Keycloak documentation: *Server Administration Guide*,

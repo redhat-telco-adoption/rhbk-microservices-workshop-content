@@ -29,7 +29,8 @@ in the **Terminal** tab.
 curl -s "$ISSUER/protocol/openid-connect/certs" | jq '.keys[] | {kid, alg, use}'
 ----
 +
-Only asymmetric public keys appear. The HMAC and AES keys are secrets and are
+Only asymmetric public keys appear. The HMAC (hash-based message
+authentication code) and AES (Advanced Encryption Standard) keys are secrets and are
 never published.
 . Look at the header of a fresh token:
 +
@@ -87,7 +88,7 @@ published.
 
 . Open **Realm settings → Keys → Providers → Add provider →
   ecdsa-generated**. Name it `ec-p256`, set **Elliptic Curve** to `P-256`,
-  and save. This key signs with `ES256`.
+  and save. This key signs with `ES256`, an elliptic-curve signature algorithm.
 . Open **Clients → spa → Advanced → Fine grain OpenID Connect
   configuration**, set **Access token signature algorithm** to `ES256`, and
   click the **Save** button directly below that section (the tab has one
@@ -153,7 +154,7 @@ trusts the realm.
 * Rotate on a schedule your security policy sets: add a new key with a
   higher priority, make the old one passive, and disable it after the longest
   token lifetime it might have signed.
-* For keys from your own PKI or a hardware security module, Keycloak's
+* For keys from your own public key infrastructure (PKI) or a hardware security module, Keycloak's
   `java-keystore` and `rsa` (imported) providers use your key material instead
   of generating it.
 * Pin the accepted algorithms in every API. The APIs in this lab do it in one

@@ -3,7 +3,7 @@
 
 Welcome to this hands-on lab. You will secure a small order system from an
 empty Keycloak realm to a working, observable application: three ways to sign
-users in to a browser app, an API that makes its own access decisions, and two
+users in to a browser app, an application programming interface (API) that makes its own access decisions, and two
 service-to-service calls with different identities.
 
 You will not only follow steps. Each module asks you to predict what will
@@ -17,7 +17,7 @@ By the end of the lab you can:
 
 * choose between a browser single-page app (SPA), a backend-for-frontend (BFF),
   and a reverse proxy for a new application, and explain the tradeoff;
-* register OIDC clients with the settings that matter and say why each one is
+* register OpenID Connect (OIDC) clients with the settings that matter and say why each one is
   set the way it is;
 * connect an application to Keycloak with three or four configuration values;
 * list the checks an API must make on every token, and find them in Java,
@@ -48,7 +48,7 @@ Answers are hidden behind a click so you can try first.
 
 . Open xref:overview.adoc[] for the modules and timing.
 . Open xref:details.adoc[] for your username, password, console links, and
-  application URLs. Everything you need is on that page.
+  application URLs (uniform resource locators: web addresses). Everything you need is on that page.
 . Keep paper or a text file handy for your predictions.
 
 The BFF and proxy show **503** or an error page until you create your realm and

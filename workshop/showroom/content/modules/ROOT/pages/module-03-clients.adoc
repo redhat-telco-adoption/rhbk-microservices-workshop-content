@@ -7,7 +7,7 @@ A *client* is Keycloak's record of an application: how it may sign users in,
 where Keycloak may send the browser back to, and what goes into its tokens.
 Three settings carry most of the security:
 
-* **Redirect URIs.** After sign-in, Keycloak sends a one-time code to the
+* **Redirect URIs (uniform resource identifiers).** After sign-in, Keycloak sends a one-time code to the
   redirect URI. If an attacker can choose that address, they receive the code
   and can turn it into tokens. Exact URIs close that door.
 * **Audience (`aud`).** A token says which APIs may accept it. Without it, a
@@ -54,7 +54,7 @@ Leave anything not listed at its default.
 |PKCE Method |`S256` |Requires a fresh proof with every code exchange, so a stolen code cannot be redeemed.
 |Valid redirect URIs |`pass:a[{spa_url}/auth/popup-callback]` |The only address Keycloak may send the code to. No wildcards.
 |Valid post logout redirect URIs |`pass:a[{spa_url}/auth/logout-callback]` |Prevents sign-out from being used to redirect users to an attacker's site.
-|Web origins |`pass:a[{spa_url}]` |Lets this one origin call Keycloak's token endpoint from JavaScript (CORS).
+|Web origins |`pass:a[{spa_url}]` |Lets this one origin call Keycloak's token endpoint from JavaScript, under Cross-Origin Resource Sharing (CORS).
 |===
 
 .Capability config for `spa`

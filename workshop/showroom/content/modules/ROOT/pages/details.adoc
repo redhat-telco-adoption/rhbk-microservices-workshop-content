@@ -27,7 +27,7 @@ you need them from Module 3 on.
 [cols="1,2",options="header"]
 |===
 |Value |Provided value
-|Attendee ID |{attendee_id}
+|Attendee identifier (ID) |{attendee_id}
 |OpenShift namespace |{attendee_namespace}
 |Realm name (you create it in Module 2) |{realm_name}
 |Expected issuer |`pass:a[{issuer}]`

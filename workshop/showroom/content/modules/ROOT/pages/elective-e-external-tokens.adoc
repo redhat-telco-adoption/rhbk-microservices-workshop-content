@@ -65,7 +65,7 @@ place.
 |The partner, or your gateway, sends the partner token to your realm's token
 endpoint and receives a token from your realm.
 |Yes, if the partner calls it. No, if your gateway calls it from inside.
-|You need tokens from your realm downstream. In RHBK 26.4, exchanging an
+|You need tokens from your realm downstream. In Red Hat build of Keycloak (RHBK) 26.4, exchanging an
 *external* token is a preview feature, not supported for production; check
 the current release before relying on it.
 

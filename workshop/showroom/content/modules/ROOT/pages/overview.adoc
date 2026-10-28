@@ -2,7 +2,7 @@
 :navtitle: Overview
 
 This workshop assumes you have used a web application with a login and know
-what an HTTP request and a container are. You do not need to know OAuth or
+what an HTTP (Hypertext Transfer Protocol) request and a container are. You do not need to know OAuth or
 OpenID Connect (OIDC) in advance; each module explains what it uses.
 
 The facilitator provides a shared Keycloak server, one OpenShift namespace per
@@ -16,7 +16,7 @@ tracing. You create and own your realm; nobody else can change it.
 |2. A realm is a trust boundary |Create your realm and users; read the documents every app trusts |25 min
 |3. Clients, roles, and audiences |Register the browser-facing clients and see each setting change the token |50 min
 |4. Connect the applications |Connect the BFF yourself, break it once, and learn the values every app needs |30 min
-|5. Prove where authorization happens |Use the browser's own tools to find the token, bypass the UI, and trigger 401, 403, and CSRF denials |40 min
+|5. Prove where authorization happens |Use the browser's own tools to find the token, bypass the user interface (UI), and trigger 401, 403, and cross-site request forgery (CSRF) denials |40 min
 |6. Service-to-service identities |Give Orders its own identities and debug each missing piece with traces and logs |45 min
 |7. Operate it |Work through three incidents and check your Module 1 predictions |30 min
 |8. Capstone |Choose a sign-in pattern for three applications, then design a client from a written requirement, with no click-path |35 min
@@ -28,6 +28,9 @@ After the core path, five self-paced xref:electives.adoc[electives] cover
 groups, signing-key rotation, token introspection, Authorization Services,
 and tokens from other issuers, in about two and a half hours. Your environment
 stays available after the session so you can finish them.
+
+The xref:glossary.adoc[Glossary] explains every acronym and technical term
+the guide uses.
 
 The times are estimates for a first run with people and will be adjusted after
 a pilot.

@@ -108,7 +108,7 @@ holder of the token about your organization.
 .Answer
 [%collapsible]
 ====
-Keycloak's LDAP user federation reads users from the directory, and its group
+Keycloak's Lightweight Directory Access Protocol (LDAP) user federation reads users from the directory, and its group
 mapper imports the directory groups as Keycloak groups. You then map each
 imported group to roles, exactly as you mapped `order-managers` here. The APIs
 do not change.

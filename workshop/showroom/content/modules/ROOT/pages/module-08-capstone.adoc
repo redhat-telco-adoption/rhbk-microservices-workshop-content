@@ -38,7 +38,7 @@ does.
 ====
 
 . **A public product catalogue with a favourites list.** A static site on a
-  CDN, no server of its own, calling your existing favourites API. The scripts
+  content delivery network (CDN), no server of its own, calling your existing favourites API. The scripts
   on the page are your own, built and reviewed in one repository.
 +
 .Reference answer

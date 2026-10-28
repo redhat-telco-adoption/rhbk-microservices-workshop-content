@@ -17,3 +17,4 @@
 ** xref:elective-e-external-tokens.adoc[E. External tokens]
 * xref:at-your-desk.adoc[At your desk]
 * xref:troubleshooting.adoc[Troubleshooting]
+* xref:glossary.adoc[Glossary]

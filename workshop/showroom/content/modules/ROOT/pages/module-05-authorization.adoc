@@ -239,7 +239,7 @@ realm's keys.
 Every API must make these checks on every request, in this order:
 
 . **Signature**, with keys from the realm's `jwks_uri`, allowing only the
-  expected algorithm (RS256 here).
+  expected algorithm (RS256 here, the signature algorithm Keycloak uses by default).
 . **Issuer** (`iss`) equals your realm's issuer exactly.
 . **Audience** (`aud`) includes this API.
 . **Expiry** (`exp`) is in the future, with a small clock tolerance.
