@@ -28,8 +28,9 @@ protect an application without changing its code. (Modules 1 and 5)
   exact URIs; full scope off; API audiences; secret in a vault, rotated.
 * **API:** confidential; no sign-in flows; turn on only the service-to-service
   flows it uses.
-* Never: wildcard redirect URIs, direct access grants, implicit flow, full
-  scope left on by default.
+* Never: wildcard redirect URIs, direct access grants, the implicit flow
+  (an older browser flow that returns tokens in the address bar), full scope
+  left on by default.
 * Keep realm configuration in version control (a realm export or a
   configuration tool) and review changes like code. (Module 3)
 

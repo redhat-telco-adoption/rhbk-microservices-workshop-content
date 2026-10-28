@@ -1,9 +1,61 @@
 = Module 8: Capstone
 :navtitle: 8. Capstone
 
-== The requirement
+There are no click-paths in this module. You have used everything it needs.
+Part 1 is a design discussion; Part 2 you build and the facilitator checks.
 
-There are no click-paths in this module. You have used every setting it needs.
+== Part 1: choose a sign-in pattern
+
+For each application, choose SPA, BFF, or reverse proxy, and write one
+sentence saying why. Name the main risk you accept and one control you would
+add. If you work with a neighbour, compare before opening the answers.
+
+. **A partner portal for invoices.** A new web application with a Java
+  backend team, showing customers' invoices and payment details.
++
+.Reference answer
+[%collapsible]
+====
+**BFF.** It handles sensitive data and the team has a server tier, so keep
+tokens off the browser entirely. The accepted risk is CSRF on
+cookie-authenticated writes; the control is a CSRF token on every write, as
+the BFF in this lab does.
+====
+
+. **A ten-year-old internal reporting tool.** A vendor product you cannot
+  modify, which today has no login and is reachable only on the office
+  network. It must now be reachable remotely by staff only.
++
+.Reference answer
+[%collapsible]
+====
+**Reverse proxy.** You cannot change the application, so sign-in has to happen
+in front of it. The accepted risk is that the proxy becomes a dependency and a
+single point of failure; the controls are running it highly available and
+making sure the application is reachable only through the proxy. If the tool
+has its own write actions, add a CSRF rule at the proxy, as this lab's gateway
+does.
+====
+
+. **A public product catalogue with a favourites list.** A static site on a
+  CDN, no server of its own, calling your existing favourites API. The scripts
+  on the page are your own, built and reviewed in one repository.
++
+.Reference answer
+[%collapsible]
+====
+**SPA with PKCE.** There is no server tier to run a BFF, the data is
+low-sensitivity, and you control every script on the page. The accepted risk
+is that XSS could steal an access token; the controls are short token
+lifetimes, tokens kept only in memory, a strict Content Security Policy, and an
+API that checks audience and roles. If the site later loads third-party
+scripts or handles sensitive data, reconsider a BFF.
+====
+
+There is rarely a single right answer. What matters is that your reason names
+where the tokens live and what that exposes, as you saw in Module 5.
+
+== Part 2: register a client from a requirement
 
 The reporting team is building **reports**, a server-side web application at
 `pass:a[https://reports.example.invalid]`. It lets signed-in staff read orders. Register it
@@ -18,18 +70,33 @@ in your realm `{realm_name}` so that:
   `pass:a[https://reports.example.invalid/]`.
 . The application never handles a user's password and never acts on its own
   behalf.
+. Sign-in codes are protected against interception, as for every client in
+  this lab.
 
 Name the client `reports`.
 
-== Prove it
+=== Prove it
 
 Use **Client scopes → Evaluate** on your new client to generate the access
 token for `manager`. Before you look, write down what `aud` and
 `realm_access.roles` should be. If the token does not match your prediction,
 work out which setting causes the difference.
 
-When you are done, tell the facilitator. They run a check that reads your
-client's settings and generates the same token.
+=== Pass criteria
+
+When you are done, tell the facilitator. Their check reads your client's
+settings and generates the manager's token. It passes when:
+
+* the client `reports` exists and is confidential;
+* only the standard flow is on, with PKCE `S256`; direct access grants,
+  implicit flow, and service accounts are off;
+* the redirect URI and post-logout redirect URI are exactly the two addresses
+  in requirement 4;
+* full scope is off and the only role in its scope is the realm role `user`;
+* `orders-api-aud` is a default scope, and neither `inventory-api-aud` nor
+  `notifications-api-aud` is attached;
+* the manager's token has `aud` `orders-api` only and `realm_access.roles`
+  `["user"]` only.
 
 .Hints, if you are stuck
 [%collapsible]
@@ -49,7 +116,8 @@ client's settings and generates the same token.
 |===
 |Setting |Value |From requirement
 |Client authentication |On (confidential) |1: runs on a server and can keep a secret
-|Standard flow |On, with PKCE `S256` |1: users sign in through Keycloak
+|Standard flow |On |1: users sign in through Keycloak
+|PKCE Method |`S256` |6
 |Direct access grants |Off |5: never handles passwords
 |Service accounts roles |Off |5: never acts on its own behalf
 |Valid redirect URIs |`pass:a[https://reports.example.invalid/callback]` |4
@@ -62,4 +130,32 @@ The manager's token has `aud` `orders-api` and `realm_access.roles` `["user"]`.
 Orders accepts it for reads and returns 403 for writes. The manager still has
 the `manager` role; this client simply never receives it. That is least
 privilege at the client level.
+====
+
+=== Twist: the requirement changes
+
+Six months later, the reporting team asks for one new feature: managers may
+re-submit a failed order from the reports screen. Answer without changing
+your client (the facilitator's check expects it as built):
+
+. Which single Keycloak setting would make that possible, and what else
+  changes as a side effect?
+. Would you make that change, or propose something else? Why?
+
+.Reference answer
+[%collapsible]
+====
+. Adding the realm role `manager` to `reports-dedicated` → **Scope** would do
+  it: managers' tokens from `reports` would then carry `manager`, and Orders
+  would accept their writes. Nothing changes in Orders. The side effect is
+  that every manager's `reports` token can now create *any* order, not only
+  re-submit failed ones, so a stolen `reports` token is worth more than
+  before.
+. A reasonable answer is to push back on widening the client. Options: a
+  narrower API operation (for example `+POST /orders/{id}/resubmit+`) protected
+  by its own role such as `order-resubmitter`, added to the `reports` scope
+  instead of `manager`; or sending the user to the orders application, which
+  already holds that permission. Either keeps "reports can read" true for
+  everything else. The point is that a client's scope is a security boundary,
+  and widening it should be a design decision, not a quick fix.
 ====

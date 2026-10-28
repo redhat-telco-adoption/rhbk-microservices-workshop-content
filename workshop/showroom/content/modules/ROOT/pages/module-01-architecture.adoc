@@ -26,6 +26,23 @@ check your predictions with real evidence in Modules 5 and 7.
 * The **frontend** is one build deployed three times, once per sign-in
   pattern.
 
+== Three kinds of token
+
+A sign-in with OpenID Connect returns up to three tokens. Keep them apart;
+mixing them up causes real bugs.
+
+[cols="1,2,2",options="header"]
+|===
+|Token |What it is for |Who reads it
+|*Access token* |Calling APIs. Short-lived (five minutes here). |The APIs. To the app that holds it, it is an opaque string to pass along.
+|*ID token* |Telling the signing-in app who the user is: name, email, when they signed in. |Only the app that signed the user in. An API must never accept it.
+|*Refresh token* |Getting a new access token without asking the user to sign in again. Longer-lived. |Only Keycloak. The app sends it back to Keycloak and never to an API; it must be kept as carefully as a password.
+|===
+
+All three are JSON Web Tokens (JWTs): three base64 parts separated by dots,
+starting with `eyJ`, and signed by Keycloak. Signed means anyone can read
+them and nobody can change them; never put secrets in claims.
+
 == Do: study the three sign-in patterns
 
 For each diagram, find two things: which component receives the browser's

@@ -19,7 +19,7 @@ tracing. You create and own your realm; nobody else can change it.
 |5. Prove where authorization happens |Use the browser's own tools to find the token, bypass the UI, and trigger 401, 403, and CSRF denials |40 min
 |6. Service-to-service identities |Give Orders its own identities and debug each missing piece with traces and logs |45 min
 |7. Operate it |Work through three incidents and check your Module 1 predictions |30 min
-|8. Capstone |Design a client from a written requirement, with no click-path |25 min
+|8. Capstone |Choose a sign-in pattern for three applications, then design a client from a written requirement, with no click-path |35 min
 |At your desk |Checklists, decision guide, and code to take home |10 min
 |Breaks and questions | |30 min
 |===
