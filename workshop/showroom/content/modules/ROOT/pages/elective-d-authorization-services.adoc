@@ -84,6 +84,8 @@ scope-based permission** for each:
 
 *Unanimous* means every policy must grant.
 
+image::el-d-approve-permission.png[The approve-order permission with three policies and the Unanimous strategy]
+
 == See it: the Evaluate tab
 
 . Open **Authorization → Evaluate**. Select user `manager` and, under
@@ -99,6 +101,10 @@ scope-based permission** for each:
 Deny. `is-manager` and `region-north` grant, but `from-branch` has nothing to
 match: no `channel` was provided. The Evaluate tab cannot push a custom claim
 such as `channel`, so you will supply it from the terminal next.
+
+image::el-d-evaluate-votes.png[Evaluate result: approve-order denied, with region-north and is-manager voting PERMIT and from-branch DENY]
+
+Ignore the `read-order` row: it is a different permission, for `order:read`.
 ====
 . Click **Back** and evaluate the same request for user `reader` with role
   `user`. Now `is-manager` and `region-north` vote deny as well: the reader
@@ -139,6 +145,8 @@ decide -d claim_token="$CLAIMS" -d claim_token_format=urn:ietf:params:oauth:toke
 ----
 +
 `{"result":true}`.
++
+image::el-d-decide-terminal.png[Terminal: decide is denied without claims and returns result true with the pushed channel claim]
 
 == Break it: who may push claims
 

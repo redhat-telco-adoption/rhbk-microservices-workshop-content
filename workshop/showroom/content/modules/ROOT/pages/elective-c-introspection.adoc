@@ -54,6 +54,8 @@ Orders still returns `200`. Introspection returns only `{"active": false}`,
 so the other fields `jq` asked for print as `null`. Keycloak knows the session is gone; Orders cannot know without
 asking. If both commands fail, the token expired; start again from step 1.
 ====
++
+image::el-c-introspection.png[Terminal: Orders still returns 200 while introspection reports active false]
 
 == Break it: who may ask
 

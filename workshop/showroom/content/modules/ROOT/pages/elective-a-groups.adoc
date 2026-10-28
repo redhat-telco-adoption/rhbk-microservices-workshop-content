@@ -18,6 +18,8 @@ group, and then decide whether APIs should see the group itself.
   click **Create**.
 . Open `order-managers` → **Role mapping → Assign role → Realm roles**, select
   `manager`, and click **Assign**.
++
+image::el-a-group-roles.png[Role mapping of the order-managers group with manager]
 . Open **Users → manager → Role mapping**, select `manager`, and click
   **Unassign**. The manager now has no role of its own beyond Keycloak's
   defaults.
@@ -48,6 +50,8 @@ role, not how the user got it.
 . Open **Clients → spa → Client scopes → Evaluate**, pick `manager`, and open
   **Generated access token**. The token has `"groups": ["/order-managers"]`
   next to `realm_access.roles`.
++
+image::el-a-groups-claim.png[Manager's spa access token with realm_access roles and the groups claim]
 
 == Break it: a membership change and a live token
 
