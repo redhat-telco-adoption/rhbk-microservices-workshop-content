@@ -1,0 +1,10 @@
+{
+  "name": "rhbk-workshop-guide",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Pinned Antora build tools for the workshop attendee guide",
+  "devDependencies": {
+    "@antora/cli": "3.1.14",
+    "@antora/site-generator": "3.1.14"
+  }
+}

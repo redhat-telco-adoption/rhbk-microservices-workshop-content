@@ -69,7 +69,10 @@ it can act as that application.
 . Open **Workloads → ConfigMaps → bff-config → Actions → Edit ConfigMap**. It
   opens a YAML (a plain-text configuration format) editor; `OIDC_ISSUER` under `data` says `set-your-realm-issuer-here`. Replace it with your issuer
   **plus a trailing slash**, a common copy-and-paste slip:
-  `pass:a[{issuer}/]`. Click **Save**.
+  `pass:a[{issuer}/]`. Click **Save**. Edit only the line under `data:`;
+  `OIDC_ISSUER` also appears higher up in the `managedFields` metadata, which
+  you leave alone. After a save the editor may show the value in single quotes
+  (`'...'`); keep the quotes and change only the text between them.
 . Open **Workloads → Deployments → bff** and choose **Restart rollout** from
   the **Actions** menu at the top right of the page (not a volume row's menu).
 +

@@ -147,21 +147,24 @@ change what "manager" includes in one place.
 
 == Do: limit the roles each client receives
 
+. **Predict:** the manager has `manager` (which includes `user`). Will the
+  manager's `spa` token carry any other roles, and what will its `aud` be?
+  Write down your answer.
 . Open **Clients → spa → Client scopes → Evaluate**. Click the **Users** field
   and pick `manager` from the list (typing alone does not select). Click
   **Effective role scope mappings**, then **Generated access token**; the
-  token appears only after you switch tabs like this.
-. **Predict:** the manager has `manager` (which includes `user`). Will the
-  token carry any other roles? Write down your answer, then look at
-  `realm_access.roles` and `aud`.
+  token appears only after you switch tabs like this. Look at
+  `realm_access.roles`, `resource_access`, and `aud`.
 +
 .What you should see
 [%collapsible]
 ====
 Besides `manager` and `user`, the token carries Keycloak's default roles
 (`offline_access`, `uma_authorization`, `default-roles-{realm_name}`), because
-the client is allowed every role in the realm (*Full scope allowed*). `aud` is
-`account`, Keycloak's account console, which comes from those extra roles.
+the client is allowed every role in the realm (*Full scope allowed*).
+`default-roles-{realm_name}` also grants roles on `account`, Keycloak's account
+console, listed under `resource_access.account`. Keycloak adds a client to
+`aud` when the token carries one of its roles, so `aud` is `account`.
 ====
 +
 image::m03-evaluate-full-scope.png[Manager's spa token with Full scope allowed on, including Keycloak's default roles]
@@ -170,8 +173,9 @@ image::m03-evaluate-full-scope.png[Manager's spa token with Full scope allowed o
   allowed** **Off**, then click **Assign role → Realm roles**, select `user`
   and `manager`, and click **Assign**.
 . Generate the manager's `spa` token again (switch tabs to refresh it). Only
-  `manager` and `user` remain, and `aud` has disappeared: the `account`
-  audience came from roles the client may no longer include.
+  `manager` and `user` remain, the `resource_access.account` roles are gone
+  too, and `aud` has disappeared: the token no longer carries any of the
+  account console's roles.
 
 **Why:** a token is a bearer credential. Whoever holds it gets every role in
 it. Limiting a client's scope keeps each token to what its APIs check, even
@@ -179,17 +183,19 @@ when a user has many more roles for other applications.
 
 == Do: constrain the audience
 
-. **Predict:** what is in the `aud` claim of the manager's `spa` token now,
-  and what would Orders do with that token? Write it down, then generate the
-  token again.
+. **Predict:** the manager's `spa` token now has no `aud`. What will Orders do
+  when the SPA sends it that token? Write it down.
+. In the SPA, sign in as `manager` and click **View orders**.
 +
 .What you should see
 [%collapsible]
 ====
-There is no `aud` at all. Orders rejects any token whose `aud` does not
-include `orders-api`, with a 401. The next steps give the SPA's tokens that
-audience.
+The SPA reports **Order lookup returned HTTP 401.**, and the **API response**
+block shows `HTTP 401`. Orders rejects any token whose `aud` does not include
+`orders-api`, even though the signature and issuer are valid and the manager
+has the right role. The next steps give the SPA's tokens that audience.
 ====
+. Click **Sign out**.
 . Open **Client scopes → Create client scope**. Name it `orders-api-aud`, set
   **Type** to **None**, turn **Include in token scope** **On**, and save.
 . On its **Mappers** tab choose **Configure a new mapper → Audience**. Name it
@@ -223,14 +229,11 @@ image::m03-evaluate.png[Generated access token for reader on the spa client]
   accept an ID token: it was never meant for the API.
 
 . In the SPA, sign in as `reader` and open **Identity and access details**
-  again. **Intended APIs** now shows the Orders API and your role is `user`.
-  Compare with what you saw at the start of the module. Sign out.
+  again. **Intended APIs** now shows `Orders API` and **Workshop roles** shows
+  `User`. Click **View orders**; it returns HTTP 200. Compare with what you saw
+  at the start of the module. Sign out.
 
 The token view is for your own lab users only; do not copy or share tokens.
-
-If the facilitator has enabled the Legacy API, also create `legacy-api-aud` the
-same way (audience `legacy-api`) and add it to `spa`, `bff`, and `proxy` as a
-default scope. Otherwise skip it.
 
 == Explain
 

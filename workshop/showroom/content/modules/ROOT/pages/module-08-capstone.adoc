@@ -105,8 +105,12 @@ What differs is the client it signs in as.
 ====
 **View orders** returns 200 and **Create a sample order** returns 403. The
 manager still has the `manager` role, but this client never receives it, so
-Orders sees only `user`. The newest Orders log line shows `client_id`
-`reports` and the roles it received.
+Orders sees only `user`. In **Observe → Logs**, the newest line whose
+`service` is `orders-api` shows `client_id` `reports`, roles `["user"]`, and
+reason `missing_role`. A line just above it from the `reports` app itself
+lists no roles: the app does not read them, Orders does.
+
+image::m08-reports-denied.png[The reports app, signed in as manager, showing HTTP 403 for Create a sample order]
 ====
 
 === Pass criteria
