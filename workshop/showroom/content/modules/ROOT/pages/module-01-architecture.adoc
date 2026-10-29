@@ -84,17 +84,19 @@ You check rows 1–4 in Module 5 and row 5 in Module 7.
   new browser tab and sign in through **sso** with your username and password
   from xref:details.adoc[]. If a welcome tour opens, click **Skip tour**.
 . Select your project `{attendee_namespace}` and open **Workloads →
-  Deployments**. You see seven: `frontend` (the SPA), `bff`, `proxy`,
-  `proxy-redis` (the proxy's session store), `orders-api`, `inventory-api`, and
-  `notifications-api`.
-. Open **Networking → Routes**. Only four components are reachable from the
-  internet: `frontend`, `bff`, `proxy`, and `orders-api`. Inventory and
+  Deployments**. You see eight: `frontend` (the SPA), `bff`, `proxy`,
+  `proxy-redis` (the proxy's session store), `orders-api`, `inventory-api`,
+  `notifications-api`, and `reports`, an application you connect in the
+  Module 8 capstone.
+. Open **Networking → Routes**. Only five components are reachable from the
+  internet: `frontend`, `bff`, `proxy`, `orders-api`, and `reports`. Inventory and
   Notifications have no Route.
 +
 image::m01-console-deployments.png[Your Deployments in the OpenShift Console]
 
-`bff` and `proxy` may show as running, but they restart or fail requests until
-you connect them to your realm in Modules 2–4.
+`bff`, `proxy`, and `reports` may show as running, but they restart or fail
+requests until you connect them to your realm: the BFF and proxy in Modules
+2–4, `reports` in Module 8.
 
 == Explain
 

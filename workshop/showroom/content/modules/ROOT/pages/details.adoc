@@ -34,6 +34,7 @@ you need them from Module 3 on.
 |SPA URL |link:{spa_url}[{spa_url},window=_blank]
 |BFF URL |link:{bff_url}[{bff_url},window=_blank]
 |Proxy URL |link:{proxy_url}[{proxy_url},window=_blank]
+|Reports URL (Module 8) |link:{reports_url}[{reports_url},window=_blank]
 |Orders API URL |`pass:a[{orders_api_url}]`
 |===
 

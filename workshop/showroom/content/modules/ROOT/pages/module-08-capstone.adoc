@@ -57,17 +57,21 @@ where the tokens live and what that exposes, as you saw in Module 5.
 
 == Part 2: register a client from a requirement
 
-The reporting team is building **reports**, a server-side web application at
-`pass:a[https://reports.example.invalid]`. It lets signed-in staff read orders. Register it
-in your realm `{realm_name}` so that:
+The reporting team has built **reports**, a server-side web application
+already running in your namespace at
+link:{reports_url}[{reports_url},window=_blank]. It lets signed-in staff read
+orders, and it signs in as client `reports`, which does not exist yet. You do
+not write any code: you register the client in your realm `{realm_name}`, give
+the application its secret, and prove the result. The client must satisfy
+these requirements:
 
 . Users sign in through Keycloak, and the application runs on a server.
 . Its tokens are accepted by Orders and by no other API.
 . Its tokens never carry `manager`, even for a manager. Reports must never be
   able to create orders.
 . After sign-in, Keycloak may send users back only to
-  `pass:a[https://reports.example.invalid/callback]`. After sign-out, only to
-  `pass:a[https://reports.example.invalid/]`.
+  `pass:a[{reports_url}/login/oauth2/code/keycloak]`. After sign-out, only to
+  `pass:a[{reports_url}/]`.
 . The application never handles a user's password and never acts on its own
   behalf.
 . Sign-in codes are protected against interception, as for every client in
@@ -75,12 +79,35 @@ in your realm `{realm_name}` so that:
 
 Name the client `reports`.
 
-=== Prove it
+=== Prove it in the token
 
 Use **Client scopes → Evaluate** on your new client to generate the access
 token for `manager`. Before you look, write down what `aud` and
 `realm_access.roles` should be. If the token does not match your prediction,
 work out which setting causes the difference.
+
+=== Prove it in the application
+
+`reports` runs the same code as the BFF, so its page looks like the BFF's.
+What differs is the client it signs in as.
+
+. Copy the client secret from **Clients → reports → Credentials** into the
+  `reports-client` Secret in your namespace (key `BFF_CLIENT_SECRET`), and
+  restart the `reports` rollout, as you did for the BFF in Module 4.
+. **Predict:** signed in to `reports` as `manager`, what will **View orders**
+  and **Create a sample order** return? Write it down.
+. Open link:{reports_url}[reports,window=_blank], sign in as `manager`, and
+  try both. If you are still signed in to another app as someone else, sign
+  out there first (Module 5).
++
+.What happened
+[%collapsible]
+====
+**View orders** returns 200 and **Create a sample order** returns 403. The
+manager still has the `manager` role, but this client never receives it, so
+Orders sees only `user`. The newest Orders log line shows `client_id`
+`reports` and the roles it received.
+====
 
 === Pass criteria
 
@@ -120,8 +147,8 @@ settings and generates the manager's token. It passes when:
 |PKCE Method |`S256` |6
 |Direct access grants |Off |5: never handles passwords
 |Service accounts roles |Off |5: never acts on its own behalf
-|Valid redirect URIs |`pass:a[https://reports.example.invalid/callback]` |4
-|Valid post logout redirect URIs |`pass:a[https://reports.example.invalid/]` |4
+|Valid redirect URIs |`pass:a[{reports_url}/login/oauth2/code/keycloak]` |4
+|Valid post logout redirect URIs |`pass:a[{reports_url}/]` |4
 |Client scopes |`orders-api-aud` as Default; no `inventory-api-aud` or `notifications-api-aud` |2
 |`reports-dedicated` → Scope |Full scope allowed Off; realm role `user` only |3
 |===
