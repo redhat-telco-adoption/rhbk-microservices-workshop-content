@@ -12,7 +12,7 @@ OpenShift Console. Keep the password to yourself.
 |Username |`{user}`
 |Password |`{password}`
 |Keycloak administration console |link:{keycloak_origin}/admin/master/console/[{keycloak_origin}/admin/master/console/,window=_blank]
-|OpenShift Console |link:{openshift_console_url}[{openshift_console_url},window=_blank] (sign in through **sso**)
+|OpenShift Console |link:{openshift_console_url}[{openshift_console_url},window=_blank] (sign in on the page titled **Sign in to sso**)
 |===
 
 Open both consoles in their own browser tabs. The OpenShift Console cannot
@@ -31,14 +31,14 @@ you need them from Module 3 on.
 |OpenShift namespace |{attendee_namespace}
 |Realm name (you create it in Module 2) |{realm_name}
 |Expected issuer |`pass:a[{issuer}]`
-|SPA URL |link:{spa_url}[{spa_url},window=_blank]
-|BFF URL |link:{bff_url}[{bff_url},window=_blank]
+|Single-page application (SPA) URL |link:{spa_url}[{spa_url},window=_blank]
+|Backend for frontend (BFF) URL |link:{bff_url}[{bff_url},window=_blank]
 |Proxy URL |link:{proxy_url}[{proxy_url},window=_blank]
 |Reports URL (Module 8) |link:{reports_url}[{reports_url},window=_blank]
-|Orders API URL |`pass:a[{orders_api_url}]`
+|Orders application programming interface (API) URL |`pass:a[{orders_api_url}]`
 |===
 
-If a value shows `not-assigned`, `namespace-not-assigned`, or an
+If a value shows `not-assigned`, `namespace-not-assigned`, `realm-not-assigned`, or an
 `example.invalid` URL, stop and ask the facilitator. Do not guess an endpoint
 or reuse another attendee's realm.
 
@@ -46,11 +46,12 @@ or reuse another attendee's realm.
 
 * A shared Keycloak server, where your account can create a realm and
   administer only the realms it creates.
-* Your OpenShift namespace with the SPA frontend, BFF, proxy, and three APIs
-  already deployed. The BFF and proxy wait for the realm you create.
+* Your OpenShift namespace with the SPA frontend, BFF, proxy (and its Redis
+  session store), three APIs, and the `reports` app for Module 8 already
+  deployed. The BFF, proxy, and `reports` wait for the realm you create.
 * ConfigMaps for the SPA, proxy, and APIs already set to your realm's issuer.
-  You connect the BFF yourself in Module 4. Three Secrets hold a placeholder
-  until you paste the client secrets.
+  You connect the BFF yourself in Module 4. Four Secrets hold a placeholder
+  until you paste the client secrets: three in Module 4 and one in Module 8.
 * Cluster logging and distributed tracing. Your applications send logs and
   traces automatically; you read them in the OpenShift Console under
   **Observe → Logs** and **Observe → Traces**. Both show only your own data:
@@ -60,8 +61,5 @@ or reuse another attendee's realm.
 
 Pause and contact the facilitator if your namespace is not the one assigned
 to you, the realm name is already owned by someone else, an app URL belongs to
-another attendee, or the Keycloak UI offers server-wide administration. Do not
+another attendee, or the Keycloak user interface (UI) offers server-wide administration. Do not
 try to fix shared cluster or Keycloak settings yourself.
-
-Legacy API activity: {legacy-status} Skipping it does not prevent completion
-of the main workshop.

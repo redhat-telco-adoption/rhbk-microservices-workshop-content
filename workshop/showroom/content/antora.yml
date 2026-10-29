@@ -1,13 +1,13 @@
 ---
 name: modules
-title: Secure microservices with Red Hat Build of Keycloak
+title: Secure microservices with Red Hat build of Keycloak
 version: ~
 nav:
   - modules/ROOT/nav.adoc
 asciidoc:
   attributes:
     page-pagination: true
-    lab_name: Secure microservices with Red Hat Build of Keycloak
+    lab_name: Secure microservices with Red Hat build of Keycloak
     user: not-assigned
     password: not-assigned
     openshift_console_url: https://console.example.invalid

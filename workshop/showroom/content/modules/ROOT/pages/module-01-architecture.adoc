@@ -4,15 +4,16 @@
 == Why it matters
 
 Signing in tells an application who you are. It does not decide what you may
-do. That decision belongs to every API that receives a request, and each one
+do. That decision belongs to every application programming interface (API) that receives a request, and each one
 must check the token itself. Most real incidents in this area come from a
 component that trusted something it should have checked: a button hidden in
-the UI, a token meant for a different API, or a token kept where a script can
+the user interface (UI), a token meant for a different API, or a token kept where a script can
 read it.
 
 Where a token lives decides who can steal it. Before you build anything, you
 will map where each pattern keeps its tokens and predict the consequences. You
-check your predictions with real evidence in Modules 5 and 7.
+check most predictions with real evidence in Module 5, and reason through the
+last one in Module 7.
 
 == The pieces
 
@@ -23,8 +24,9 @@ check your predictions with real evidence in Modules 5 and 7.
 * **Orders** is the protected API. It checks every token and decides.
 * **Inventory** and **Notifications** are called by Orders, not by the
   browser.
-* The **frontend** is one build deployed three times, once per sign-in
-  pattern.
+* The **frontend** is one build served three ways, once per sign-in pattern:
+  by its own `frontend` Deployment for the single-page application (SPA), and from inside the `bff` and
+  `proxy` for the other two.
 
 == Three kinds of token
 
@@ -34,29 +36,36 @@ mixing them up causes real bugs.
 [cols="1,2,2",options="header"]
 |===
 |Token |What it is for |Who reads it
-|*Access token* |Calling APIs. Short-lived (five minutes here). |The APIs. The app that holds it should only pass it along. (This lab's frontend decodes it to show you what is inside.)
+|*Access token* |Calling APIs. Short-lived (five minutes here). |The APIs. The app that holds it should only pass it along. (In the SPA, this lab's frontend decodes it to show you what is inside.)
 |*ID token* |Telling the signing-in app who the user is: name, email, when they signed in. |Only the app that signed the user in. An API must never accept it.
 |*Refresh token* |Getting a new access token without asking the user to sign in again. Longer-lived. |Only Keycloak. The app sends it back to Keycloak and never to an API; it must be kept as carefully as a password.
 |===
 
-All three are JavaScript Object Notation (JSON) Web Tokens (JWTs): three base64 parts separated by dots,
-starting with `eyJ`, and signed by Keycloak. Signed means anyone can read
-them and nobody can change them; never put secrets in claims.
+All three are JavaScript Object Notation (JSON) Web Tokens (JWTs): three
+base64url parts separated by dots, starting with `eyJ`, and signed by Keycloak.
+Signed is not encrypted: anyone can decode and read them, but any change breaks the signature, so an
+API that checks the signature rejects an altered token. Never put secrets in
+claims.
 
 == Do: study the three sign-in patterns
 
-For each diagram, find two things: which component receives the browser's
-return from Keycloak (the *callback*), and where the tokens are kept
-afterwards.
+For each of the three sign-in diagrams, find two things: which component
+receives the browser's return from Keycloak (the *callback*), and where the
+tokens are kept afterwards.
 
 .SPA with Proof Key for Code Exchange (PKCE): tokens stay in browser memory
 image::spa-auth-flow.svg[SPA authorization code flow with PKCE]
 
-.BFF: tokens stay on the server
+.Backend for frontend (BFF): tokens stay on the server
 image::bff-auth-flow.svg[BFF login and session flow]
 
 .Reverse proxy: tokens stay in the proxy's Redis session
 image::proxy-auth-flow.svg[Reverse proxy login and session flow]
+
+=== Service-to-service calls
+
+In the diagram below, note which token Inventory receives and which token
+Notifications receives, and whose identity each one carries.
 
 .One order, two downstream identities
 image::service-auth-flow.svg[Token exchange to Inventory and client credentials to Notifications]
@@ -64,7 +73,7 @@ image::service-auth-flow.svg[Token exchange to Inventory and client credentials 
 == Predict
 
 Copy this table to your notes and fill in every cell. There is no penalty for
-being wrong; you will check each row against the running system.
+being wrong.
 
 [cols="2,1,1,1",options="header"]
 |===
@@ -76,23 +85,29 @@ being wrong; you will check each row against the running system.
 |If Keycloak is down for ten minutes, can a signed-in user keep working? | | |
 |===
 
-You check rows 1–4 in Module 5 and row 5 in Module 7.
+CSRF is when another website makes your browser
+send a request to an app, and the browser attaches that app's cookies by
+itself. Use that to answer row 4.
+
+You check rows 1–4 against the running system in Module 5, and reason through
+row 5 in Module 7.
 
 == Do: find your applications
 
 . Open the link:{openshift_console_url}[OpenShift Console,window=_blank] in a
-  new browser tab and sign in through **sso** with your username and password
-  from xref:details.adoc[]. If a welcome tour opens, click **Skip tour**.
+  new browser tab. On the page titled **Sign in to sso**, sign in with your
+  username and password from xref:details.adoc[]. If a welcome tour opens,
+  click **Skip tour**.
 . Select your project `{attendee_namespace}` and open **Workloads →
   Deployments**. You see eight: `frontend` (the SPA), `bff`, `proxy`,
   `proxy-redis` (the proxy's session store), `orders-api`, `inventory-api`,
   `notifications-api`, and `reports`, an application you connect in the
   Module 8 capstone.
++
+image::m01-console-deployments.png[Your Deployments in the OpenShift Console]
 . Open **Networking → Routes**. Only five components are reachable from the
   internet: `frontend`, `bff`, `proxy`, `orders-api`, and `reports`. Inventory and
   Notifications have no Route.
-+
-image::m01-console-deployments.png[Your Deployments in the OpenShift Console]
 
 `bff`, `proxy`, and `reports` may show as running, but they restart or fail
 requests until you connect them to your realm: the BFF and proxy in Modules

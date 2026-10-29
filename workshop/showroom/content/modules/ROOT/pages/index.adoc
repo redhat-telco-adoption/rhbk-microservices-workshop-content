@@ -1,4 +1,4 @@
-= Secure microservices with Red Hat Build of Keycloak
+= Secure microservices with Red Hat build of Keycloak
 :navtitle: Welcome
 
 Welcome to this hands-on lab. You will secure a small order system from an
@@ -15,7 +15,7 @@ work. You leave with a checklist and the code each application needs.
 
 By the end of the lab you can:
 
-* choose between a browser single-page app (SPA), a backend-for-frontend (BFF),
+* choose between a browser single-page application (SPA), a backend for frontend (BFF),
   and a reverse proxy for a new application, and explain the tradeoff;
 * register OpenID Connect (OIDC) clients with the settings that matter and say why each one is
   set the way it is;

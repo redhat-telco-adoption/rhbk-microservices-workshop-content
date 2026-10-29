@@ -1,6 +1,6 @@
 ---
 site:
-  title: Secure Microservices with Red Hat Build of Keycloak
+  title: Secure Microservices with Red Hat build of Keycloak
   start_page: modules::index.adoc
 content:
   sources:

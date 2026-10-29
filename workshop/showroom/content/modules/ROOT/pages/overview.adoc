@@ -2,8 +2,10 @@
 :navtitle: Overview
 
 This workshop assumes you have used a web application with a login and know
-what an HTTP (Hypertext Transfer Protocol) request and a container are. You do not need to know OAuth or
-OpenID Connect (OIDC) in advance; each module explains what it uses.
+what a Hypertext Transfer Protocol (HTTP) request and a container are. You do not need to know OAuth or
+OpenID Connect (OIDC) in advance; each module explains what it uses. You need a
+desktop browser whose developer tools you can open (Chrome, Edge, or Firefox);
+Module 5 uses the **Network**, **Application** (**Storage** in Firefox), and **Console** tabs.
 
 The facilitator provides a shared Keycloak server, one OpenShift namespace per
 attendee with the applications already deployed, and shared logging and
@@ -15,7 +17,7 @@ tracing. You create and own your realm; nobody else can change it.
 |1. The system and your predictions |Map who holds which token, and write down predictions you test later |20 min
 |2. A realm is a trust boundary |Create your realm and users; read the documents every app trusts |25 min
 |3. Clients, roles, and audiences |Register the browser-facing clients and see each setting change the token |50 min
-|4. Connect the applications |Connect the BFF yourself, break it once, and learn the values every app needs |30 min
+|4. Connect the applications |Connect the backend for frontend (BFF) yourself, break it once, and learn the values every app needs |30 min
 |5. Prove where authorization happens |Use the browser's own tools to find the token, bypass the user interface (UI), and trigger 401, 403, and cross-site request forgery (CSRF) denials |40 min
 |6. Service-to-service identities |Give Orders its own identities and debug each missing piece with traces and logs |45 min
 |7. Operate it |Work through three incidents and check your Module 1 predictions |30 min
@@ -26,24 +28,24 @@ tracing. You create and own your realm; nobody else can change it.
 
 After the core path, five self-paced xref:electives.adoc[electives] cover
 groups, signing-key rotation, token introspection, Authorization Services,
-and tokens from other issuers, in about two and a half hours. Your environment
+and tokens from other issuers, in a little over two hours. Your environment
 stays available after the session so you can finish them.
 
 The xref:glossary.adoc[Glossary] explains every acronym and technical term
 the guide uses.
 
-The times are estimates for a first run with people and will be adjusted after
-a pilot.
+The core path takes about 5 hours 15 minutes, including 30 minutes of breaks
+and questions.
 
 == The application
 
-Orders is the protected API. It allows reads to users with the `user` role and
+Orders is the protected application programming interface (API). It allows reads to users with the `user` role and
 writes to users with the `manager` role. When it creates an order, it calls
 Inventory on the user's behalf and Notifications as itself.
 
-The same browser front end is deployed three times, once per sign-in pattern:
+The same browser frontend is served three ways, once per sign-in pattern:
 
-* **SPA:** the browser signs in and calls Orders with an access token it keeps
+* **Single-page application (SPA):** the browser signs in and calls Orders with an access token it keeps
   in memory.
 * **BFF:** a server signs in for the browser, keeps the tokens, and gives the
   browser only a session cookie.
@@ -53,7 +55,7 @@ The same browser front end is deployed three times, once per sign-in pattern:
 == Definition of done
 
 * Your realm signs users in to all three patterns.
-* A reader can view orders but not create them, and a manager can create them,
+* Your `reader` user can view orders but not create them, and your `manager` user can create them,
   through every pattern.
 * An order shows the user at Inventory and Orders' own identity at
   Notifications.
