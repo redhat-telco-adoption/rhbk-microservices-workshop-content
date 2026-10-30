@@ -21,4 +21,3 @@ asciidoc:
     proxy_url: https://proxy.example.invalid
     reports_url: https://reports.example.invalid
     orders_api_url: https://orders-api.example.invalid
-    legacy-status: Optional; enabled only when the facilitator confirms AWS, DNS, subnet, and trusted TLS readiness.

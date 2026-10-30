@@ -13,14 +13,12 @@ bold inside a definition have their own entry.
 |**ABAC** |Attribute-based access control |Deciding access from attributes of the user, the resource, and the request (such as region or network), not only from roles. Elective D.
 |**AES** |Advanced Encryption Standard |A symmetric encryption algorithm. Keycloak keeps an AES key for its own internal use; it is never published.
 |**API** |Application programming interface |A service that other programs call over HTTP. Orders, Inventory, and Notifications are APIs.
-|**AWS** |Amazon Web Services |The cloud provider that hosts the optional Legacy API.
 |**BFF** |Backend for frontend |A server that signs users in for a browser application, keeps their tokens, and gives the browser only a session cookie.
 |**CDN** |Content delivery network |A service that serves static files, such as a website's pages and scripts, from servers close to the user.
 |**CIP** |Claim Information Point |The part of a policy enforcer that collects facts from a request or another system and sends them as *pushed claims* for policies to use. Elective D.
 |**CORS** |Cross-Origin Resource Sharing |Browser rules that decide whether JavaScript on one site may read responses from another. It is not an authorization check.
 |**CSP** |Content Security Policy |A response header that limits which scripts and resources a page may load, reducing the damage of XSS.
 |**CSRF** |Cross-site request forgery |An attack where another site makes the browser send a request with the user's cookies. The BFF and proxy block it on writes.
-|**DNS** |Domain Name System |The system that turns names such as `example.com` into network addresses.
 |**ES256** |Elliptic Curve Digital Signature Algorithm with SHA-256 |An elliptic-curve signature algorithm. Elective B uses it to show the APIs' algorithm allowlist.
 |**HMAC** |Hash-based message authentication code |A signature made with a shared secret key. Keycloak signs its internal tokens, such as refresh tokens, with an HMAC key (`HS512`).
 |**HTTP** |Hypertext Transfer Protocol |The protocol browsers and APIs use for requests and responses. HTTPS is HTTP over TLS.
@@ -35,7 +33,7 @@ bold inside a definition have their own entry.
 |**PKCE** |Proof Key for Code Exchange |A one-time secret the client creates for each sign-in, so a stolen authorization code cannot be redeemed. Every client in this lab that signs users in requires it (method `S256`).
 |**PKI** |Public key infrastructure |An organization's system for issuing and managing certificates and keys.
 |**RFC** |Request for Comments |The numbered documents in which the IETF publishes Internet standards, such as RFC 7662 for token introspection.
-|**RHBK** |Red Hat build of Keycloak |Red Hat's supported distribution of Keycloak, the identity server in this lab.
+|**RHBK** |Red Hat build of Keycloak |Red Hat's supported distribution of Keycloak, the identity server in this lab. After first use, this guide calls it Keycloak.
 |**RS256** |RSA signature with SHA-256 |The algorithm Keycloak signs access tokens with by default. Every API in this lab accepts only `RS256`.
 |**RSA** |Rivest–Shamir–Adleman |A public-key algorithm used for signatures and encryption. `RS256` is an RSA signature with SHA-256.
 |**SHA** |Secure Hash Algorithm |A family of hash functions; SHA-256 is the one used in `RS256` and `ES256`.

@@ -4,8 +4,8 @@
 The electives go deeper into questions that come up when Keycloak becomes the
 central identity platform: groups, signing keys, token introspection,
 fine-grained authorization, and tokens from other issuers. They are
-self-paced. Your environment stays available after the session, so you can
-finish them later.
+self-paced. Your environment stays available until your reservation ends, so
+you can finish them later. Your facilitator gives you the date.
 
 Each elective starts from a realm completed through Module 6 and is
 independent of the others. Each one ends by leaving your realm in a state

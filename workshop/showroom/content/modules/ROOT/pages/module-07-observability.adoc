@@ -158,10 +158,3 @@ Pick one application you work on. Write down, in one line each:
 Compare your answers with the checklists in xref:at-your-desk.adoc[], then
 discuss one gap with a neighbor or the facilitator: what would you change
 first, and what would it take?
-
-== Optional: the Legacy API
-
-The Legacy API depends on Amazon Web Services (AWS), Domain Name System (DNS), and public Transport Layer Security (TLS) prerequisites. Use it only
-when your facilitator confirms it is available: confirm the audience is
-`legacy-api`, call the prepared endpoint, and compare its log line with those
-of the cluster APIs. Otherwise skip it.

@@ -29,7 +29,8 @@ tracing. You create and own your realm; nobody else can change it.
 After the core path, five self-paced xref:electives.adoc[electives] cover
 groups, signing-key rotation, token introspection, Authorization Services,
 and tokens from other issuers, in a little over two hours. Your environment
-stays available after the session so you can finish them.
+stays available until your reservation ends, so you can finish them. Your
+facilitator gives you the date.
 
 The xref:glossary.adoc[Glossary] explains every acronym and technical term
 the guide uses.

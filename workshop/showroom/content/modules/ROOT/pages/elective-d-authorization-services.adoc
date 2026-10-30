@@ -195,8 +195,9 @@ now carry `region`, but no API reads it, and the other modules work as before.
 .Answer
 [%collapsible]
 ====
-From a source the user cannot set: the network zone a gateway or mutual TLS
-connection established, a device-management system, or Orders' own records.
+From a source the user cannot set: the network zone a gateway or mutual
+Transport Layer Security (TLS) connection established, a device-management
+system, or Orders' own records.
 Never from a request header or body field the browser controls. A Claim
 Information Point is only as trustworthy as its inputs.
 ====
