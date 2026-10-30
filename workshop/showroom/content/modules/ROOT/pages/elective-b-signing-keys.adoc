@@ -8,10 +8,10 @@ realm's private key. APIs verify it with the matching public key from the
 realm's JSON Web Key Set (JWKS), the `jwks_uri` you opened in Module 2. Keys
 must be replaced from time to time: on a schedule, when an algorithm or key
 size policy changes, or when a key may have leaked. Done carelessly, rotation
-logs everyone out or makes every API reject valid tokens.
+signs everyone out or makes every API reject valid tokens.
 
-You will rotate your realm's key while the applications keep working, and then
-break the algorithm rule the APIs enforce.
+You rotate your realm's key while the applications keep working, and then
+break the algorithm allowlist the APIs enforce.
 
 Before you start, run the setup block from xref:electives.adoc#_the_terminal[Electives]
 in the **Terminal** tab.
@@ -60,9 +60,9 @@ jwt_part "$(sa_token)" 1 | jq -r .kid
 curl -s "$ISSUER/protocol/openid-connect/certs" | jq -r '.keys[] | select(.alg == "RS256") | .kid'
 ----
 +
-New tokens carry the new key's `kid`, and the JWKS lists both RS256 keys.
+New tokens carry the new key's `kid`, and the JWKS lists both `RS256` keys.
 +
-image::el-b-kid-change.png[Terminal: the new token's kid, and both RS256 kids in the JWKS]
+image::el-b-kid-change.png["Terminal: the new token's kid, and both RS256 kids in the JWKS"]
 +
 image::el-b-keys-list.png[Keys list with the rsa-rotated and rsa-generated RS256 keys]
 . In the link:{spa_url}[SPA,window=_blank], sign out, sign in as `manager`,
@@ -100,18 +100,21 @@ published.
 .What happened
 [%collapsible]
 ====
-It returns 401. Each API accepts only `RS256`, whatever the token header says. An
-algorithm allowlist stops an attacker from choosing a weaker algorithm, or
-`none`, in a token they forged. The side effect is that changing the algorithm
-is a coordinated change: update and deploy every API's allowlist first, then
-switch Keycloak.
+It returns 401; the SPA shows the error as `invalid_response`. Each API accepts
+only `RS256`, whatever the token header says. An algorithm allowlist stops an
+attacker from choosing a weaker algorithm, or `none`, in a token they forged.
+The side effect is that changing the algorithm is a coordinated change: update
+and deploy every API's allowlist first, then switch Keycloak.
 ====
 +
 image::el-b-es256-denied.png[SPA showing HTTP 401 from Orders for an ES256-signed token]
-. Restore it: set **Access token signature algorithm** for `spa` back to
-  empty (the realm default, `RS256`), save, and sign in again. **View orders**
-  returns 200. Delete the `ec-p256` provider: **Realm settings → Keys →
-  Providers**, its row menu (⋮), **Delete**.
+. Restore the setting: open **Access token signature algorithm** for `spa`,
+  select **Choose...** at the top of the list (this clears the setting, so the
+  realm default `RS256` applies), and save.
+. Sign out of the SPA, sign in as `manager`, and click **View orders**. It
+  returns 200.
+. Delete the `ec-p256` provider: **Realm settings → Keys → Providers**, its
+  row menu (⋮), **Delete**.
 
 == Explain
 

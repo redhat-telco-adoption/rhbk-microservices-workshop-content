@@ -11,8 +11,8 @@ exists. That is fast and keeps working when Keycloak is briefly unreachable.
 *Token introspection*, defined in Request for Comments (RFC) 7662, is the
 alternative. The API sends the token
 to Keycloak's introspection endpoint and asks whether it is still active. You
-will compare the two answers for the same token, then decide when each one is
-the right choice.
+compare the two answers for the same token, then decide when each one is the
+right choice.
 
 Before you start, run the setup block from xref:electives.adoc#_the_terminal[Electives]
 in the **Terminal** tab.
@@ -22,8 +22,9 @@ through first.
 
 == Do: one token, two answers
 
-. In the link:{spa_url}[SPA,window=_blank], sign in as `reader` and click
-  **View orders**. Copy the `Authorization` value of the `orders` request from
+. In the link:{spa_url}[SPA,window=_blank], sign out if you are signed in,
+  sign in as `reader`, and click **View orders**. Copy the `Authorization`
+  value of the `orders` request (the `GET`, not an `OPTIONS` preflight) from
   the **Network** tab, run `paste_token` in the terminal, and paste it.
 . Ask Orders, which validates locally:
 +
@@ -53,7 +54,7 @@ curl -s -u "orders-api:$ORDERS_SECRET" -d "token=$TOKEN" \
 ====
 Orders still returns `200`. Introspection returns only `{"active": false}`,
 so the other fields `jq` asked for print as `null`. Keycloak knows the session is gone; Orders cannot know without
-asking. If both commands fail, the token expired; start again from step 1.
+asking. If Orders prints `401`, the token expired; start again from step 1.
 ====
 +
 image::el-c-introspection.png[Terminal: Orders still returns 200 while introspection reports active false]
@@ -69,9 +70,10 @@ curl -s -o /dev/null -w '%{http_code}\n' -u 'orders-api:wrong' -d "token=$TOKEN"
 ----
 +
 Keycloak refuses with `401`: only an authenticated client may introspect.
-. Now consider the answer from step 3. `orders-api` introspected a token that
-  was issued to `spa`. In Keycloak, any confidential client of the realm can
-  introspect any of the realm's tokens and learn whose they are.
+. Now consider the introspection answer from step 3 of the previous section.
+  `orders-api` introspected a token that was issued to `spa`. In Keycloak, any
+  confidential client of the realm can introspect any of the realm's tokens
+  and learn whose they are.
 +
 In production, give each introspecting service its own confidential client,
 protect that client's secret like any other credential, and keep
@@ -121,18 +123,18 @@ settings.
 |Detects a revoked session |No; the token is valid until it expires |Yes, on the next call
 |Keycloak in the request path |No; only for occasional JWKS downloads |Yes; every uncached request
 |Works with opaque or lightweight tokens |No |Yes
-|Secret needed by the API |None |A client credential for the introspection call
+|Secret needed by the API |None |A client secret for the introspection call
 |===
 
-Spring Security switches between the two with configuration. Local JWT
-validation, as in Orders:
+Spring Security supports both models, but switching takes more than the
+properties below. Local JWT validation starts from:
 
 [source,yaml]
 ----
 spring.security.oauth2.resourceserver.jwt.issuer-uri: ${ISSUER}
 ----
 
-Introspection:
+Introspection starts from:
 
 [source,yaml]
 ----
@@ -141,3 +143,8 @@ spring.security.oauth2.resourceserver.opaquetoken:
   client-id: orders-api
   client-secret: ${ORDERS_API_CLIENT_SECRET}
 ----
+
+Orders defines its decoder in code, with audience and role checks, so these
+properties alone do not change how it validates. With introspection you must
+add those checks again: map the roles from the introspection response and
+verify that `aud` contains `orders-api`.

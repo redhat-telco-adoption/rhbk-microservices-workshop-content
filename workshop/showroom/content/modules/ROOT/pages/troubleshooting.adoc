@@ -8,9 +8,9 @@ the facilitator.
 
 * **BFF or proxy shows 503, `Client not found`, or an error page.** Expected
   until your realm, its clients, and Module 4 are done.
-* **Create realm is missing.** Your account lacks the delegated
-  `create-realm` permission. Ask the facilitator; do not change roles in the
-  `master` realm.
+* **`No realm access`, or Manage realms or Create realm is missing.** Your
+  account lacks the delegated `query-realms` or `create-realm` permission. Ask
+  the facilitator; do not change roles in the `master` realm.
 * **A user gets an extra profile form at first sign-in.** First name, last
   name, or email is missing on the user.
 
@@ -20,8 +20,9 @@ the facilitator.
   with the app's callback address: scheme, host, path, trailing slash.
 * **Signed in as the wrong user.** The apps share one Keycloak session. Sign out
   of every app you used, then sign in again.
-* **The proxy loops back to Keycloak.** Check the `proxy-audience` mapper
-  (Module 3) and the `client-secret` key in `proxy-secrets`.
+* **The proxy shows an error after sign-in, at `/oauth2/callback`.** Check the
+  `client-secret` key in `proxy-secrets`, then the `proxy-audience` mapper
+  (Module 3).
 
 == Application problems
 
@@ -34,22 +35,36 @@ the facilitator.
   the `orders-api-aud` scope on the client you signed in with.
 * **Manager writes return 502.** Expected until Module 6. After Module 6,
   follow the trace and search the logs for `/inventory/reserve` and `/notify`.
-* **`ImagePullBackOff`.** A reservation problem, not a lab task; tell the
+* **`reports` shows 503 or `Client not found`.** Expected until Module 8.
+* **Orders logs `Token exchange rejected`.** Check that **Standard Token
+  Exchange** is on for `orders-api` and that `inventory-api-aud` is attached as
+  **Optional**. After a restart, check that the new pod started and that
+  `orders-api-client` holds the current client secret (Module 6).
+* **A role change has no effect on a service.** Orders caches its service
+  token; restart `orders-api` or wait five minutes (Module 6).
+* **`ImagePullBackOff`.** A lab environment problem, not a lab task; tell the
   facilitator.
 
 == Logs and traces
 
 * Results can take up to a minute to appear. If **Run Query** shows old
   results, click it again or use the refresh button.
-* **Traces page shows no Tempo instance or no permission.** Select Tempo
-  instance `tracing / workshop`, then Tenant `{attendee_id}`. Other tenant names
-  are listed but only yours opens.
+* **Traces page shows no Tempo instance or no permission.** Select **Tempo
+  instance** `tracing / workshop`, then **Tenant** `{attendee_id}`. Other
+  tenant names are listed but only yours opens.
 * **Observe → Logs or Traces is missing.** Ask the facilitator to check the
   logging and tracing setup.
+
+== Electives terminal
+
+* **`sa_token` prints `null`, or the check prints a `jq` parse error or
+  nothing.** The secret is wrong; run the `read` line again.
+* **A command prints `401` or `{"active": false}` unexpectedly.** The token
+  expired; copy a fresh one.
 
 == Ground rules
 
 Work only in your realm `{realm_name}` and namespace `{attendee_namespace}`.
-Never paste passwords, client secrets, tokens, or cookies into chat, tickets,
+Never put passwords, client secrets, tokens, or cookies in chat, tickets,
 or screenshots. If an app URL or realm belongs to someone else, stop and tell
 the facilitator.

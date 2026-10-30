@@ -8,7 +8,7 @@ points back to the module where you saw it work.
 
 [cols="1,2,2,2",options="header"]
 |===
-| |SPA with PKCE |Backend-for-frontend |Reverse proxy
+| |SPA with PKCE |Backend for frontend (BFF) |Reverse proxy
 |Tokens live |In browser memory |On your server |In the proxy's session store
 |Main risk |XSS can steal tokens |CSRF on cookie-authenticated writes |CSRF; the proxy is a shared dependency
 |You need |Short token lifetimes, a strict Content Security Policy, CORS on your API |A server session store, CSRF tokens |A proxy and session store you operate, CSRF checks
@@ -19,15 +19,23 @@ Start from the BFF unless you have a reason not to. Use an SPA when there is no
 server tier and the scripts on the page are tightly controlled. Use a proxy to
 protect an application without changing its code. (Modules 1 and 5)
 
+== Set up a realm
+
+* One realm per trust boundary, not one per application.
+* Give teams delegated realm administration, not server-wide administration.
+* Treat the issuer as exact configuration: scheme, host, no trailing slash.
+  (Module 2)
+
 == Register clients
 
 * **Browser app:** public; standard flow only; PKCE `S256`; exact redirect,
   post-logout, and web-origin values; full scope off; the audience of each API
   it calls.
 * **Server-side web app:** confidential; standard flow only; PKCE `S256`;
-  exact URIs; full scope off; API audiences; secret in a vault, rotated.
+  exact URIs; full scope off; API audiences; secret in a secret store, rotated.
 * **API:** confidential; no sign-in flows; turn on only the service-to-service
-  flows it uses.
+  flows it uses; full scope off, allowing only the roles its exchanged and
+  service-account tokens need. (Module 6)
 * Never: wildcard redirect URIs, direct access grants, the implicit flow
   (an older browser flow that returns tokens in the address bar), full scope
   left on by default.
@@ -61,8 +69,9 @@ Return 401 for token problems and 403 for missing permissions. (Module 5)
 
 * The downstream service decides about the user: **token exchange**, with the
   target's audience as an optional scope, and the target checking `azp`.
-* The action belongs to the system: **client credentials**, with a client role
-  on the target and the caller's scope allowing it.
+* The action belongs to the system: **client credentials**, with a service
+  account on the caller, the target's audience as a default scope, a client
+  role on the target, and the caller's scope allowing it.
 * Never forward the user's token to a different API.
 * Cached service tokens keep old roles until they expire. (Module 6)
 
@@ -72,8 +81,17 @@ Return 401 for token problems and 403 for missing permissions. (Module 5)
   log tokens, cookies, or secrets.
 * Ending a Keycloak session does not cancel access tokens already issued; keep
   them short-lived.
-* Know which requests call Keycloak per request; those fail first during an
-  outage. (Module 7)
+* Know which of your flows depend on Keycloak per request; those fail first
+  during an outage. (Module 7)
+
+== Code to copy
+
+* xref:module-04-connect-apps.adoc#_at_your_desk[Module 4]: sign-in
+  configuration for Spring Boot, oauth2-proxy, and oidc-client-ts.
+* xref:module-05-authorization.adoc#_at_your_desk[Module 5]: token checks in
+  Java, Python, and JavaScript.
+* xref:module-06-service-identities.adoc#_at_your_desk[Module 6]: token
+  exchange and client credentials.
 
 == Errors you have now seen
 
@@ -82,7 +100,7 @@ Return 401 for token problems and 403 for missing permissions. (Module 5)
 |What you see |Where |Usual cause
 |`Invalid parameter: redirect_uri` |Keycloak error page |The app's callback address is not in the client's list exactly
 |`did not match the requested issuer` |App startup log |Issuer differs by a character, often a trailing slash
-|401, `invalid_token` |API log |Wrong issuer or audience, expired, forged, or missing token
+|401, `invalid_token`, `bad_issuer`, `bad_audience`, `expired`, or `missing_token` |API log |The token is wrong, expired, forged, or missing; the reason names which, though Orders logs most of these as `invalid_token`
 |403, `missing_role` |API log |The user lacks the role, or the client's scope does not include it
 |403 with no Orders log line |BFF or proxy |The CSRF proof is missing (a role denial still logs an Orders line)
 |502 from Orders |Orders |A downstream identity is not set up; follow the trace
@@ -102,7 +120,7 @@ production:
 * **Session and token lifetimes:** realm settings for access-token lifespan,
   single sign-on (SSO) session idle and maximum, and refresh-token reuse. Shorter lifetimes
   limit stolen tokens; longer ones reduce Keycloak load.
-* **Multi-factor authentication and identity brokering**, configured in
+* **Multi-factor authentication and identity brokering:** configured in
   Keycloak's authentication flows and identity providers.
 
 == Learn more
@@ -111,5 +129,6 @@ production:
   Engineering Task Force (IETF): the SPA, BFF, and proxy patterns in depth.
 * OAuth 2.0 Security Best Current Practice (RFC 9700).
 * OAuth 2.0 Token Exchange (RFC 8693).
-* Red Hat build of Keycloak documentation: *Server Administration Guide*,
-  chapters on clients, client scopes, and token exchange.
+* Red Hat build of Keycloak documentation: *Server Administration Guide* for
+  clients and client scopes, and *Securing Applications and Services Guide*
+  for token exchange.

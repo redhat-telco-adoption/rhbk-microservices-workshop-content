@@ -17,7 +17,7 @@ Keycloak for a decision and can *push claims*, facts from the request or from
 other systems, for the policies to use. The component that collects those
 facts is a *Claim Information Point* (CIP).
 
-You will model order approval for Orders, test it in the console, and then ask
+You model order approval for Orders, test it in the console, and then ask
 Keycloak for decisions from the terminal, with and without pushed claims.
 
 Before you start, run the setup block from xref:electives.adoc#_the_terminal[Electives]
@@ -31,10 +31,10 @@ in the **Terminal** tab.
 . Open **Users → manager**, set **Region** to `north`, and save.
 . Put it in tokens with a shared client scope, so it reaches every token
   Keycloak evaluates for this user. Open **Client scopes → Create client
-  scope**, name it `region`, set **Type** to **None**, and save. On its
-  **Mappers** tab choose **Configure a new mapper → User Attribute**, name it
-  `region`, set **User Attribute** to `region` and **Token Claim Name** to
-  `region`, turn **Add to access token** **On** and **Add to ID token**
+  scope**, name it `region`, set **Type** to **None**, and save.
+. On its **Mappers** tab, choose **Configure a new mapper → User Attribute**,
+  name it `region`, set **User Attribute** to `region` and **Token Claim Name**
+  to `region`, turn **Add to access token** **On** and **Add to ID token**
   **Off**, and save.
 . Add the scope to `spa` and to `orders-api`: open **Clients →** _client_ **→
   Client scopes → Add client scope**, select `region`, and choose **Add →
@@ -45,11 +45,11 @@ in the **Terminal** tab.
 . Open **Clients → orders-api**. Under **Capability config**, turn
   **Authorization** **On** and click **Save**. An **Authorization** tab
   appears. Keycloak creates a sample *Default Resource*, *Default Policy*, and
-  *Default Permission*; leave them, they cover a different resource.
+  *Default Permission*. Leave them: they cover a different resource.
 . On **Authorization → Scopes**, click **Create authorization scope** twice:
   `order:read` and `order:approve`.
 . On **Authorization → Resources**, click **Create resource**: name `order`,
-  **Display name** `Order`, **Resource type** `urn:orders-api:order`, **URIs**
+  **Display name** `Order`, **Type** `urn:orders-api:order`, **URIs**
   `/orders/*`, and **Authorization scopes** `order:read` and `order:approve`.
   Save.
 
@@ -99,12 +99,14 @@ image::el-d-approve-permission.png[The approve-order permission with three polic
 [%collapsible]
 ====
 Deny. `is-manager` and `region-north` grant, but `from-branch` has nothing to
-match: no `channel` was provided. The Evaluate tab cannot push a custom claim
-such as `channel`, so you will supply it from the terminal next.
+match: no `channel` was provided. The **Evaluate** tab cannot push a custom
+claim such as `channel`, so you supply it from the terminal next.
 
-image::el-d-evaluate-votes.png[Evaluate result: approve-order denied, with region-north and is-manager voting PERMIT and from-branch DENY]
+image::el-d-evaluate-votes.png["Evaluate result: approve-order denied, with region-north and is-manager voting PERMIT and from-branch DENY"]
 
-Ignore the `read-order` row: it is a different permission, for `order:read`.
+Ignore the `read-order` row. It is a different permission, for `order:read`,
+even though the **Evaluate** table lists `order:approve` beside it. The overall
+result for `order:approve` is what counts.
 ====
 . Click **Back** and evaluate the same request for user `reader` with role
   `user`. Now `is-manager` and `region-north` vote deny as well: the reader
@@ -117,8 +119,13 @@ Authorization Services, at the token endpoint. `response_mode=decision`
 returns only the verdict.
 
 . In the link:{spa_url}[SPA,window=_blank], sign out, sign in as `manager` (so
-  the token carries `region`), click **View orders**, copy the token, and run
-  `paste_token` in the terminal.
+  the token carries `region`), click **View orders**, copy the `Authorization`
+  value of the `orders` request (the `GET`, not an `OPTIONS` preflight) from the
+  **Network** tab, and run `paste_token` in the terminal.
++
+The steps below use this token. It expires after five minutes, so if a
+response is not the one the step describes, copy a fresh token and run
+`paste_token` again.
 . Ask as Orders, with its own credentials, on behalf of the user
   (`subject_token`), without pushed claims:
 +
@@ -144,7 +151,7 @@ CLAIMS=$(printf '{"channel":["branch"]}' | base64 -w0)
 decide -d claim_token="$CLAIMS" -d claim_token_format=urn:ietf:params:oauth:token-type:jwt
 ----
 +
-`{"result":true}`.
+Keycloak answers with `{"result":true}`.
 +
 image::el-d-decide-terminal.png[Terminal: decide is denied without claims and returns result true with the pushed channel claim]
 
@@ -153,8 +160,8 @@ image::el-d-decide-terminal.png[Terminal: decide is denied without claims and re
 Pushing `channel=branch` from your terminal made you look like a branch
 office. Could the browser do the same?
 
-. Send the same request as the SPA would: with the user's token as a bearer
-  credential and no client secret.
+. Read the request the SPA would send, with the user's token as a bearer
+  credential and no client secret. Do not run it yet:
 +
 [source,bash]
 ----
@@ -164,7 +171,7 @@ curl -s -H "Authorization: Bearer $TOKEN" \
   -d claim_token="$CLAIMS" -d claim_token_format=urn:ietf:params:oauth:token-type:jwt \
   "$ISSUER/protocol/openid-connect/token"; echo
 ----
-. **Predict**, then run it.
+. **Predict:** will Keycloak accept it? Write it down, then run it.
 +
 .What happened
 [%collapsible]
@@ -175,13 +182,15 @@ Only an authenticated, confidential client, normally the resource server
 itself, may push claims. That client is then responsible for their truth.
 ====
 
-Orders' own role checks from Module 5 still apply; Authorization Services adds
-decisions on top of them. Leave the configuration in place; it does not
-change the tokens the other modules use.
+Nothing in Orders calls Keycloak for these decisions: it has no approve
+endpoint and no policy enforcer, so it still decides with the role checks from
+Module 5. The *At your desk* section below shows how a service would use them.
+Leave the configuration in place. The manager's `spa` and `orders-api` tokens
+now carry `region`, but no API reads it, and the other modules work as before.
 
 == Explain
 
-. Orders pushes `channel`. Where should Orders get that value from?
+. If Orders pushed `channel`, where should it get that value from?
 +
 .Answer
 [%collapsible]
@@ -210,8 +219,10 @@ such as "needs `user`", are simpler as roles in the token.
 When a rule compares values with logic that Role, Group, Time, Client, Client
 scope, User, Regex, and Aggregated policies cannot express, such as "the order
 amount is below the user's approval limit". Package JavaScript policies in a
-Java archive (JAR) deployed with Keycloak. Uploading scripts through the admin API is
-disabled by default, and should stay disabled.
+Java archive (JAR) in the server's `providers/` directory, and enable the
+`scripts` feature. That is a preview feature, disabled by default and not
+recommended for production, so first check whether a policy engine or the
+API's own code can hold the rule.
 ====
 
 == At your desk
@@ -223,7 +234,7 @@ and asks Keycloak for the decision. A Quarkus service using
 
 [source,properties]
 ----
-quarkus.keycloak.policy-enforcer.enable=true
+quarkus.keycloak.policy-enforcer.enabled=true
 quarkus.keycloak.policy-enforcer.paths.approve.name=order
 quarkus.keycloak.policy-enforcer.paths.approve.paths=/orders/{id}/approve
 quarkus.keycloak.policy-enforcer.paths.approve.methods.post.method=POST

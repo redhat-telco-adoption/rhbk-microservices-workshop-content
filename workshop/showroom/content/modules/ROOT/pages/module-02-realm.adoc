@@ -36,8 +36,9 @@ image::m02-create-realm.png[Create realm form]
 == See it: the documents every application trusts
 
 . Open **Realm settings** and, next to **Endpoints**, click **OpenID Endpoint
-  Configuration**. This *discovery document* is public. Every application in
-  this lab reads it at startup.
+  Configuration**. This *discovery document* is public. The SPA, BFF, and proxy
+  read it to find their endpoints. The APIs in this lab are simpler: each
+  builds its `jwks_uri` address from the issuer.
 . Find these fields and note what each is for:
 +
 [cols="1,3",options="header"]
@@ -80,8 +81,8 @@ assign a role before it exists.
 == Explain
 
 . An attacker runs their own Keycloak and issues a token with
-  `"realm_access": {"roles": ["manager"]}` and your realm's name in `iss`. Why
-  does Orders reject it?
+  `"realm_access": {"roles": ["manager"]}` and your realm's exact issuer in
+  `iss`. Why does Orders reject it?
 +
 .Answer
 [%collapsible]
@@ -98,16 +99,18 @@ token came from your realm.
 .Answer
 [%collapsible]
 ====
-One value, the issuer, gives them everything else. Keycloak can change
+One value, the issuer, gives them everything else, so Keycloak can change
 endpoint paths or rotate keys without every application being reconfigured.
-It also means a wrong issuer breaks everything at once, which you will see in
-Module 4.
+It also means a wrong issuer breaks everything at once. Module 4 shows this.
+An application that builds a path from the issuer itself, as this lab's APIs
+do for the keys, loses that protection against a path change.
 ====
 
 == At your desk
 
 * Use one realm per trust boundary (for example per product or per customer),
   not one per application. Applications that share users share a realm.
-* Give teams delegated realm administration rather than server-wide admin.
+* Give teams delegated realm administration rather than server-wide
+  administration.
 * Treat the issuer as configuration that must be exact, including scheme,
   host, and the absence of a trailing slash.

@@ -46,15 +46,16 @@ jwt_part() { local p; p=$(cut -d. -f"$2" <<<"$1" | tr '_-' '/+'); while (( ${#p}
 ----
 
 Check it: `jwt_part "$(sa_token)" 2 | jq '{iss, azp}'` prints your issuer and
-`orders-api`. If it prints `null` values, the secret is wrong; run the
-`read` line again.
+`orders-api`. If it prints a `jq` parse error or nothing at all, the secret is
+wrong; run the `read` line again.
 
-image::el-terminal-setup.png[Terminal after the setup block, showing the issuer and azp orders-api]
+image::el-terminal-setup.png["Terminal after the setup block, showing the issuer and azp orders-api"]
 
 To copy a user's token, use the browser's **Network** tab as in Module 5:
-select an `orders` request and copy the `Authorization` header value. Then run
-`paste_token` and paste it. Access tokens expire after five minutes; copy a
-fresh one when a step says the token expired.
+select the `orders` request from **View orders** (the `GET`, not an `OPTIONS`
+preflight) and copy the `Authorization` header value. Then run `paste_token` and
+paste it. Access tokens expire after five minutes; copy a fresh one when a step
+says the token expired.
 
 Treat every token and secret in this terminal as a credential. Do not paste
 them into tickets, chat, or files.

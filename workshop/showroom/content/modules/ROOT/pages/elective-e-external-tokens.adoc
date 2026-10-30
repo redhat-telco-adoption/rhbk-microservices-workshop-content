@@ -8,9 +8,9 @@ needs to read your orders, and it already has tokens from its own issuer. Your
 security team adds one constraint: the realm that issues tokens for your
 internal APIs must not be reachable from outside.
 
-In Module 2 you reasoned that Orders rejects a token from any other issuer. In
-this elective you see it happen, then design how to accept the partner's
-tokens anyway.
+In Module 2 you reasoned about a token signed by another server. In this
+elective you test a different case, a token from your own server, then design
+how to accept the partner's tokens.
 
 Before you start, run the setup block from xref:electives.adoc#_the_terminal[Electives]
 in the **Terminal** tab.
@@ -22,10 +22,16 @@ administration console holds a `master` access token for you, which makes a
 convenient foreign token. It is a powerful token: send it only to your own
 Orders API, as below, and to nothing else.
 
-. In the Keycloak administration console tab, open developer tools, select any
-  request to `/admin/realms/...` in the **Network** tab, and copy its
-  `Authorization` value. Run `paste_token` and paste it. `master` tokens expire
-  after about a minute, so continue at once.
+. **Predict:** this token comes from your own Keycloak server and has a
+  genuine signature, but from the `master` realm. What will Orders return?
+  Write it down.
+. In the Keycloak administration console tab, open developer tools and the
+  **Network** tab.
+. Click any item in the left menu, such as **Clients**, so that new requests
+  appear.
+. Select a request to `+/admin/realms/...+` and copy its `Authorization` value.
+. Run `paste_token` and paste it. `master` tokens expire after about a minute,
+  so continue at once.
 . Look at its issuer, then send it to Orders:
 +
 [source,bash]
@@ -70,10 +76,10 @@ endpoint and receives a token from your realm.
 the current release before relying on it.
 
 |**Identity brokering**
-|Your realm lists the partner's identity provider. Partner *people* sign in
-through your realm's login page and receive your realm's tokens.
-|The browser login endpoints must be public; the admin console and backchannel
-need not be.
+|Your realm lists the partner's identity provider. Partner *people* use your
+realm's sign-in page and receive your realm's tokens.
+|The browser sign-in endpoints must be public; the administration console and
+backchannel need not be.
 |Interactive partner users of your web applications. Not machine-to-machine.
 
 |**Introspection**
@@ -103,12 +109,14 @@ validating proxy you operate also works.
 [%collapsible]
 ====
 Add identity brokering for the people: Acme becomes an identity provider in
-your realm, and its employees sign in through your login page. Browsers must
-reach your login endpoints, so those are public; keep the administration
-console on a separate internal hostname (Keycloak's `hostname-admin` option)
-and let confidential clients reach the token endpoint through an internal
-address (`hostname-backchannel-dynamic`). The batch system still goes through
-the gateway.
+your realm, and its employees use your sign-in page. Browsers must reach your
+sign-in endpoints, so those are public; serve the administration console on a
+separate internal hostname (Keycloak's `hostname-admin` option), block `/admin`
+on the public hostname at your reverse proxy, and let confidential clients
+reach the token endpoint through an internal address
+(`hostname-backchannel-dynamic`). This relaxes the security team's constraint
+for the sign-in endpoints, so agree on this with them first. The batch system
+still goes through the gateway.
 ====
 . Why is "add Acme's issuer to every API" risky over time?
 +

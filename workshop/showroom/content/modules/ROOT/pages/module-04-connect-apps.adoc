@@ -16,8 +16,8 @@ depends on its role:
 |Calls other services as itself (Orders) |Issuer, client ID, and secret.
 |===
 
-These values change per environment, so they live in configuration, never in
-code. Secrets go in a secret store; everything else can sit in plain
+Most of these values change per environment, so they live in configuration,
+not in code. Secrets go in a secret store; everything else can sit in plain
 configuration. Because one value drives everything, the most common
 integration bug is an issuer that is almost right.
 
@@ -29,17 +29,22 @@ connect the BFF yourself.
 . Open the link:{openshift_console_url}[OpenShift Console,window=_blank],
   select your project `{attendee_namespace}`, and open **Workloads →
   ConfigMaps → frontend-runtime-config**. Its `config.json` holds `issuer` and
-  `spaClientId`: everything the SPA needs. No secret, because a public client
-  has none.
-. Open `proxy-config` and `orders-api-config`. Match each value to a row of the
-  table above; a ConfigMap may hold only some of the rows (neither holds a
-  client ID, for example). `orders-api-config` has two issuer values: `ISSUER` for
-  checking incoming tokens and `WORKSHOP_ISSUER` for requesting its own tokens.
+  `spaClientId`, the two Keycloak values the SPA reads from configuration. The
+  SPA builds its redirect URI from its own address. The ConfigMap holds no
+  secret, because a public client has none.
+. Open `proxy-config` and `orders-api-config`. Match the issuer and redirect
+  values to rows of the table above. A ConfigMap may hold only some of the rows:
+  neither of these holds a client ID, for example. `orders-api-config` has two
+  issuer values: `ISSUER` for checking incoming tokens and `WORKSHOP_ISSUER`
+  for requesting its own tokens. It also holds `SPA_ORIGIN` and the addresses
+  of the APIs Orders calls, which are not Keycloak values.
 
 == Do: copy the client secrets
 
-The three confidential clients each need their secret in an OpenShift Secret.
-The Secrets hold a placeholder until you do this.
+Three of your five confidential clients use their secret at runtime, and each
+needs it in an OpenShift Secret. `inventory-api` and `notifications-api` only
+check tokens, so they need none. The Secrets hold a placeholder until you do
+this.
 
 [cols="1,1,1",options="header"]
 |===
@@ -48,6 +53,8 @@ The Secrets hold a placeholder until you do this.
 |`proxy` |`proxy-secrets` |`client-secret`
 |`orders-api` |`orders-api-client` |`client-secret`
 |===
+
+For each row of the table:
 
 . In Keycloak, open **Clients →** _client_ **→ Credentials** and use the copy
   button next to **Client Secret**.
@@ -61,18 +68,18 @@ image::m04-client-credentials.png[Credentials tab of the bff client]
 +
 image::m04-edit-secret.png[Edit Secret form for bff-client]
 
-Never paste a client secret into chat, a ticket, or a screenshot. Anyone with
+Never put a client secret in chat, a ticket, or a screenshot. Anyone with
 it can act as that application.
 
 == Break it: connect the BFF with an issuer that is almost right
 
 . Open **Workloads → ConfigMaps → bff-config → Actions → Edit ConfigMap**. It
-  opens a YAML (a plain-text configuration format) editor; `OIDC_ISSUER` under `data` says `set-your-realm-issuer-here`. Replace it with your issuer
-  **plus a trailing slash**, a common copy-and-paste slip:
-  `pass:a[{issuer}/]`. Click **Save**. Edit only the line under `data:`;
+  opens an editor for YAML (a plain-text configuration format). Under `data:`,
+  `OIDC_ISSUER` says `set-your-realm-issuer-here`. Edit only that line:
   `OIDC_ISSUER` also appears higher up in the `managedFields` metadata, which
-  you leave alone. After a save the editor may show the value in single quotes
-  (`'...'`); keep the quotes and change only the text between them.
+  you leave alone.
+. Replace the value with your issuer **plus a trailing slash**, a common
+  copy-and-paste slip: `pass:a[{issuer}/]`. Click **Save**.
 . Open **Workloads → Deployments → bff** and choose **Restart rollout** from
   the **Actions** menu at the top right of the page (not a volume row's menu).
 +
@@ -95,8 +102,10 @@ given. They differ by one character, so it stopped rather than trust tokens
 from an issuer it cannot match exactly.
 +
 image::m04-issuer-log.png[The BFF's startup error in Observe → Logs]
-. Edit `bff-config` again, remove the trailing slash so `OIDC_ISSUER` is
-  exactly `pass:a[{issuer}]`, and save.
+. Edit `bff-config` again and remove the trailing slash so `OIDC_ISSUER` is
+  exactly `pass:a[{issuer}]`. The editor may now show the value in single
+  quotes (`+'...'+`); keep the quotes and change only the text between them.
+  Save.
 
 == Do: restart and sign in
 
@@ -123,7 +132,7 @@ image::m04-issuer-log.png[The BFF's startup error in Observe → Logs]
 ====
 Spring Security checks the discovery document's `issuer` against the
 configured one at startup. Failing fast turns a configuration mistake into an
-obvious startup error. An API that only fails per request, like Orders,
+obvious startup error. An API that fails only per request, like Orders,
 returns 401 to every caller instead, which is harder to trace back to
 configuration.
 ====
@@ -135,14 +144,13 @@ configuration.
 [%collapsible]
 ====
 The issuer, client ID, and redirect URI are not secrets; they appear in every
-browser sign-in. The client secret is. It belongs in a Secret or a vault,
-injected at runtime, and rotated if it leaks.
+browser sign-in. The client secret is. It belongs in a Secret or another secret
+store, injected at runtime, and rotated if it leaks.
 ====
 
 == At your desk
 
-The BFF's whole Keycloak connection is this Spring Boot configuration
-(`apps/bff/src/main/resources/application.yml`):
+The BFF's whole Keycloak connection is its Spring Boot `application.yml`:
 
 [source,yaml]
 ----

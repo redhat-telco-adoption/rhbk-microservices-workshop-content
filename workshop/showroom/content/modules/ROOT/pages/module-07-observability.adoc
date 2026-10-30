@@ -11,49 +11,60 @@ reference answer; write yours first.
 
 == Do: follow a denial end to end
 
-. Sign in to the link:{spa_url}[SPA,window=_blank] as `reader`, click **View
-  orders**, then **Create a sample order**.
+. Sign out of every app first (Module 5). Then sign in to the
+  link:{spa_url}[SPA,window=_blank] as `reader`, click **View orders**, then
+  **Create a sample order**.
 . Open
   link:{openshift_console_url}/observe/traces?namespace=tracing&name=workshop&tenant={attendee_id}&start=15m&limit=100&q=%7B+resource.service.name+%3D+%22orders-api%22+%26%26+name+%3D+%22POST+%2Forders%22+%7D[your Orders traces,window=_blank]
   and find the denied `POST /orders` trace. Through the BFF or proxy the trace
   is named after that app, for example `bff: POST orders-api`. The list does
   not mark it as an error; open it and click the Orders span to see the 403
-  status. It never reaches Inventory or Notifications.
+  status. The request never reaches Inventory or Notifications.
 . In **Observe → Logs**, search for `missing_role` and click **Run Query**
-  (again if the old results stay). Click **Details** on the Orders line: it
+  (again if the results do not change). Click **Details** on the Orders line: it
   shows `decision` `deny`, status 403, and `reason` `missing_role`, with no
   token or secret in the log. **Details** leaves out `roles`; the pod's
   **Logs** tab (**Workloads → Pods →** _pod_ **→ Logs**) shows the whole line.
-  A denied write through the BFF also has a BFF line whose pod log has
-  `"roles":[]`: the BFF logs its session's ID token, which carries no roles,
-  while Orders checks the access token.
+  A denied write through the BFF also produces a BFF log line. In the BFF pod
+  log, that line has `"roles":[]`: the BFF logs its session's ID token, which
+  carries no roles, while Orders checks the access token.
 +
 image::m07-deny-log.png[Orders log line for the reader's denied write]
 
 == Scenario 1: "I can't create orders"
 
 A colleague signed in as `reader` says the app is broken: creating an order
-fails. Using only the console and the logs, decide whether this is a bug or
-policy, and what would change it.
+fails. Using only the OpenShift Console, the Keycloak administration console,
+and the logs, decide whether this is a bug or policy, and what would change it.
+
+A second colleague, signed in to a new app as `manager`, gets 401 on every
+request, and the Orders line says `reason` `invalid_token`. Is that policy too,
+and where do you look?
 
 .Reference answer
 [%collapsible]
 ====
-It is policy. The Orders log line says `status 403` and `reason
-missing_role`, and the orders-api pod log shows `roles ["user"]`.
+It is policy. The Orders log line has status 403 and `reason`
+`missing_role`, and the `orders-api` pod log shows `roles` `["user"]`.
 Authentication worked; the user lacks `manager`. The fix, if
 the business agrees, is a role assignment in Keycloak, not a code change.
 Before granting it, check the client side too: if the client's scope did not
 include `manager`, the user could have the role and still not get it in the
 token, as the service account did in Module 6.
+
+The second case is not policy. Orders could not accept the token, so it never
+checked roles. That points to configuration or token handling (Module 5):
+check the token's `iss`, `aud`, and `exp`. The usual cause is a client without
+`orders-api-aud` (Module 3).
 ====
 
 == Scenario 2: a token appears in a support ticket
 
-Someone pasted a request, including its `Authorization: Bearer ...` header,
+Someone pasted a request, including its `+Authorization: Bearer ...+` header,
 into a ticket.
 
-. **Try it.** Sign in to the SPA as `reader`, then in Keycloak open **Users →
+. **Try it.** In the SPA, click **Sign out**, then sign in again as `reader`
+  so the token is new. Within the next few minutes, in Keycloak open **Users →
   reader → Sessions** and sign out each session from its row menu.
 . **Predict:** the user's sessions are gone. What will **View orders** in the
   SPA return now? Write it down, then click it.
@@ -64,6 +75,10 @@ into a ticket.
 It still returns 200. Orders validates tokens locally with the realm's public
 keys and never asks Keycloak whether the session still exists. The access
 token stays valid until it expires, five minutes here.
+
+If your token had expired by then, the SPA tried to renew it, Keycloak refused,
+and the SPA signed you out. That is the session ending, not the token being
+revoked.
 ====
 
 What do you do about the ticket?
@@ -79,7 +94,7 @@ What do you do about the ticket?
 . End the user's sessions in Keycloak. That stops refresh and new tokens
   but, as you just saw, not an access token already issued.
 . If a client secret leaked, regenerate it in Keycloak (**Credentials →
-  Regenerate**) and update the Secret.
+  Regenerate**), update the Secret, and restart the workloads that read it.
 . Check logs for use of that identity during the exposure window.
 . Prevent the next one: keep access tokens short-lived, and never log
   `Authorization` headers or cookies.
@@ -98,8 +113,8 @@ order, while Keycloak is unreachable?
   expires (five minutes here). New sign-ins fail everywhere.
 * **SPA:** when the token expires, the SPA cannot renew it and the user is
   signed out.
-* **BFF and proxy:** same, at the next token refresh; the session cookie alone
-  is not enough.
+* **BFF and proxy:** the same limit, at the next token refresh: the app cannot
+  renew the token, so API calls fail. The session cookie alone is not enough.
 * **Orders:** reads keep working while the user's token is valid. Every
   *write* fails at once, because Orders exchanges a token with Keycloak for
   each Inventory call. Notifications would work until Orders' cached
@@ -123,9 +138,9 @@ Compare your completed Module 1 table with this one.
 |Question |SPA |BFF |Proxy
 |Where is the access token after sign-in? |Browser memory |BFF server |Proxy's Redis session
 |Can JavaScript on the page read the token? |Yes |No |No
-|What does the browser send to the API? |The token |A session cookie |A session cookie
-|Does the app need CSRF protection? |No |Yes |Yes
-|If Keycloak is down for ten minutes? (reasoned in Scenario 3) |Reads work until the token expires; writes fail at once |Reads work until the next refresh; writes fail at once |Reads work until the next refresh; writes fail at once
+|What does the browser send to the API: a token or a cookie? |The token |A session cookie |A session cookie
+|Does the app need protection against cross-site request forgery (CSRF)? |No |Yes |Yes
+|If Keycloak is down for ten minutes, can a signed-in user keep working? (reasoned in Scenario 3) |Reads work until the token expires; writes fail at once |Reads work until the next refresh; writes fail at once |Reads work until the next refresh; writes fail at once
 |===
 ====
 
@@ -141,12 +156,12 @@ Pick one application you work on. Write down, in one line each:
 . What happens to it during a Keycloak outage.
 
 Compare your answers with the checklists in xref:at-your-desk.adoc[], then
-discuss one gap with a neighbour or the facilitator: what would you change
+discuss one gap with a neighbor or the facilitator: what would you change
 first, and what would it take?
 
 == Optional: the Legacy API
 
 The Legacy API depends on Amazon Web Services (AWS), Domain Name System (DNS), and public Transport Layer Security (TLS) prerequisites. Use it only
 when your facilitator confirms it is available: confirm the audience is
-`legacy-api`, call the prepared endpoint, and compare its log line with the
-cluster APIs. Otherwise skip it.
+`legacy-api`, call the prepared endpoint, and compare its log line with those
+of the cluster APIs. Otherwise skip it.

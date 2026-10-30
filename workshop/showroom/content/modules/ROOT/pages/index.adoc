@@ -1,12 +1,12 @@
 = Secure microservices with Red Hat build of Keycloak
 :navtitle: Welcome
 
-Welcome to this hands-on lab. You will secure a small order system from an
+Welcome to this hands-on lab. You secure a small order system from an
 empty Keycloak realm to a working, observable application: three ways to sign
 users in to a browser app, an application programming interface (API) that makes its own access decisions, and two
 service-to-service calls with different identities.
 
-You will not only follow steps. Each module asks you to predict what will
+You do more than follow steps. Each module asks you to predict what will
 happen, look at the evidence (tokens, cookies, traces, and logs), and break
 something on purpose so you recognize the error when you meet it in your own
 work. You leave with a checklist and the code each application needs.
@@ -51,5 +51,5 @@ Answers are hidden behind a click so you can try first.
   application URLs (uniform resource locators: web addresses). Everything you need is on that page.
 . Keep paper or a text file handy for your predictions.
 
-The BFF and proxy show **503** or an error page until you create your realm and
+The BFF and proxy show 503 or an error page until you create your realm and
 connect them in Modules 2–4. That is expected.

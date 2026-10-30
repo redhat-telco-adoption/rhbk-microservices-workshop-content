@@ -1,14 +1,15 @@
 = Module 8: Capstone
 :navtitle: 8. Capstone
 
-There are no click-paths in this module. You have used everything it needs.
-Part 1 is a design discussion; Part 2 you build and the facilitator checks.
+This module gives you requirements, not step-by-step instructions. You have
+used everything it needs. Part 1 is a design discussion. In Part 2, you build
+a client and the facilitator checks it.
 
 == Part 1: choose a sign-in pattern
 
 For each application, choose SPA, BFF, or reverse proxy, and write one
 sentence saying why. Name the main risk you accept and one control you would
-add. If you work with a neighbour, compare before opening the answers.
+add. If you work with a neighbor, compare before opening the answers.
 
 . **A partner portal for invoices.** A new web application with a Java
   backend team, showing customers' invoices and payment details.
@@ -23,7 +24,7 @@ the BFF in this lab does.
 ====
 
 . **A ten-year-old internal reporting tool.** A vendor product you cannot
-  modify, which today has no login and is reachable only on the office
+  modify, which today has no sign-in and is reachable only on the office
   network. It must now be reachable remotely by staff only.
 +
 .Reference answer
@@ -37,8 +38,8 @@ has its own write actions, add a CSRF rule at the proxy, as this lab's gateway
 does.
 ====
 
-. **A public product catalogue with a favourites list.** A static site on a
-  content delivery network (CDN), no server of its own, calling your existing favourites API. The scripts
+. **A public product catalog with a favorites list.** A static site on a
+  content delivery network (CDN), no server of its own, calling your existing favorites API. The scripts
   on the page are your own, built and reviewed in one repository.
 +
 .Reference answer
@@ -57,7 +58,7 @@ where the tokens live and what that exposes, as you saw in Module 5.
 
 == Part 2: register a client from a requirement
 
-The reporting team has built **reports**, a server-side web application
+The reporting team has built `reports`, a server-side web application
 already running in your namespace at
 link:{reports_url}[{reports_url},window=_blank]. It lets signed-in staff read
 orders, and it signs in as client `reports`, which does not exist yet. You do
@@ -75,7 +76,7 @@ these requirements:
 . The application never handles a user's password and never acts on its own
   behalf.
 . Sign-in codes are protected against interception, as for every client in
-  this lab.
+  this lab that signs users in.
 
 Name the client `reports`.
 
@@ -107,34 +108,40 @@ What differs is the client it signs in as.
 manager still has the `manager` role, but this client never receives it, so
 Orders sees only `user`. In **Observe → Logs**, open **Details** on the newest
 line whose `service` is `orders-api`: it shows `client_id` `reports` and
-reason `missing_role`. The orders-api pod's **Logs** tab shows the same line
-with roles `["user"]`, while the `reports` pod's line lists no roles: the app
+`reason` `missing_role`. The `orders-api` pod's **Logs** tab shows the same line
+with `roles` `["user"]`, while the `reports` pod's line lists no roles: the app
 does not read them, Orders does.
 
-image::m08-reports-denied.png[The reports app, signed in as manager, showing HTTP 403 for Create a sample order]
+image::m08-reports-denied.png["The reports app, signed in as manager, showing HTTP 403 for Create a sample order"]
 ====
 
 === Pass criteria
 
 When you are done, tell the facilitator. Their check reads your client's
-settings and generates the manager's token. It passes when:
+settings and generates the manager's token. It passes when the client meets
+all six requirements.
 
-* the client `reports` exists and is confidential;
-* only the standard flow is on, with PKCE `S256`; direct access grants,
-  implicit flow, and service accounts are off;
-* the redirect URI and post-logout redirect URI are exactly the two addresses
-  in requirement 4;
-* full scope is off and the only role in its scope is the realm role `user`;
+.Exact pass criteria (open after you have built the client)
+[%collapsible]
+====
+* The client `reports` exists and is confidential.
+* Only the standard flow is on, with PKCE `S256`. Direct access grants, the
+  implicit flow, and service accounts are off.
+* The redirect URI and post-logout redirect URI are exactly the two addresses
+  in requirement 4.
+* **Full scope allowed** is off, and the only role in its scope is the realm
+  role `user`.
 * `orders-api-aud` is a default scope, and neither `inventory-api-aud` nor
-  `notifications-api-aud` is attached;
-* the manager's token has `aud` `orders-api` only and `realm_access.roles`
+  `notifications-api-aud` is attached.
+* The manager's token has `aud` `orders-api` only and `realm_access.roles`
   `["user"]` only.
+====
 
 .Hints, if you are stuck
 [%collapsible]
 ====
-* Requirement 1 decides two things on the first wizard pages: the client type
-  and the flow.
+* Requirement 1 decides two things on the first wizard pages: **Client
+  authentication** and the flow.
 * Requirement 2 is one client scope you already have.
 * Requirement 3 is not about the user's roles. Think about Module 3's "limit
   the roles each client receives".
@@ -167,7 +174,7 @@ privilege at the client level.
 === Twist: the requirement changes
 
 Six months later, the reporting team asks for one new feature: managers may
-re-submit a failed order from the reports screen. Answer without changing
+resubmit a failed order from the reports screen. Answer without changing
 your client (the facilitator's check expects it as built):
 
 . Which single Keycloak setting would make that possible, and what else
@@ -181,13 +188,13 @@ your client (the facilitator's check expects it as built):
   it: managers' tokens from `reports` would then carry `manager`, and Orders
   would accept their writes. Nothing changes in Orders. The side effect is
   that every manager's `reports` token can now create *any* order, not only
-  re-submit failed ones, so a stolen `reports` token is worth more than
+  resubmit failed ones, so a stolen `reports` token is worth more than
   before.
 . A reasonable answer is to push back on widening the client. Options: a
   narrower API operation (for example `+POST /orders/{id}/resubmit+`) protected
   by its own role such as `order-resubmitter`, added to the `reports` scope
-  instead of `manager`; or sending the user to the orders application, which
-  already holds that permission. Either keeps "reports can read" true for
-  everything else. The point is that a client's scope is a security boundary,
-  and widening it should be a design decision, not a quick fix.
+  instead of `manager`; or sending the user to the SPA, which already holds
+  that permission. Either keeps "reports can read" true for everything else.
+  The point is that a client's scope is a security boundary, and widening it
+  should be a design decision, not a quick fix.
 ====
