@@ -56,7 +56,8 @@ image::m02-create-realm.png[Create realm form]
 
 == Do: create two lab users
 
-. Open **Users → Create new user**. Enter username `reader`, email
+. Open **Users → Create new user** (**Add user** once the realm has a user).
+  Enter username `reader`, email
   `reader@example.invalid`, first name `Reader`, and last name `Lab`, then
   click **Create**. Keycloak's default user profile requires first and last
   name; without them the user gets an extra form at first sign-in.
@@ -64,7 +65,8 @@ image::m02-create-realm.png[Create realm form]
 image::m02-create-user.png[Create user form for reader]
 
 . On the user's **Credentials** tab, click **Set password**. Enter a password
-  you choose (not your attendee password), turn **Temporary** **Off**, and
+  you choose (not your attendee password) in **Password** and **Password
+  confirmation**, turn **Temporary** **Off**, and
   click **Save**, then confirm **Save password**.
 +
 image::m02-set-password.png[Set password dialog with Temporary turned off]

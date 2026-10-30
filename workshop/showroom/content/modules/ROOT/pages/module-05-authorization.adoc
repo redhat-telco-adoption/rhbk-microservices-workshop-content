@@ -94,12 +94,18 @@ SPA's main risk.
 
 Open **Observe → Logs** in the OpenShift Console, search for `missing_role`,
 and click **Run Query** (again if the results do not change). Then search for
-`invalid_token`. You find the Orders lines for your attempts:
+`invalid_token`. You find the Orders lines for your attempts. Each shows only
+its message, `request completed`; click **Details** on a line to see its
+fields:
 
-* `"status":403`, `"reason":"missing_role"`, `"username":"reader"`,
-  `"roles":["user"]`: Orders knew who you were and said no.
-* `"status":401`, `"reason":"invalid_token"`: Orders could not establish who
-  you were. (Orders reports a missing token as `invalid_token` too.)
+* `status` 403, `reason` `missing_role`, `username` `reader`: Orders knew who
+  you were and said no.
+* `status` 401, `reason` `invalid_token`: Orders could not establish who you
+  were. (Orders reports a missing token as `invalid_token` too.)
+
+**Details** leaves out list fields such as `roles`. To see the whole line,
+open **Workloads → Pods →** _orders-api pod_ **→ Logs**: the 403 line has
+`"roles":["user"]`.
 
 No token appears in any line. The log records the decision, not the
 credential.

@@ -69,7 +69,7 @@ Check the response, then find out how far the request got.
   span.
 . Open **Observe → Logs**, search for `/inventory/reserve`, and click **Run
   Query** (again if the results do not change). The newest Inventory line shows
-  `"username":"manager"`, `"client_id":"orders-api"`, `"decision":"allow"`:
+  `"username": "manager"`, `"client_id": "orders-api"`, `"decision": "allow"`:
   the user's identity arrived, and Inventory can see that Orders brought it.
 +
 image::m06-inventory-log.png[Inventory log line for the manager, called by orders-api]
@@ -156,10 +156,11 @@ image::m06-trace.png[Trace of a manager order across Orders, Inventory, and Noti
 
 . Copy the **Trace ID** from the top right of the trace page. In **Observe →
   Logs**, search for it and click **Run Query** (again if the results do not
-  change). You get one line per API:
+  change). You get one line per API. The Orders line shows only `request
+  completed`; click **Details** to see its fields:
 +
-* **Orders:** `username` `manager`, `client_id` `spa`, roles `manager` and
-  `user`.
+* **Orders:** `username` `manager`, `client_id` `spa`. **Details** leaves out
+  `roles`; the orders-api pod's **Logs** tab shows roles `manager` and `user`.
 * **Inventory:** `username` still `manager`, but `client_id` `orders-api`.
 * **Notifications:** `username` `service-account-orders-api`, role
   `notifier`. No user is involved.

@@ -11,7 +11,7 @@ dev_mode: false
 # frame, so its tab opens a new browser tab instead.
 view_switcher:
   enabled: true
-  default_mode: instructions
+  default_mode: split
 tabs:
   - name: Terminal
     path: /terminal

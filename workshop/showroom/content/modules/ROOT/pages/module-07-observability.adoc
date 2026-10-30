@@ -20,11 +20,13 @@ reference answer; write yours first.
   not mark it as an error; open it and click the Orders span to see the 403
   status. It never reaches Inventory or Notifications.
 . In **Observe → Logs**, search for `missing_role` and click **Run Query**
-  (again if the old results stay). The Orders line shows `decision` `deny`,
-  status 403, and `reason` `missing_role`, with no token or secret in the log.
-  A denied write through the BFF also has a BFF line with `roles: []`: the BFF
-  logs its session's ID token, which carries no roles, while Orders checks the
-  access token.
+  (again if the old results stay). Click **Details** on the Orders line: it
+  shows `decision` `deny`, status 403, and `reason` `missing_role`, with no
+  token or secret in the log. **Details** leaves out `roles`; the pod's
+  **Logs** tab (**Workloads → Pods →** _pod_ **→ Logs**) shows the whole line.
+  A denied write through the BFF also has a BFF line whose pod log has
+  `"roles":[]`: the BFF logs its session's ID token, which carries no roles,
+  while Orders checks the access token.
 +
 image::m07-deny-log.png[Orders log line for the reader's denied write]
 
@@ -37,8 +39,9 @@ policy, and what would change it.
 .Reference answer
 [%collapsible]
 ====
-It is policy. The Orders log line says `status 403`, `reason missing_role`,
-`roles ["user"]`. Authentication worked; the user lacks `manager`. The fix, if
+It is policy. The Orders log line says `status 403` and `reason
+missing_role`, and the orders-api pod log shows `roles ["user"]`.
+Authentication worked; the user lacks `manager`. The fix, if
 the business agrees, is a role assignment in Keycloak, not a code change.
 Before granting it, check the client side too: if the client's scope did not
 include `manager`, the user could have the role and still not get it in the
