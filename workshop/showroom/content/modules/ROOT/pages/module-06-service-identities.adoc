@@ -78,8 +78,9 @@ It still returns 502. The next steps find out how far the request got.
   worked. There is no `notifications-api` span.
 . Open **Observe → Logs**, search for `/inventory/reserve`, and click **Run
   Query** (again if the results do not change). The newest Inventory line shows
-  `"username": "manager"`, `"client_id": "orders-api"`, `"decision": "allow"`:
-  the user's identity arrived, and Inventory can see that Orders brought it.
+  only `request_complete`. Click **Details** to see `username` `manager`,
+  `client_id` `orders-api`, and `decision` `allow`: the user's identity arrived,
+  and Inventory can see that Orders brought it.
 +
 image::m06-inventory-log.png["Inventory log line for the manager, called by orders-api"]
 . Search for `/notify`. There is no line at all. Orders never reached
@@ -179,8 +180,9 @@ image::m06-trace.png["Trace of a manager order across Orders, Inventory, and Not
 
 . Copy the **Trace ID** from the top right of the trace page. In **Observe →
   Logs**, search for it and click **Run Query** (again if the results do not
-  change). You get one line per API. The Orders line shows only `request
-  completed`; click **Details** to see its fields:
+  change). You get one line per API. The Orders and Inventory lines show only
+  their message (`request completed`, `request_complete`); click **Details** to
+  see their fields:
 +
 --
 * **Orders:** `username` `manager`, `client_id` `spa`. **Details** leaves out
