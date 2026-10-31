@@ -71,9 +71,10 @@ curl -s -o /dev/null -w '%{http_code}\n' -u 'orders-api:wrong' -d "token=$TOKEN"
 +
 Keycloak refuses with `401`: only an authenticated client may introspect.
 . Now consider the introspection answer from step 3 of the previous section.
-  `orders-api` introspected a token that was issued to `spa`. In Keycloak, any
-  confidential client of the realm can introspect any of the realm's tokens
-  and learn whose they are.
+  `orders-api` introspected a token that was issued to `spa`, and got the user
+  back, because `orders-api` is in that token's `aud`. A client that
+  authenticates but is not in the audience gets only `{"active": false}`, even
+  for a live token, so `false` does not always mean revoked.
 +
 In production, give each introspecting service its own confidential client,
 protect that client's secret like any other credential, and keep

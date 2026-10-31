@@ -102,7 +102,7 @@ Return 401 for token problems and 403 for missing permissions. (Module 5)
 |`did not match the requested issuer` |App startup log |Issuer differs by a character, often a trailing slash
 |401, `invalid_token`, `bad_issuer`, `bad_audience`, `expired`, or `missing_token` |API log |The token is wrong, expired, forged, or missing; the reason names which, though Orders logs most of these as `invalid_token`
 |403, `missing_role` |API log |The user lacks the role, or the client's scope does not include it
-|403 with no Orders log line |BFF or proxy |The CSRF proof is missing (a role denial still logs an Orders line)
+|403 with no Orders log line |Browser response (the BFF writes no log line for it); proxy `nginx` access log |The CSRF proof is missing (a role denial still logs an Orders line)
 |502 from Orders |Orders |A downstream identity is not set up; follow the trace
 |Role change has no effect |Service-to-service |A cached token; wait for expiry or restart
 |===
@@ -125,10 +125,11 @@ production:
 
 == Learn more
 
-* OAuth 2.0 for Browser-Based Applications, a draft from the Internet
-  Engineering Task Force (IETF): the SPA, BFF, and proxy patterns in depth.
-* OAuth 2.0 Security Best Current Practice (RFC 9700).
-* OAuth 2.0 Token Exchange (RFC 8693).
-* Red Hat build of Keycloak documentation: *Server Administration Guide* for
+* link:https://datatracker.ietf.org/doc/draft-ietf-oauth-browser-based-apps/[OAuth 2.0 for Browser-Based Applications,window=_blank],
+  a draft from the Internet Engineering Task Force (IETF): the SPA, BFF, and
+  proxy patterns in depth.
+* link:https://www.rfc-editor.org/rfc/rfc9700[OAuth 2.0 Security Best Current Practice (RFC 9700),window=_blank].
+* link:https://www.rfc-editor.org/rfc/rfc8693[OAuth 2.0 Token Exchange (RFC 8693),window=_blank].
+* link:https://docs.redhat.com/en/documentation/red_hat_build_of_keycloak/26.4[Red Hat build of Keycloak documentation,window=_blank]: *Server Administration Guide* for
   clients and client scopes, and *Securing Applications and Services Guide*
   for token exchange.

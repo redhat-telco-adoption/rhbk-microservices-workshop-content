@@ -209,7 +209,8 @@ image::m03-audience-mapper.png[Audience mapper for orders-api-aud]
 . Attach it to `spa`, `bff`, and `proxy`: open **Clients →** _client_ **→
   Client scopes → Add client scope**, select `orders-api-aud`, and choose
   **Add → Default**. *Default* means it is in every token for that client.
-. The proxy also checks that tokens were issued to itself. Open **Clients →
+. Add the proxy to its own access token's audience as well, so the token names
+  the client holding it. Open **Clients →
   proxy → Client scopes → proxy-dedicated → Configure a new mapper** (or **Add
   mapper → By configuration**), choose **Audience**, name it
   `proxy-audience`, select `proxy` as the **Included Client Audience**, turn

@@ -21,8 +21,8 @@ the facilitator.
 * **Signed in as the wrong user.** The apps share one Keycloak session. Sign out
   of every app you used, then sign in again.
 * **The proxy shows an error after sign-in, at `/oauth2/callback`.** Check the
-  `client-secret` key in `proxy-secrets`, then the `proxy-audience` mapper
-  (Module 3).
+  `client-secret` key in `proxy-secrets` (Module 4) against **Clients → proxy →
+  Credentials**, then read the `oauth2-proxy` container's log in the proxy pod.
 
 == Application problems
 

@@ -55,7 +55,8 @@ in the **Terminal** tab.
 
 == Do: write the policies
 
-On **Authorization → Policies**, click **Create policy** for each row. Leave
+On **Authorization → Policies**, click **Create client policy**, choose the
+**Type** from the table, and fill in the settings. Repeat for each row. Leave
 **Logic** **Positive**.
 
 [cols="1,1,3",options="header"]
