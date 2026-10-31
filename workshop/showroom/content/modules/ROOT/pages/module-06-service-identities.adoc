@@ -68,7 +68,7 @@ It still returns 502. The next steps find out how far the request got.
 . Open
   link:{openshift_console_url}/observe/traces?namespace=tracing&name=workshop&tenant={attendee_id}&start=15m&limit=100&q=%7B+resource.service.name+%3D+%22orders-api%22+%26%26+name+%3D+%22POST+%2Forders%22+%7D[your Orders traces,window=_blank]
   (**Observe → Traces**, **Tempo instance** `tracing / workshop`, **Tenant**
-  `{attendee_id}`, **Service Name** `orders-api`, **Limit traces** 100, and the link's query for `POST /orders` spans; only you can
+  `{attendee_id}`, **Service Name** `orders-api`, **Max traces** 100, and the link's query for `POST /orders` spans; only you can
   read this tenant, though the list names others). If you open Traces from the
   menu instead of the link, set those values yourself: the **Tenant** starts on
   `workshop`, which you cannot read.
