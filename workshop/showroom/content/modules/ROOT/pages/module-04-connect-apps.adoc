@@ -88,8 +88,9 @@ image::m04-restart-rollout.png[Restart rollout action on the bff Deployment]
 . **Predict:** the issuer is only one character off. Will the BFF start?
 . Wait a minute, then open **Observe → Logs**, search for
   `did not match the requested issuer`, and click **Run Query** (click it again
-  if the results do not change). The BFF refused to start. The line is long;
-  the part that matters is near the middle:
+  if the results do not change). The BFF refused to start. Two lines match: the
+  newest shows only `Application run failed`, and the next is long, with the
+  part that matters at its end:
 +
 [subs="attributes+"]
 ----
@@ -122,6 +123,9 @@ image::m04-issuer-log.png[The BFF's startup error in Observe → Logs]
   link:{bff_url}[BFF,window=_blank] (the page goes to Keycloak and back), and
   link:{proxy_url}[proxy,window=_blank] (Keycloak appears immediately; the
   whole app is behind the sign-in). Each returns to its own callback address.
+  After you sign out of the proxy, close any tab left on Keycloak's sign-in
+  page: a later sign-in in another tab can complete it and sign you in to the
+  proxy.
 
 == Explain
 

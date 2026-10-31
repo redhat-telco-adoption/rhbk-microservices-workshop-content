@@ -100,12 +100,15 @@ Return 401 for token problems and 403 for missing permissions. (Module 5)
 |What you see |Where |Usual cause
 |`Invalid parameter: redirect_uri` |Keycloak error page |The app's callback address is not in the client's list exactly
 |`did not match the requested issuer` |App startup log |Issuer differs by a character, often a trailing slash
-|401, `invalid_token`, `bad_issuer`, `bad_audience`, `expired`, or `missing_token` |API log |The token is wrong, expired, forged, or missing; the reason names which, though Orders logs most of these as `invalid_token`
+|401, `invalid_token` or `expired` |API log |The token is missing, forged, meant for another API, or expired; Orders logs all but expiry as `invalid_token`
 |403, `missing_role` |API log |The user lacks the role, or the client's scope does not include it
 |403 with no Orders log line |Browser response (the BFF writes no log line for it); proxy `nginx` access log |The CSRF proof is missing (a role denial still logs an Orders line)
 |502 from Orders |Orders |A downstream identity is not set up; follow the trace
 |Role change has no effect |Service-to-service |A cached token; wait for expiry or restart
 |===
+
+Other services can log finer reasons, such as `bad_issuer`, `bad_audience`, or
+`missing_token`; you did not see those here.
 
 == Not covered in this lab
 
@@ -125,9 +128,8 @@ production:
 
 == Learn more
 
-* link:https://datatracker.ietf.org/doc/draft-ietf-oauth-browser-based-apps/[OAuth 2.0 for Browser-Based Applications,window=_blank],
-  a draft from the Internet Engineering Task Force (IETF): the SPA, BFF, and
-  proxy patterns in depth.
+* link:https://www.rfc-editor.org/rfc/rfc10017[OAuth 2.0 for Browser-Based Applications (RFC 10017),window=_blank]:
+  the SPA, BFF, and proxy patterns in depth.
 * link:https://www.rfc-editor.org/rfc/rfc9700[OAuth 2.0 Security Best Current Practice (RFC 9700),window=_blank].
 * link:https://www.rfc-editor.org/rfc/rfc8693[OAuth 2.0 Token Exchange (RFC 8693),window=_blank].
 * link:https://docs.redhat.com/en/documentation/red_hat_build_of_keycloak/26.4[Red Hat build of Keycloak documentation,window=_blank]: *Server Administration Guide* for

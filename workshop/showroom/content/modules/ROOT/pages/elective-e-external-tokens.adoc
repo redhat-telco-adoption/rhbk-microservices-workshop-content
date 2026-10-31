@@ -27,8 +27,8 @@ Orders API, as below, and to nothing else.
   Write it down.
 . In the Keycloak administration console tab, open developer tools and the
   **Network** tab.
-. Click any item in the left menu, such as **Clients**, so that new requests
-  appear.
+. Click an item in the left menu other than the page you are on, such as
+  **Realm roles**, so that new requests appear.
 . Select a request to `+/admin/realms/...+` and copy its `Authorization` value.
 . Run `paste_token` and paste it. `master` tokens expire after about a minute,
   so continue at once.

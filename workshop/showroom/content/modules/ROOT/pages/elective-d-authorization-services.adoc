@@ -94,7 +94,8 @@ image::el-d-approve-permission.png[The approve-order permission with three polic
   is selected). Under the resources and scopes section, select resource
   `order` and scope `order:approve`. Click **Evaluate**.
 . **Predict:** permit or deny? Write it down, then read the result. Expand
-  `approve-order` to see how each policy voted.
+  the `order with scopes [order:approve]` row, then `approve-order` inside it,
+  to see how each policy voted.
 +
 .What happened
 [%collapsible]
@@ -109,8 +110,9 @@ Ignore the `read-order` row. It is a different permission, for `order:read`,
 even though the **Evaluate** table lists `order:approve` beside it. The overall
 result for `order:approve` is what counts.
 ====
-. Click **Back** and evaluate the same request for user `reader` with role
-  `user`. Now `is-manager` and `region-north` vote deny as well: the reader
+. Click **Back**. Select user `reader`, remove the `manager` chip under
+  **Roles** (**Back** keeps it), select role `user`, and click **Evaluate**.
+  Now `is-manager` and `region-north` vote deny as well: the reader
   has neither the role nor a region.
 
 == Do: ask Keycloak for a decision

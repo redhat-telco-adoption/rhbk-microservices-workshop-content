@@ -17,9 +17,10 @@ reference answer; write yours first.
 . Open
   link:{openshift_console_url}/observe/traces?namespace=tracing&name=workshop&tenant={attendee_id}&start=15m&limit=100&q=%7B+resource.service.name+%3D+%22orders-api%22+%26%26+name+%3D+%22POST+%2Forders%22+%7D[your Orders traces,window=_blank]
   and find the denied `POST /orders` trace. Through the BFF or proxy the trace
-  is named after that app, for example `bff: POST orders-api`. The list does
-  not mark it as an error; open it and click the Orders span to see the 403
-  status. The request never reaches Inventory or Notifications.
+  is named after that app, for example `bff: POST orders-api`. A denial through
+  the SPA shows no error in the list; one through the BFF shows `1 error`, from
+  the BFF's own call to Orders. Either way, open it and click the Orders span
+  to see the 403 status. The request never reaches Inventory or Notifications.
 . In **Observe → Logs**, search for `missing_role` and click **Run Query**
   (again if the results do not change). Click **Details** on the Orders line: it
   shows `decision` `deny`, status 403, and `reason` `missing_role`, with no
