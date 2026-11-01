@@ -86,7 +86,7 @@ being wrong.
 |===
 
 CSRF is when another website makes your browser
-send a request to an app, and the browser attaches that app's cookies by
+send a request to an app, hoping the browser attaches that app's cookies by
 itself. Use that to answer row 4.
 
 You check rows 1–4 against the running system in Module 5, and reason through
