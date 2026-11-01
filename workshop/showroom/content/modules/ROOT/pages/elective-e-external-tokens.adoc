@@ -25,8 +25,11 @@ Orders API, as below, and to nothing else.
 . **Predict:** this token comes from your own Keycloak server and has a
   genuine signature, but from the `master` realm. What will Orders return?
   Write it down.
-. In the Keycloak administration console tab, open developer tools and the
-  **Network** tab.
+. In the Keycloak administration console tab, make sure your own realm is
+  selected: if the left menu has no **Realm roles**, open **Manage realms** and
+  select `{realm_name}`. Your token still comes from `master`, because that is
+  where your account lives.
+. Open developer tools and the **Network** tab.
 . Click an item in the left menu other than the page you are on, such as
   **Realm roles**, so that new requests appear.
 . Select a request to `+/admin/realms/...+` and copy its `Authorization` value.

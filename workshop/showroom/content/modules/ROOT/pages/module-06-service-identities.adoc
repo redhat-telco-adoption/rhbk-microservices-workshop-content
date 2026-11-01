@@ -103,8 +103,9 @@ image::m06-inventory-log.png["Inventory log line for the manager, called by orde
 +
 image::m03-service-account-roles.png[Service accounts roles tab for orders-api]
 
-. Create a client scope `notifications-api-aud` with an **Audience** mapper for
-  `notifications-api`.
+. Create a client scope `notifications-api-aud` as you did for
+  `inventory-api-aud` in Step 1, with `notifications-api` as the **Included
+  Client Audience**.
 . Add it to `orders-api` as **Default**. Default,
   because Orders`' client-credentials request names no scope, so only Default
   scopes reach that token. The exchange in Step 1 names its scope, so Optional

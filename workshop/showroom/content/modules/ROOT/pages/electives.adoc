@@ -28,8 +28,8 @@ shell in your own Showroom pod with `curl` and `jq`. Electives B, C, D, and E
 use it.
 
 Run this setup block each time you open a new terminal. It asks for the
-`orders-api` client secret, which you find in Keycloak under **Clients →
-orders-api → Credentials**. `read -s` keeps the secret off the screen and out
+`orders-api` client secret, which you find in Keycloak, in your own realm, under
+**Clients → orders-api → Credentials**. `read -s` keeps the secret off the screen and out
 of the shell history.
 
 [source,bash,subs="attributes+"]
