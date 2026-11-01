@@ -3,7 +3,7 @@
 
 *Time:* 50 minutes +
 *Before you start:* Module 2: your realm and lab users +
-*By the end, you can:* register browser and server-side clients with exact redirect URIs; limit the roles each client receives; give tokens the audience Orders requires
+*By the end, you can:* register browser and server-side clients with exact redirect addresses; limit the roles each client receives; give tokens the audience Orders requires
 
 == Why it matters
 
