@@ -1,6 +1,10 @@
 = Module 8: Capstone
 :navtitle: 8. Capstone
 
+*Time:* 35 minutes +
+*Before you start:* Modules 1–7, because this module gives requirements rather than steps +
+*By the end, you can:* choose a sign-in pattern and name the risk you accept; register a client from written requirements; prove its limits in the token and the application
+
 This module gives you requirements, not step-by-step instructions. You have
 used everything it needs. Part 1 is a design discussion. In Part 2, you build
 a client and the facilitator checks it.
@@ -12,7 +16,7 @@ sentence saying why. Name the main risk you accept and one control you would
 add. If you work with a neighbor, compare before opening the answers.
 
 . **A partner portal for invoices.** A new web application with a Java
-  backend team, showing customers' invoices and payment details.
+  backend team, showing customers`' invoices and payment details.
 +
 .Reference answer
 [%collapsible]
@@ -108,7 +112,7 @@ What differs is the client it signs in as.
 manager still has the `manager` role, but this client never receives it, so
 Orders sees only `user`. In **Observe → Logs**, search for `missing_role` and
 click **Run Query** (again if the results do not change). Click **Details** on
-the newest `request completed` line, which is Orders' line: it shows `client_id`
+the newest `request completed` line, which is Orders`' line: it shows `client_id`
 `reports` and `reason` `missing_role`. The `orders-api` pod's **Logs** tab shows
 the same line with `roles` `["user"]`, while the `reports` pod's line lists no
 roles: the app does not read them, Orders does.
@@ -186,7 +190,7 @@ your client (the facilitator's check expects it as built):
 [%collapsible]
 ====
 . Adding the realm role `manager` to `reports-dedicated` → **Scope** would do
-  it: managers' tokens from `reports` would then carry `manager`, and Orders
+  it: managers`' tokens from `reports` would then carry `manager`, and Orders
   would accept their writes. Nothing changes in Orders. The side effect is
   that every manager's `reports` token can now create *any* order, not only
   resubmit failed ones, so a stolen `reports` token is worth more than

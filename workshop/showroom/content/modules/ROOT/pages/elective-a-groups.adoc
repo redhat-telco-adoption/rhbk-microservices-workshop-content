@@ -48,9 +48,9 @@ role, not how the user got it.
   path** **On**, turn **Add to access token** **On**, turn **Add to ID token**
   **Off**, and save.
 . Open **Clients → spa → Client scopes → Evaluate** and pick `manager` from
-  the **Users** list. Click **Effective role scope mappings**, then **Generated
-  access token**. The token has `"groups": ["/order-managers"]` next to
-  `realm_access.roles`.
+  the **Users** list.
+. Click **Effective role scope mappings**, then **Generated access token**. The
+  token has `"groups": ["/order-managers"]` next to `realm_access.roles`.
 +
 image::el-a-groups-claim.png[Manager's spa access token with realm_access roles and the groups claim]
 
@@ -73,7 +73,8 @@ the reader can create orders. Group changes, like role changes in Module 6,
 take effect when a new token is issued.
 ====
 . Remove `reader` from `order-managers` (**Users → reader → Groups**, select
-  the group, **Leave**). Sign the reader out of the SPA.
+  the group, **Leave**).
+. Sign the reader out of the SPA.
 
 Leave the manager in `order-managers`. The other modules and electives work
 with either assignment. No API here reads the `groups` claim, so delete the

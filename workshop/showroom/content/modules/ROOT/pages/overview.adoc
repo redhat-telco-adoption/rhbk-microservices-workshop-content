@@ -58,7 +58,7 @@ The same browser frontend is served three ways, once per sign-in pattern:
 * Your realm signs users in to all three patterns.
 * Your `reader` user can view orders but not create them, and your `manager` user can create them,
   through every pattern.
-* An order shows the user at Inventory and Orders' own identity at
+* An order shows the user at Inventory and Orders`' own identity at
   Notifications.
 * Your capstone client passes its check.
 * You can explain, for your own application, which pattern you would choose

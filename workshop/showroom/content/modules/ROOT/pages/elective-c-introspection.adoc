@@ -17,15 +17,16 @@ right choice.
 Before you start, run the setup block from xref:electives.adoc#_the_terminal[Electives]
 in the **Terminal** tab.
 
-Steps 1–5 below must fit inside the token's five-minute lifetime. Read them
+Steps 1–6 below must fit inside the token's five-minute lifetime. Read them
 through first.
 
 == Do: one token, two answers
 
 . In the link:{spa_url}[SPA,window=_blank], sign out if you are signed in,
-  sign in as `reader`, and click **View orders**. Copy the `Authorization`
-  value of the `orders` request (the `GET`, not an `OPTIONS` preflight) from
-  the **Network** tab, run `paste_token` in the terminal, and paste it.
+  sign in as `reader`, and click **View orders**.
+. Copy the `Authorization` value of the `orders` request (the `GET`, not an
+  `OPTIONS` preflight) from the **Network** tab, run `paste_token` in the
+  terminal, and paste it.
 . Ask Orders, which validates locally:
 +
 [source,bash]
@@ -70,7 +71,7 @@ curl -s -o /dev/null -w '%{http_code}\n' -u 'orders-api:wrong' -d "token=$TOKEN"
 ----
 +
 Keycloak refuses with `401`: only an authenticated client may introspect.
-. Now consider the introspection answer from step 3 of the previous section.
+. Now consider the introspection answer from step 4 of the previous section.
   `orders-api` introspected a token that was issued to `spa`, and got the user
   back, because `orders-api` is in that token's `aud`. A client that
   authenticates but is not in the audience gets only `{"active": false}`, even

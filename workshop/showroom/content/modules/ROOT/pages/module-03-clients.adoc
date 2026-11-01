@@ -1,6 +1,10 @@
 = Module 3: Clients, roles, and audiences
 :navtitle: 3. Clients and tokens
 
+*Time:* 50 minutes +
+*Before you start:* Module 2: your realm and lab users +
+*By the end, you can:* register browser and server-side clients with exact redirect URIs; limit the roles each client receives; give tokens the audience Orders requires
+
 == Why it matters
 
 A *client* is Keycloak's record of an application: how it may sign users in,
@@ -79,9 +83,11 @@ module. Click **Sign out**.
   URI to `pass:a[{spa_url}/auth/callback]`. Click **Save**.
 . In the SPA, click **Sign in**. The popup shows Keycloak's error page:
   **Invalid parameter: redirect_uri**. Keycloak refused to send a code to an
-  address it does not know. Close the popup and reload the SPA page.
+  address it does not know.
+. Close the popup and reload the SPA page.
 . Change the redirect URI back to `pass:a[{spa_url}/auth/popup-callback]` and
-  save. Sign in again to confirm it works, then sign out.
+  save.
+. Sign in again to confirm it works, then sign out.
 
 .Why not just allow `pass:a[{spa_url}/*]`?
 [%collapsible]
@@ -137,8 +143,8 @@ client from its redirect URI; that is harmless for a server-side app.
   role → Realm roles**, select `user`, and click **Assign**. `manager` is now
   a *composite* role: anyone with `manager` also has `user`.
 . Open **Users → reader → Role mapping → Assign role → Realm roles**, select
-  `user`, and click **Assign**. Do the same for the user `manager`, but assign
-  the role `manager` only.
+  `user`, and click **Assign**.
+. Do the same for the user `manager`, but assign the role `manager` only.
 +
 image::m03-role-mapping.png[Role mapping tab for the manager user]
 
@@ -152,8 +158,8 @@ change what "manager" includes in one place.
   manager's `spa` token carry any other roles, and what will its `aud` be?
   Write down your answer.
 . Open **Clients → spa → Client scopes → Evaluate**. Click the **Users** field
-  and pick `manager` from the list (typing alone does not select). Click
-  **Effective role scope mappings**, then **Generated access token**; the
+  and pick `manager` from the list (typing alone does not select).
+. Click **Effective role scope mappings**, then **Generated access token**; the
   token appears only after you switch tabs like this. Look at
   `realm_access.roles`, `resource_access`, and `aud`.
 +
@@ -232,8 +238,9 @@ image::m03-evaluate.png[Generated access token for reader on the spa client]
 
 . In the SPA, sign in as `reader` and open **Identity and access details**
   again. **Intended APIs** now shows `Orders API` and **Workshop roles** shows
-  `User`. Click **View orders**; it returns HTTP 200. Compare with what you saw
-  at the start of the module. Sign out.
+  `User`.
+. Click **View orders**; it returns HTTP 200. Compare with what you saw at the
+  start of the module. Sign out.
 
 The token view is for your own lab users only; do not copy or share tokens.
 

@@ -1,6 +1,10 @@
 = Module 6: Service-to-service identities
 :navtitle: 6. Service identities
 
+*Time:* 45 minutes +
+*Before you start:* Module 5, where a manager's order still fails with 502 +
+*By the end, you can:* set up token exchange so Inventory sees the user; give Orders a service account for Notifications; use traces and logs to find each missing piece
+
 == Why it matters
 
 Creating an order makes Orders call two other services, and they need
@@ -32,9 +36,9 @@ You set these up one piece at a time and use traces and logs to find
 each missing piece, which is how you would debug them in your own work.
 
 A *trace* records one request as it crosses services. Each step, such as
-Orders' call to Inventory, is a *span*. If one of the three APIs has no span
+Orders`' call to Inventory, is a *span*. If one of the three APIs has no span
 in a trace, the request never reached it. Keycloak is not traced here; you see
-only Orders' calls to it.
+only Orders`' calls to it.
 
 Right now a manager's order fails with 502. Keep the
 link:{spa_url}[SPA,window=_blank] open and signed in as `manager`; you
@@ -100,8 +104,9 @@ image::m06-inventory-log.png["Inventory log line for the manager, called by orde
 image::m03-service-account-roles.png[Service accounts roles tab for orders-api]
 
 . Create a client scope `notifications-api-aud` with an **Audience** mapper for
-  `notifications-api`, and add it to `orders-api` as **Default**. Default,
-  because Orders' client-credentials request names no scope, so only Default
+  `notifications-api`.
+. Add it to `orders-api` as **Default**. Default,
+  because Orders`' client-credentials request names no scope, so only Default
   scopes reach that token. The exchange in Step 1 names its scope, so Optional
   works there.
 . **Predict:** Orders now has its own identity, and its service account has
@@ -148,7 +153,7 @@ image::m03-dedicated-scope.png["Scope tab of orders-api-dedicated with user, man
 .What happened
 [%collapsible]
 ====
-It still fails if Orders' service-account token is less than about four minutes
+It still fails if Orders`' service-account token is less than about four minutes
 old. Orders first fetched it for your first order after Step 2, and reuses it
 until it nears expiry (five minutes here), so it is still sending the old one
 without `notifier`. If your order succeeded, that token had already been
@@ -156,7 +161,8 @@ replaced.
 ====
 . Restart the `orders-api` rollout in the OpenShift Console and wait until it
   shows **1 of 1 pods** and the pod's **Created** time is just now (Module 4),
-  or wait five minutes. Then create an order. It returns 201, and the
+  or wait five minutes.
+. Create an order. It returns 201, and the
   response shows `"for": "manager"` under `reserved` and `"accepted": true`
   under `notification`. The first order after a restart can take a few seconds
   while Orders fetches the realm's keys and its first tokens.
@@ -172,15 +178,15 @@ its old permissions until it gets a new token.
 
 . Open your Orders traces again and open the newest `POST /orders` trace. One
   request crosses Orders, Inventory, and Notifications. The `orders-api: POST`
-  spans with no service below them are Orders' calls to Keycloak's token
+  spans with no service below them are Orders`' calls to Keycloak's token
   endpoint: the exchange, and the client-credentials request when it needs a
   new token. Click one to see its Keycloak address.
 +
 image::m06-trace.png["Trace of a manager order across Orders, Inventory, and Notifications"]
 
-. Copy the **Trace ID** from the top right of the trace page. In **Observe →
-  Logs**, search for it and click **Run Query** (again if the results do not
-  change). You get one line per API. The Orders and Inventory lines show only
+. Copy the **Trace ID** from the top right of the trace page.
+. In **Observe → Logs**, search for it and click **Run Query** (again if the
+  results do not change). You get one line per API. The Orders and Inventory lines show only
   their message (`request completed`, `request_complete`); click **Details** to
   see their fields:
 +
@@ -215,7 +221,7 @@ user only when Orders is the one asking, so the path into Inventory is a
 reviewed decision, not open to any client that can get a token.
 ====
 
-. A reader somehow calls Orders' create endpoint. Could Orders' service account
+. A reader somehow calls Orders`' create endpoint. Could Orders`' service account
   be used to reserve stock on their behalf?
 +
 .Answer

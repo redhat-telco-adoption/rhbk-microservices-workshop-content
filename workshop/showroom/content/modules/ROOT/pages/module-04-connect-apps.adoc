@@ -1,6 +1,10 @@
 = Module 4: Connect the applications
 :navtitle: 4. Connect apps
 
+*Time:* 30 minutes +
+*Before you start:* Module 3: your clients, roles, and audience scope +
+*By the end, you can:* say which values each kind of application needs; copy client secrets into OpenShift Secrets; find and fix an issuer mismatch from the logs
+
 == Why it matters
 
 Connecting an application to Keycloak takes very few values, and the
@@ -111,11 +115,11 @@ image::m04-issuer-log.png[The BFF's startup error in Observe → Logs]
 == Do: restart and sign in
 
 . Restart the rollout of `bff`, `proxy`, and `orders-api` the same way, so
-  they read the new secrets and configuration. Wait until each shows **1 of 1
-  pods**, and check that the pod's **Created** time under **Workloads → Pods**
-  is just now: an older pod means the restart did not happen. (The
-  proxy's pod shows **2/2** containers: the gateway and its sign-in
-  component.)
+  they read the new secrets and configuration.
+. Wait until each shows **1 of 1 pods**, and check that the pod's **Created**
+  time under **Workloads → Pods** is just now: an older pod means the restart
+  did not happen. (The proxy's pod shows **2/2** containers: the gateway and
+  its sign-in component.)
 . Open `pass:a[{spa_url}/config.json]` in a new tab. It shows your issuer and
   `spa`, and no secret.
 . Sign in as `reader` through each app, then sign out: the
@@ -123,7 +127,7 @@ image::m04-issuer-log.png[The BFF's startup error in Observe → Logs]
   link:{bff_url}[BFF,window=_blank] (the page goes to Keycloak and back), and
   link:{proxy_url}[proxy,window=_blank] (Keycloak appears immediately; the
   whole app is behind the sign-in). Each returns to its own callback address.
-  After you sign out of the proxy, close any tab left on Keycloak's sign-in
+. After you sign out of the proxy, close any tab left on Keycloak's sign-in
   page: a later sign-in in another tab can complete it and sign you in to the
   proxy.
 

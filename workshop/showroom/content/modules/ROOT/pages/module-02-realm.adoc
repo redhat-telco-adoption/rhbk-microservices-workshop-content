@@ -1,6 +1,10 @@
 = Module 2: A realm is a trust boundary
 :navtitle: 2. Realm
 
+*Time:* 25 minutes +
+*Before you start:* Module 1, and your username and password from xref:details.adoc[] +
+*By the end, you can:* create a realm you administer with delegated rights; find the issuer, endpoints, and public keys that applications trust; add lab users who can sign in
+
 == Why it matters
 
 A realm is a separate identity world inside one Keycloak server: its own
@@ -30,7 +34,7 @@ the same model to let teams own their realms without touching each other's.
 image::m02-create-realm.png[Create realm form]
 
 . Keycloak switches to your new realm. Open **Manage realms** again: you see
-  only `master` and your realm. You cannot see or change other attendees'
+  only `master` and your realm. You cannot see or change other attendees`'
   realms.
 
 == See it: the documents every application trusts
@@ -73,7 +77,8 @@ image::m02-create-user.png[Create user form for reader]
 image::m02-set-password.png[Set password dialog with Temporary turned off]
 
 . Repeat for `manager` (`manager@example.invalid`, first name `Manager`, last
-  name `Lab`). Write down both lab passwords.
+  name `Lab`).
+. Write down both lab passwords.
 
 The users have no roles yet. You create roles in Module 3; Keycloak cannot
 assign a role before it exists.

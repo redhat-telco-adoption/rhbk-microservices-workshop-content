@@ -122,9 +122,10 @@ Authorization Services, at the token endpoint. `response_mode=decision`
 returns only the verdict.
 
 . In the link:{spa_url}[SPA,window=_blank], sign out, sign in as `manager` (so
-  the token carries `region`), click **View orders**, copy the `Authorization`
-  value of the `orders` request (the `GET`, not an `OPTIONS` preflight) from the
-  **Network** tab, and run `paste_token` in the terminal.
+  the token carries `region`), and click **View orders**.
+. Copy the `Authorization` value of the `orders` request (the `GET`, not an
+  `OPTIONS` preflight) from the **Network** tab, and run `paste_token` in the
+  terminal.
 +
 The steps below use this token. It expires after five minutes, so if a
 response is not the one the step describes, copy a fresh token and run
@@ -200,11 +201,11 @@ now carry `region`, but no API reads it, and the other modules work as before.
 ====
 From a source the user cannot set: the network zone a gateway or mutual
 Transport Layer Security (TLS) connection established, a device-management
-system, or Orders' own records.
+system, or Orders`' own records.
 Never from a request header or body field the browser controls. A Claim
 Information Point is only as trustworthy as its inputs.
 ====
-. Why put the `approve-order` rule in Keycloak instead of in Orders' code?
+. Why put the `approve-order` rule in Keycloak instead of in Orders`' code?
 +
 .Answer
 [%collapsible]

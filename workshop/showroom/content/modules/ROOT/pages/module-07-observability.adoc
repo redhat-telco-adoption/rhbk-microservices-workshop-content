@@ -1,6 +1,10 @@
 = Module 7: Operate it
 :navtitle: 7. Operate it
 
+*Time:* 30 minutes +
+*Before you start:* Module 6, and your Module 1 predictions table +
+*By the end, you can:* follow a denial through traces and logs; tell policy from configuration when a user is refused; reason through a leaked token and a Keycloak outage
+
 == Why it matters
 
 A secure design still has to be run: someone gets a 403 they did not expect, a
@@ -11,9 +15,9 @@ reference answer; write yours first.
 
 == Do: follow a denial end to end
 
-. Sign out of every app first (Module 5). Then sign in to the
-  link:{spa_url}[SPA,window=_blank] as `reader`, click **View orders**, then
-  **Create a sample order**.
+. Sign out of every app first (Module 5).
+. Sign in to the link:{spa_url}[SPA,window=_blank] as `reader`, click **View
+  orders**, then **Create a sample order**.
 . Open
   link:{openshift_console_url}/observe/traces?namespace=tracing&name=workshop&tenant={attendee_id}&start=15m&limit=100&q=%7B+resource.service.name+%3D+%22orders-api%22+%26%26+name+%3D+%22POST+%2Forders%22+%7D[your Orders traces,window=_blank]
   and find the denied `POST /orders` trace. Through the BFF or proxy the trace
@@ -65,8 +69,9 @@ Someone pasted a request, including its `+Authorization: Bearer ...+` header,
 into a ticket.
 
 . **Try it.** In the SPA, click **Sign out**, then sign in again as `reader`
-  so the token is new. Within the next few minutes, in Keycloak open **Users →
-  reader → Sessions** and sign out each session from its row menu.
+  so the token is new.
+. Within the next few minutes, in Keycloak open **Users → reader → Sessions**
+  and sign out each session from its row menu.
 . **Predict:** the user's sessions are gone. What will **View orders** in the
   SPA return now? Write it down, then click it.
 +
@@ -118,7 +123,7 @@ order, while Keycloak is unreachable?
   renew the token, so API calls fail. The session cookie alone is not enough.
 * **Orders:** reads keep working while the user's token is valid. Every
   *write* fails at once, because Orders exchanges a token with Keycloak for
-  each Inventory call. Notifications would work until Orders' cached
+  each Inventory call. Notifications would work until Orders`' cached
   service-account token expires.
 
 The design point: each call to Keycloak in a request path is a dependency.

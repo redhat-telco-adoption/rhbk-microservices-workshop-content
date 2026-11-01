@@ -1,6 +1,10 @@
 = Module 1: The system and your predictions
 :navtitle: 1. The system
 
+*Time:* 20 minutes +
+*Before you start:* your username and password from xref:details.adoc[] +
+*By the end, you can:* map where each sign-in pattern keeps its tokens; say what each of the three kinds of token is for; name which of your applications are reachable from the internet
+
 == Why it matters
 
 Signing in tells an application who you are. It does not decide what you may
@@ -27,6 +31,12 @@ last one in Module 7.
 * The **frontend** is one build served three ways, once per sign-in pattern:
   by its own `frontend` Deployment for the single-page application (SPA), and from inside the `bff` and
   `proxy` for the other two.
+
+The diagram shows everything in your project, and who calls whom. You meet each
+piece as the modules reach it.
+
+.The whole system
+image::system-overview.svg["The browser reaches frontend, bff, reports, and proxy, and calls orders-api directly for the SPA. orders-api calls inventory-api and notifications-api. The browser and orders-api use Keycloak."]
 
 == Three kinds of token
 

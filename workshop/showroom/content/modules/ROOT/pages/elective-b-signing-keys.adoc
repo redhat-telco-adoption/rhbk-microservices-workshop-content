@@ -82,7 +82,8 @@ published.
   but still publishes it, so tokens it signed earlier still verify.
 . Wait at least five minutes, the access-token lifetime. Every token signed
   with the old key has now expired. Open the provider again, turn **Enabled**
-  **Off**, and save. Run the JWKS command again: the old key is gone.
+  **Off**, and save.
+. Run the JWKS command again: the old key is gone.
 
 == Break it: an algorithm the APIs do not accept
 

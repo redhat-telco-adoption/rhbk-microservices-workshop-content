@@ -1,6 +1,10 @@
 = Module 5: Prove where authorization happens
 :navtitle: 5. Prove it
 
+*Time:* 40 minutes +
+*Before you start:* Module 4: all three apps connected to your realm +
+*By the end, you can:* find where each pattern keeps its tokens; prove that Orders decides, not the UI, by calling it directly; tell 401, 403, and CSRF denials apart
+
 == Why it matters
 
 A button the UI hides or disables protects nothing. Anyone can send the
@@ -23,8 +27,9 @@ You need the browser's developer tools for this module: press **F12** (or
 == Do: the SPA
 
 . Open your link:{spa_url}[SPA,window=_blank], click **Sign in**, and sign in
-  as `reader`. Click **View orders**, then **Create a sample order**. Note
-  both status codes.
+  as `reader`.
+. Click **View orders**, then **Create a sample order**. Note both status
+  codes.
 +
 image::m05-spa-reader-denied.png[SPA showing the reader's write denied with 403]
 
@@ -55,7 +60,8 @@ The reader's write was refused. Is that the button's doing, or the API's?
   starts with `Bearer`.
 . Open the **Console** tab. If the browser asks you to type `allow pasting`
   first, do so. Type `var auth = '`, paste your copied value, type `'`, and
-  press Enter. Then paste this:
+  press Enter.
+. Paste this:
 +
 [source,javascript,subs="attributes+"]
 ----
@@ -119,7 +125,7 @@ credential.
 . Click **Sign out**, sign in as `manager`, and click **View orders**, then
   **Create a sample order**.
 . Reading works. Creating returns 502 with `downstream_unavailable`. This
-  is expected. The manager passed Orders' role check (not a 403), but Orders
+  is expected. The manager passed Orders`' role check (not a 403), but Orders
   cannot yet get the tokens it needs to call Inventory and Notifications. You
   give it those identities in Module 6.
 . Sign out.

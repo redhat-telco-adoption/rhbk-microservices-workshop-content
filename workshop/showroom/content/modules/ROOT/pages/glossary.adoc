@@ -19,7 +19,7 @@ bold inside a definition have their own entry.
 |**CORS** |Cross-Origin Resource Sharing |Browser rules that decide whether JavaScript on one site may read responses from another. It is not an authorization check.
 |**CSP** |Content Security Policy |A response header that limits which scripts and resources a page may load, reducing the damage of XSS.
 |**CSRF** |Cross-site request forgery |An attack where another site makes the browser send a request with the user's cookies. The BFF and proxy block it on writes.
-|**ES256** |Elliptic Curve Digital Signature Algorithm with SHA-256 |An elliptic-curve signature algorithm. Elective B uses it to show the APIs' algorithm allowlist.
+|**ES256** |Elliptic Curve Digital Signature Algorithm with SHA-256 |An elliptic-curve signature algorithm. Elective B uses it to show the APIs`' algorithm allowlist.
 |**HMAC** |Hash-based message authentication code |A signature made with a shared secret key. Keycloak signs its internal tokens, such as refresh tokens, with an HMAC key (`HS512`).
 |**HTTP** |Hypertext Transfer Protocol |The protocol browsers and APIs use for requests and responses. HTTPS is HTTP over TLS.
 |**ID** |Identifier |A name or number that identifies something, as in client ID or trace ID. An *ID token* is a different thing; see Terms.
