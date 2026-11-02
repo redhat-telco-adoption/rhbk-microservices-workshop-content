@@ -2,7 +2,7 @@
 :navtitle: 5. Prove it
 
 *Time:* 40 minutes +
-*Before you start:* Module 4: all three apps connected to your realm +
+*Before you start:* Module 4, with all three apps connected to your realm +
 *By the end, you can:* find where each pattern keeps its tokens; prove that Orders decides, not the UI, by calling it directly; tell 401, 403, and CSRF denials apart
 
 == Why it matters

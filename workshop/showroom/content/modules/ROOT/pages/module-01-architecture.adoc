@@ -32,11 +32,13 @@ last one in Module 7.
   by its own `frontend` Deployment for the single-page application (SPA), and from inside the `bff` and
   `proxy` for the other two.
 
-The diagram shows everything in your project, and who calls whom. You meet each
+The diagram shows everything in your project and the main calls between them.
+Every API also downloads Keycloak's public keys to check signatures, and the
+sign-in diagrams below show each pattern's calls to Keycloak. You meet each
 piece as the modules reach it.
 
 .The whole system
-image::system-overview.svg["The browser reaches frontend, bff, reports, and proxy, and calls orders-api directly for the SPA. orders-api calls inventory-api and notifications-api. The browser and orders-api use Keycloak.",link=self,window=_blank]
+image::system-overview.svg["The browser reaches frontend, bff, reports, and proxy, and calls orders-api directly for the SPA. bff, reports, and proxy also call orders-api, and proxy keeps its sessions in proxy-redis. orders-api calls inventory-api and notifications-api. The browser calls Keycloak to sign in, and orders-api calls Keycloak for signing keys, token exchange, and its own token.",link=self,window=_blank]
 
 == Three kinds of token
 

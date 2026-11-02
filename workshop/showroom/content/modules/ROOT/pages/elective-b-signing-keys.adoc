@@ -83,7 +83,8 @@ published.
 . Wait at least five minutes, the access-token lifetime. Every token signed
   with the old key has now expired. Open the provider again, turn **Enabled**
   **Off**, and save.
-. Run the JWKS command again: the old key is gone.
+. Run the second command from the Check step again: the JWKS now lists only
+  one `RS256` `kid`, and the original key's `kid` is gone.
 
 == Break it: an algorithm the APIs do not accept
 

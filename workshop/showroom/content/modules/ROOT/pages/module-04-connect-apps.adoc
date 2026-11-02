@@ -2,7 +2,7 @@
 :navtitle: 4. Connect apps
 
 *Time:* 30 minutes +
-*Before you start:* Module 3: your clients, roles, and audience scope +
+*Before you start:* Module 3, with your clients, roles, and audience scope +
 *By the end, you can:* say which values each kind of application needs; copy client secrets into OpenShift Secrets; find and fix an issuer mismatch from the logs
 
 == Why it matters

@@ -106,8 +106,8 @@ image::m03-service-account-roles.png[Service accounts roles tab for orders-api,l
 . Create a client scope `notifications-api-aud` as you did for
   `inventory-api-aud` in Step 1, with `notifications-api` as the **Included
   Client Audience**.
-. Add it to `orders-api` as **Default**. Default,
-  because Orders`' client-credentials request names no scope, so only Default
+. Add it to `orders-api` as **Default**. It must be **Default** because
+  Orders`' client-credentials request names no scope, so only Default
   scopes reach that token. The exchange in Step 1 names its scope, so Optional
   works there.
 . **Predict:** Orders now has its own identity, and its service account has

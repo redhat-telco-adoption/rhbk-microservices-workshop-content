@@ -108,7 +108,7 @@ Return 401 for token problems and 403 for missing permissions. (Module 5)
 |===
 
 Other services can log finer reasons, such as `bad_issuer`, `bad_audience`, or
-`missing_token`; you did not see those here.
+`missing_token`; you did not see those in this lab.
 
 == Not covered in this lab
 

@@ -85,7 +85,7 @@ bold inside a definition have their own entry.
 |**Opaque token** |A token with no readable contents, which only its issuer can interpret.
 |**Permission** |In Authorization Services, the rule that combines policies for a resource or scope, with a decision strategy.
 |**Pod** |A running instance of an application in OpenShift.
-|**Policy** |In Authorization Services, one condition, such as having the role `manager`, or the claim `region` matching `north`.
+|**Policy** |In Authorization Services, one condition, such as having the role `manager` or having the claim `region` match `north`.
 |**Preflight** |An `OPTIONS` request the browser sends first, to ask whether a cross-origin call is allowed. It carries no token.
 |**Pushed claim** |A claim a confidential client sends with an authorization request for policies to evaluate. Elective D.
 |**Realm** |An isolated set of users, roles, clients, and keys in Keycloak. You created one named after your attendee ID.

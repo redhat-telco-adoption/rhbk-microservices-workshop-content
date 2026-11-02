@@ -112,8 +112,9 @@ What differs is the client it signs in as.
 manager still has the `manager` role, but this client never receives it, so
 Orders sees only `user`. In **Observe → Logs**, search for `missing_role` and
 click **Run Query** (again if the results do not change). Click **Details** on
-the newest `request completed` line, which is Orders`' line: it shows `client_id`
-`reports` and `reason` `missing_role`. The `orders-api` pod's **Logs** tab shows
+the newest `request completed` line, which is Orders`' line. The
+`request_complete` line above it comes from the `reports` app. Orders`' line
+shows `client_id` `reports` and `reason` `missing_role`. The `orders-api` pod's **Logs** tab shows
 the same line with `roles` `["user"]`, while the `reports` pod's line lists no
 roles: the app does not read them, Orders does.
 

@@ -28,10 +28,11 @@ reference answer; write yours first.
   Orders. Either way, open it and click the Orders span
   to see the 403 status. The request never reaches Inventory or Notifications.
 . In **Observe → Logs**, search for `missing_role` and click **Run Query**
-  (again if the results do not change). Click **Details** on the Orders line: it
-  shows `decision` `deny`, status 403, and `reason` `missing_role`, with no
-  token or secret in the log. **Details** leaves out `roles`; the pod's
-  **Logs** tab (**Workloads → Pods →** _pod_ **→ Logs**) shows the whole line.
+  (again if the results do not change). Click **Details** on the newest
+  `request completed` line, which is Orders`' line: it shows `decision` `deny`,
+  status 403, and `reason` `missing_role`, with no token or secret in the log.
+  **Details** leaves out `roles`; the `orders-api` pod's **Logs** tab
+  (**Workloads → Pods →** _pod_ **→ Logs**) shows the whole line.
   A denied write through the BFF also produces a BFF log line. In the BFF pod
   log, that line has `"roles":[]`: the BFF logs its session's ID token, which
   carries no roles, while Orders checks the access token.
