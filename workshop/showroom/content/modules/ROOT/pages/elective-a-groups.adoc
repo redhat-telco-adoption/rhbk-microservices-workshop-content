@@ -20,8 +20,8 @@ group, and then decide whether APIs should see the group itself.
   `manager`, and click **Assign**.
 +
 image::el-a-group-roles.png[Role mapping of the order-managers group with manager,link=self,window=_blank]
-. Open **Users → manager → Role mapping**, select `manager`, and click
-  **Unassign**. The manager now has no role of its own beyond Keycloak's
+. Open **Users → manager → Role mapping**, select `manager`, click
+  **Unassign**, and confirm **Remove**. The manager now has no role of its own beyond Keycloak's
   defaults.
 . Open **Users → manager → Groups → Join Group**, select `order-managers`, and
   click **Join**.
@@ -73,7 +73,7 @@ the reader can create orders. Group changes, like role changes in Module 6,
 take effect when a new token is issued.
 ====
 . Remove `reader` from `order-managers` (**Users → reader → Groups**, select
-  the group, **Leave**).
+  the group, click **Leave**, and confirm **Leave**).
 . Sign the reader out of the SPA.
 
 Leave the manager in `order-managers`. The other modules and electives work

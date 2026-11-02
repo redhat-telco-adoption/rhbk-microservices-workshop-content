@@ -33,7 +33,6 @@ bold inside a definition have their own entry.
 |**PKCE** |Proof Key for Code Exchange |A one-time secret the client creates for each sign-in, so a stolen authorization code cannot be redeemed. Every client in this lab that signs users in requires it (method `S256`).
 |**PKI** |Public key infrastructure |An organization's system for issuing and managing certificates and keys.
 |**RFC** |Request for Comments |The numbered documents in which the IETF publishes Internet standards, such as RFC 7662 for token introspection.
-|**RHBK** |Red Hat build of Keycloak |Red Hat's supported distribution of Keycloak, the identity server in this lab. After first use, this guide calls it Keycloak.
 |**RS256** |RSA signature with SHA-256 |The algorithm Keycloak signs access tokens with by default. Every API in this lab accepts only `RS256`.
 |**RSA** |Rivest–Shamir–Adleman |A public-key algorithm used for signatures and encryption. `RS256` is an RSA signature with SHA-256.
 |**SHA** |Secure Hash Algorithm |A family of hash functions; SHA-256 is the one used in `RS256` and `ES256`.
@@ -79,6 +78,7 @@ bold inside a definition have their own entry.
 |**Introspection** |Asking Keycloak whether a token is still active, instead of checking it locally. Elective C.
 |**Issuer (`iss`)** |The realm that issued a token, as a URL. APIs accept tokens only from the issuer they trust.
 |**Key ID (`kid`)** |The token header value naming the key that signed it, so an API can pick the right key from the JWKS.
+|**Keycloak** |The identity server in this lab. This lab runs Red Hat build of Keycloak, Red Hat's supported distribution of it; after first use, this guide calls it Keycloak.
 |**Mapper** |A Keycloak setting that adds a claim to tokens, such as an audience or a user attribute.
 |**OAuth 2.0** |The standard for delegated access with tokens that Keycloak implements. OIDC builds on it.
 |**oauth2-proxy** |The open-source component that signs users in for the reverse-proxy pattern in this lab.

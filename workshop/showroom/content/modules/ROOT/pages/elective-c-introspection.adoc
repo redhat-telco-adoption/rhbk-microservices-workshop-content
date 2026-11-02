@@ -45,7 +45,9 @@ curl -s -u "orders-api:$ORDERS_SECRET" -d "token=$TOKEN" \
 +
 `active` is `true`, with the user, the client that obtained the token
 (`spa`), and its audience.
-. In Keycloak, open **Users → reader → Sessions** and sign out each session
+. In the
+  link:{keycloak_origin}/admin/master/console/[Keycloak administration console,window=_blank],
+  in your realm, open **Users → reader → Sessions** and sign out each session
   from its row menu.
 . **Predict:** what will each command print now? Write it down, then run both
   again.
