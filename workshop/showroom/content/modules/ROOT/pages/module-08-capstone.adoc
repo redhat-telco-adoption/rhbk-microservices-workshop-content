@@ -117,7 +117,7 @@ the newest `request completed` line, which is Orders`' line: it shows `client_id
 the same line with `roles` `["user"]`, while the `reports` pod's line lists no
 roles: the app does not read them, Orders does.
 
-image::m08-reports-denied.png["The reports app, signed in as manager, showing HTTP 403 for Create a sample order"]
+image::m08-reports-denied.png["The reports app, signed in as manager, showing HTTP 403 for Create a sample order",link=self,window=_blank]
 ====
 
 === Pass criteria

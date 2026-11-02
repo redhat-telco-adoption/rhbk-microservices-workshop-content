@@ -85,7 +85,7 @@ scope-based permission** for each:
 
 *Unanimous* means every policy must grant.
 
-image::el-d-approve-permission.png[The approve-order permission with three policies and the Unanimous strategy]
+image::el-d-approve-permission.png[The approve-order permission with three policies and the Unanimous strategy,link=self,window=_blank]
 
 == See it: the Evaluate tab
 
@@ -104,7 +104,7 @@ Deny. `is-manager` and `region-north` grant, but `from-branch` has nothing to
 match: no `channel` was provided. The **Evaluate** tab cannot push a custom
 claim such as `channel`, so you supply it from the terminal next.
 
-image::el-d-evaluate-votes.png["Evaluate result: approve-order denied, with region-north and is-manager voting PERMIT and from-branch DENY"]
+image::el-d-evaluate-votes.png["Evaluate result: approve-order denied, with region-north and is-manager voting PERMIT and from-branch DENY",link=self,window=_blank]
 
 Ignore the `read-order` row. It is a different permission, for `order:read`,
 even though the **Evaluate** table lists `order:approve` beside it. The overall
@@ -157,7 +157,7 @@ decide -d claim_token="$CLAIMS" -d claim_token_format=urn:ietf:params:oauth:toke
 +
 Keycloak answers with `{"result":true}`.
 +
-image::el-d-decide-terminal.png[Terminal: decide is denied without claims and returns result true with the pushed channel claim]
+image::el-d-decide-terminal.png[Terminal: decide is denied without claims and returns result true with the pushed channel claim,link=self,window=_blank]
 
 == Break it: who may push claims
 

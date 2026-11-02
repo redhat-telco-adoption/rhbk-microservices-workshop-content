@@ -36,7 +36,7 @@ reference answer; write yours first.
   log, that line has `"roles":[]`: the BFF logs its session's ID token, which
   carries no roles, while Orders checks the access token.
 +
-image::m07-deny-log.png[Orders log line for the reader's denied write]
+image::m07-deny-log.png[Orders log line for the reader's denied write,link=self,window=_blank]
 
 == Scenario 1: "I can't create orders"
 

@@ -63,14 +63,14 @@ For each row of the table:
 . In Keycloak, open **Clients →** _client_ **→ Credentials** and use the copy
   button next to **Client Secret**.
 +
-image::m04-client-credentials.png[Credentials tab of the bff client]
+image::m04-client-credentials.png[Credentials tab of the bff client,link=self,window=_blank]
 
 . In the OpenShift Console, open **Workloads → Secrets →** _secret_ and choose
   **Edit Secret** from the **Actions** menu at the top right of the page.
   Replace the value of the listed key and click **Save**. In `proxy-secrets`,
   leave `cookie-secret` and `redis-password` unchanged.
 +
-image::m04-edit-secret.png[Edit Secret form for bff-client]
+image::m04-edit-secret.png[Edit Secret form for bff-client,link=self,window=_blank]
 
 Never put a client secret in chat, a ticket, or a screenshot. Anyone with
 it can act as that application.
@@ -87,7 +87,7 @@ it can act as that application.
 . Open **Workloads → Deployments → bff** and choose **Restart rollout** from
   the **Actions** menu at the top right of the page (not a volume row's menu).
 +
-image::m04-restart-rollout.png[Restart rollout action on the bff Deployment]
+image::m04-restart-rollout.png[Restart rollout action on the bff Deployment,link=self,window=_blank]
 
 . **Predict:** the issuer is only one character off. Will the BFF start?
 . Wait a minute, then open **Observe → Logs**, search for
@@ -106,7 +106,7 @@ The BFF compared the issuer in the discovery document with the one it was
 given. They differ by one character, so it stopped rather than trust tokens
 from an issuer it cannot match exactly.
 +
-image::m04-issuer-log.png[The BFF's startup error in Observe → Logs]
+image::m04-issuer-log.png[The BFF's startup error in Observe → Logs,link=self,window=_blank]
 . Edit `bff-config` again and remove the trailing slash so `OIDC_ISSUER` is
   exactly `pass:a[{issuer}]`. The editor may now show the value in single
   quotes (`+'...'+`); keep the quotes and change only the text between them.

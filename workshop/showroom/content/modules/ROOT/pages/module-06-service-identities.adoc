@@ -86,7 +86,7 @@ It still returns 502. The next steps find out how far the request got.
   `client_id` `orders-api`, and `decision` `allow`: the user's identity arrived,
   and Inventory can see that Orders brought it.
 +
-image::m06-inventory-log.png["Inventory log line for the manager, called by orders-api"]
+image::m06-inventory-log.png["Inventory log line for the manager, called by orders-api",link=self,window=_blank]
 . Search for `/notify`. There is no line at all. Orders never reached
   Notifications, because it has no identity of its own yet.
 
@@ -101,7 +101,7 @@ image::m06-inventory-log.png["Inventory log line for the manager, called by orde
 . Open **Clients → orders-api → Service accounts roles → Assign role → Client
   roles**, select `notifications-api` `notifier`, and click **Assign**.
 +
-image::m03-service-account-roles.png[Service accounts roles tab for orders-api]
+image::m03-service-account-roles.png[Service accounts roles tab for orders-api,link=self,window=_blank]
 
 . Create a client scope `notifications-api-aud` as you did for
   `inventory-api-aud` in Step 1, with `notifications-api` as the **Included
@@ -126,7 +126,7 @@ Search the logs for `/notify` again:
 "username":"service-account-orders-api", "client_id":"orders-api", "roles":[]
 ----
 
-image::m06-notify-denied.png[Notifications log line refusing the Orders service account]
+image::m06-notify-denied.png[Notifications log line refusing the Orders service account,link=self,window=_blank]
 
 Orders reached Notifications with its own identity, and Notifications refused
 it. The service account has `notifier`, yet the token carried no roles.
@@ -146,7 +146,7 @@ but not in the client's scope never reaches the token.
   Assign role → Client roles**, select `notifications-api` `notifier`, and
   click **Assign**.
 +
-image::m03-dedicated-scope.png["Scope tab of orders-api-dedicated with user, manager, and notifier"]
+image::m03-dedicated-scope.png["Scope tab of orders-api-dedicated with user, manager, and notifier",link=self,window=_blank]
 
 . **Predict:** the scope now allows `notifier`. Will the next order succeed?
   Write it down, then create an order.
@@ -183,7 +183,7 @@ its old permissions until it gets a new token.
   endpoint: the exchange, and the client-credentials request when it needs a
   new token. Click one to see its Keycloak address.
 +
-image::m06-trace.png["Trace of a manager order across Orders, Inventory, and Notifications"]
+image::m06-trace.png["Trace of a manager order across Orders, Inventory, and Notifications",link=self,window=_blank]
 
 . Copy the **Trace ID** from the top right of the trace page.
 . In **Observe → Logs**, search for it and click **Run Query** (again if the
@@ -203,7 +203,7 @@ Orders lines repeat `trace_id`, `span_id`, and `level`: the Java tracing agent
 adds the trace fields and the JSON log encoder adds `level`, and the
 application writes its own copy of each.
 +
-image::m06-logs.png[Logs for one trace ID across the three APIs]
+image::m06-logs.png[Logs for one trace ID across the three APIs,link=self,window=_blank]
 
 . Create an order as `manager` through the BFF or the proxy too: it now
   returns 201 there as well. An order from `reader` still returns 403.

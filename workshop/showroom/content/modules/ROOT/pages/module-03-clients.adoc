@@ -62,10 +62,10 @@ Leave anything not listed at its default.
 |===
 
 .Capability config for `spa`
-image::m03-spa-capability.png[Capability config page for the spa client]
+image::m03-spa-capability.png[Capability config page for the spa client,link=self,window=_blank]
 
 .Login settings for `spa`
-image::m03-spa-login-settings.png[Login settings page for the spa client]
+image::m03-spa-login-settings.png[Login settings page for the spa client,link=self,window=_blank]
 
 === See it: your first sign-in
 
@@ -146,7 +146,7 @@ client from its redirect URI; that is harmless for a server-side app.
   `user`, and click **Assign**.
 . Do the same for the user `manager`, but assign the role `manager` only.
 +
-image::m03-role-mapping.png[Role mapping tab for the manager user]
+image::m03-role-mapping.png[Role mapping tab for the manager user,link=self,window=_blank]
 
 **Why a composite?** Orders checks for `user` on reads and `manager` on writes.
 With a composite, a manager can read without a second assignment, and you
@@ -174,7 +174,7 @@ console, listed under `resource_access.account`. Keycloak adds a client to
 `aud` when the token carries one of its roles, so `aud` is `account`.
 ====
 +
-image::m03-evaluate-full-scope.png["Manager's spa token with Full scope allowed on, including Keycloak's default roles"]
+image::m03-evaluate-full-scope.png["Manager's spa token with Full scope allowed on, including Keycloak's default roles",link=self,window=_blank]
 . For each of `spa`, `bff`, and `proxy`: open **Clients →** _client_ **→
   Client scopes →** _client_**-dedicated → Scope**, turn **Full scope
   allowed** **Off**, then click **Assign role → Realm roles**, select `user`
@@ -210,7 +210,7 @@ has the right role. The next steps give the SPA's tokens that audience.
   turn **Add to access token** **On** and **Add to ID token** **Off**, and
   save.
 +
-image::m03-audience-mapper.png[Audience mapper for orders-api-aud]
+image::m03-audience-mapper.png[Audience mapper for orders-api-aud,link=self,window=_blank]
 
 . Attach it to `spa`, `bff`, and `proxy`: open **Clients →** _client_ **→
   Client scopes → Add client scope**, select `orders-api-aud`, and choose
@@ -230,7 +230,7 @@ image::m03-audience-mapper.png[Audience mapper for orders-api-aud]
 ** `realm_access.roles` is `user` for the reader, and `manager` and `user` for
    the manager.
 +
-image::m03-evaluate.png[Generated access token for reader on the spa client]
+image::m03-evaluate.png[Generated access token for reader on the spa client,link=self,window=_blank]
 
 . Click **Generated ID token** for the same user. Its `aud` is `spa`, the app
   that signed the user in, not `orders-api`. That is why an API must never

@@ -31,7 +31,7 @@ the same model to let teams own their realms without touching each other's.
 . In the left menu choose **Manage realms**, then **Create realm**. Enter the
   realm name `{realm_name}`, keep **Enabled** on, and click **Create**.
 +
-image::m02-create-realm.png[Create realm form]
+image::m02-create-realm.png[Create realm form,link=self,window=_blank]
 
 . Keycloak switches to your new realm. Open **Manage realms** again: you see
   only `master` and your realm. You cannot see or change other attendees`'
@@ -67,14 +67,14 @@ image::m02-create-realm.png[Create realm form]
   click **Create**. Keycloak's default user profile requires first and last
   name; without them the user gets an extra form at first sign-in.
 +
-image::m02-create-user.png[Create user form for reader]
+image::m02-create-user.png[Create user form for reader,link=self,window=_blank]
 
 . On the user's **Credentials** tab, click **Set password**. Enter a password
   you choose (not your attendee password) in **Password** and **Password
   confirmation**, turn **Temporary** **Off**, and
   click **Save**, then confirm **Save password**.
 +
-image::m02-set-password.png[Set password dialog with Temporary turned off]
+image::m02-set-password.png[Set password dialog with Temporary turned off,link=self,window=_blank]
 
 . Repeat for `manager` (`manager@example.invalid`, first name `Manager`, last
   name `Lab`).

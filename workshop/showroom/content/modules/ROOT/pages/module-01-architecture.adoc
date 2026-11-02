@@ -36,7 +36,7 @@ The diagram shows everything in your project, and who calls whom. You meet each
 piece as the modules reach it.
 
 .The whole system
-image::system-overview.svg["The browser reaches frontend, bff, reports, and proxy, and calls orders-api directly for the SPA. orders-api calls inventory-api and notifications-api. The browser and orders-api use Keycloak."]
+image::system-overview.svg["The browser reaches frontend, bff, reports, and proxy, and calls orders-api directly for the SPA. orders-api calls inventory-api and notifications-api. The browser and orders-api use Keycloak.",link=self,window=_blank]
 
 == Three kinds of token
 
@@ -64,13 +64,13 @@ receives the browser's return from Keycloak (the *callback*), and where the
 tokens are kept afterwards.
 
 .SPA with Proof Key for Code Exchange (PKCE): tokens stay in browser memory
-image::spa-auth-flow.svg[SPA authorization code flow with PKCE]
+image::spa-auth-flow.svg[SPA authorization code flow with PKCE,link=self,window=_blank]
 
 .Backend for frontend (BFF): tokens stay on the server
-image::bff-auth-flow.svg[BFF login and session flow]
+image::bff-auth-flow.svg[BFF login and session flow,link=self,window=_blank]
 
 .Reverse proxy: tokens stay in the proxy's Redis session
-image::proxy-auth-flow.svg[Reverse proxy login and session flow]
+image::proxy-auth-flow.svg[Reverse proxy login and session flow,link=self,window=_blank]
 
 === Service-to-service calls
 
@@ -78,7 +78,7 @@ In the diagram below, note which token Inventory receives and which token
 Notifications receives, and whose identity each one carries.
 
 .One order, two downstream identities
-image::service-auth-flow.svg[Token exchange to Inventory and client credentials to Notifications]
+image::service-auth-flow.svg[Token exchange to Inventory and client credentials to Notifications,link=self,window=_blank]
 
 == Predict
 
@@ -114,7 +114,7 @@ row 5 in Module 7.
   `notifications-api`, and `reports`, an application you connect in the
   Module 8 capstone.
 +
-image::m01-console-deployments.png[Your Deployments in the OpenShift Console]
+image::m01-console-deployments.png[Your Deployments in the OpenShift Console,link=self,window=_blank]
 . Open **Networking → Routes**. Only five components are reachable from the
   internet: `frontend`, `bff`, `proxy`, `orders-api`, and `reports`. Inventory and
   Notifications have no Route.

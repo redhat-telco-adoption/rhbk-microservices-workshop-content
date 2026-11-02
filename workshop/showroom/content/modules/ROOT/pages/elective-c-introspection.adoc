@@ -58,7 +58,7 @@ so the other fields `jq` asked for print as `null`. Keycloak knows the session i
 asking. If Orders prints `401`, the token expired; start again from step 1.
 ====
 +
-image::el-c-introspection.png[Terminal: Orders still returns 200 while introspection reports active false]
+image::el-c-introspection.png[Terminal: Orders still returns 200 while introspection reports active false,link=self,window=_blank]
 
 == Break it: who may ask
 

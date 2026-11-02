@@ -31,7 +31,7 @@ You need the browser's developer tools for this module: press **F12** (or
 . Click **View orders**, then **Create a sample order**. Note both status
   codes.
 +
-image::m05-spa-reader-denied.png[SPA showing the reader's write denied with 403]
+image::m05-spa-reader-denied.png[SPA showing the reader's write denied with 403,link=self,window=_blank]
 
 === See it: where is the token?
 
