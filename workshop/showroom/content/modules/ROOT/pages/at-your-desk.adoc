@@ -53,7 +53,7 @@ protect an application without changing its code. (Modules 1 and 5)
 
 == Validate tokens in every API
 
-. Signature with the realm's JWKS, one allowed algorithm.
+. Signature with the realm's JSON Web Key Set (JWKS), one allowed algorithm.
 . `iss` exactly equals your issuer.
 . `aud` includes this API.
 . `exp` in the future, small clock tolerance.
