@@ -145,6 +145,13 @@ dev_namespace() {
   if [[ "$namespace" != *-rhbk-dev || ! "$namespace" =~ ^[a-z0-9]([-a-z0-9]{0,61}[a-z0-9])?$ ]]; then
     die "refusing namespace '$namespace': exercises roll out only to your developer namespace, <user>-rhbk-dev"
   fi
+  # In Dev Spaces, oc must run as you. The workspace service account has no
+  # rights in <user>-rhbk-dev, so stop with the fix instead of a forbidden error.
+  local identity
+  identity="$(oc whoami 2>/dev/null || true)"
+  if [[ "$identity" == system:serviceaccount:*-devspaces:workspace* ]]; then
+    die "oc runs as the workspace service account ($identity), not as you: stop this workspace and start it again from the Dev Spaces dashboard, which logs oc in as you"
+  fi
   printf '%s\n' "$namespace"
 }
 

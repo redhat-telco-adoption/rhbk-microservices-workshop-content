@@ -8,7 +8,11 @@
 # notificationsApiBase): Java 25 with Maven, Python 3.14, and Node 24. The oc
 # image is the Showroom terminal image the workshop config already pins.
 #
-# Workspaces run oc as the attendee. The seat's role binding allows builds and
+# Workspaces run oc as the attendee. When the Dev Spaces dashboard starts a
+# workspace, it writes the user's kubeconfig into each container, at
+# $KUBECONFIG or else $HOME/.kube/config; a container where that write fails
+# is skipped and its oc falls back to the workspace service account, which has
+# no rights in <user>-rhbk-dev. The seat's role binding allows builds and
 # rollouts only in <user>-rhbk-dev, which the commands derive from the
 # workspace namespace <user>-devspaces.
 #
@@ -75,6 +79,13 @@ components:
       memoryLimit: 512Mi
       cpuRequest: 50m
       cpuLimit: 500m
+      env:
+        # The image sets HOME only in its runttyd entrypoint, which the command
+        # above replaces. Without it OpenShift's arbitrary UID gets HOME=/, the
+        # dashboard cannot create /.kube, and oc runs as the service account.
+        # /home/lab-user is writable by group 0, which every arbitrary UID has.
+        - name: HOME
+          value: /home/lab-user
   - name: caches
     volume:
       size: 4Gi
