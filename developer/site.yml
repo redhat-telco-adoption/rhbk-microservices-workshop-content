@@ -1,18 +1,18 @@
 ---
 # Trial playbook for the developer track (rhbk-microservices-walkthrough#62).
-# Paths are relative to this file.
+# Paths start with ./ so Antora resolves them from this file, not the working directory.
 site:
   title: Build secure microservices with Red Hat build of Keycloak
   start_page: modules::index.adoc
 content:
   sources:
-    - url: ..
+    - url: ./..
       branches: HEAD
       start_path: developer/content
 ui:
   bundle:
     url: https://github.com/rhpds/rhdp_showroom_theme/releases/download/latest/ui-bundle.zip
 output:
-  dir: ../build/www
+  dir: ./../build/www
 runtime:
-  cache_dir: ../build/antora-cache
+  cache_dir: ./../build/antora-cache
