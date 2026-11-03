@@ -1,0 +1,209 @@
+= Module 6: Service to service
+:navtitle: 6. Service to service
+
+*Time:* 50 minutes +
+*Before you start:* Module 4, with all three APIs rolled out from your code +
+*By the end, you can:* choose between token exchange and client credentials for a call to another service; implement both in Java; follow one order through three identities in a trace and its logs
+
+== Why it matters
+
+When Orders creates an order, it calls two services. The tempting shortcut is
+to forward the user's token to both. It does not work here, because Module 4
+made each API accept only tokens whose audience names it, and it should not:
+a token forwarded once can be forwarded again, by any service that receives
+it, to any API that trusts it.
+
+Each call needs its own token, and the right kind depends on whose action it
+is:
+
+[cols="1,2,2",options="header"]
+|===
+| |Inventory: reserve stock for the user |Notifications: send a notice
+|Whose action |The user's. Inventory must know who. |The system's. No user is involved.
+|Grant |*Token exchange*, from Request for Comments (RFC) 8693: Orders trades the user's token at Keycloak for a new one. |*Client credentials*: Orders signs in as itself, with its own secret.
+|The token's user |The same user |The `orders-api` service account
+|`aud` and `azp` |`inventory-api`, and `azp` `orders-api` |`notifications-api`, and `azp` `orders-api`
+|===
+
+Operations has already allowed both in your realm: `orders-api` may exchange
+tokens for Inventory, and its service account has the `notifier` role on
+Notifications. Your job is the code.
+
+== Predict
+
+The starter forwards the user's token to both services. A manager creates an
+order through the SPA. Which status does the SPA show, and which services does
+the request reach? Write it down.
+
+.Answer
+[%collapsible]
+====
+The SPA shows 502. Inventory refuses the forwarded token with 401, because its audience is
+`orders-api`, so Orders cannot reserve stock and fails the order. The request
+never reaches Notifications. The checks you wrote in Module 4 turned a silent
+over-trust into a visible failure.
+====
+
+== Code: token exchange in InventoryClient
+
+. In your workspace, run the task **Test the
+  d6-service-to-service/orders-api starter**. Inventory and Notifications in
+  the tests receive the user's token, and fail.
+. Open
+  `d6-service-to-service/orders-api/starter/src/main/java/com/example/orders/downstream/InventoryClient.java`.
+  At the `ANTI-PATTERN` comment in `reserve`, post a token exchange form to
+  `tokenEndpoint` with `tokenClient` before calling Inventory:
++
+[cols="1,2",options="header"]
+|===
+|Field |Value
+|`grant_type` |`urn:ietf:params:oauth:grant-type:token-exchange`
+|`subject_token` |`subject.getTokenValue()`, the user's token
+|`subject_token_type` |`urn:ietf:params:oauth:token-type:access_token`
+|`requested_token_type` |`urn:ietf:params:oauth:token-type:access_token`
+|`audience` |`inventory-api`
+|`scope` |`inventory-api-aud`
+|`client_id`, `client_secret` |`orders-api` and `clientSecret`: only a client that proves itself may exchange
+|===
++
+Read the `TokenResponse`, and send its `access_token` to Inventory instead of
+the user's token. If the exchange fails or returns no token, throw
+`DownstreamFailure`. Never cache or return the exchanged token.
+
+== Code: client credentials in NotificationsClient
+
+. Open `NotificationsClient.java` in the same folder. At the `ANTI-PATTERN`
+  comment, stop reading the user's token. Ask `manager` for a token for the
+  `notifications-api` client registration, with the principal
+  `orders-api-machine`, and send that token. The registration in
+  `application.yml` already says to use client credentials, so the manager
+  requests and caches a token for the service account.
+. Run the test task again until every test passes.
++
+.Reference solution
+[%collapsible]
+====
+`InventoryClient.reserve`:
+
+[source,java]
+----
+MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+form.add("grant_type", "urn:ietf:params:oauth:grant-type:token-exchange");
+form.add("subject_token", subject.getTokenValue());
+form.add("subject_token_type", "urn:ietf:params:oauth:token-type:access_token");
+form.add("scope", "inventory-api-aud");
+form.add("audience", "inventory-api");
+form.add("client_id", "orders-api");
+form.add("client_secret", clientSecret);
+form.add("requested_token_type", "urn:ietf:params:oauth:token-type:access_token");
+TokenResponse exchanged;
+try {
+    exchanged = tokenClient
+            .post().uri(tokenEndpoint).contentType(MediaType.APPLICATION_FORM_URLENCODED)
+            .body(form).retrieve().body(TokenResponse.class);
+} catch (ResourceAccessException ex) {
+    throw new DownstreamFailure(ex.getCause() instanceof java.net.SocketTimeoutException);
+} catch (org.springframework.web.client.RestClientResponseException ex) {
+    LOGGER.warn("Token exchange rejected with HTTP status {}", ex.getStatusCode().value());
+    throw new DownstreamFailure(false);
+}
+if (exchanged == null || exchanged.access_token() == null || exchanged.access_token().isBlank())
+    throw new DownstreamFailure(false);
+// ...
+headers.setBearerAuth(exchanged.access_token());
+----
+
+`NotificationsClient.notifyOrder`:
+
+[source,java]
+----
+var authorized = manager.authorize(OAuth2AuthorizeRequest.withClientRegistrationId("notifications-api")
+        .principal("orders-api-machine").build());
+if (authorized == null || authorized.getAccessToken() == null) throw new DownstreamFailure(false);
+return rest.post().uri("/notify").contentType(MediaType.APPLICATION_JSON)
+        .headers(headers -> headers.setBearerAuth(authorized.getAccessToken().getTokenValue()))
+        .body(Map.of("orderId", orderId)).retrieve().body(Map.class);
+----
+
+The imports are `org.springframework.util.LinkedMultiValueMap`,
+`org.springframework.util.MultiValueMap`, and
+`org.springframework.security.oauth2.client.OAuth2AuthorizeRequest`.
+====
+
+== Ship it
+
+. Run the task **Build d6-service-to-service/orders-api in the developer
+  namespace and roll it out**, and wait for `successfully rolled out`. This
+  replaces the Orders you built in Module 4. The starter already has the token
+  checks of Module 4, as the lab's Orders has them.
+. Sign in to the link:{spa_url}[SPA,window=_blank] as `manager` and click
+  **Create a sample order**. It returns 201.
+
+== See it: one order, three identities
+
+. Open
+  link:{openshift_console_url}/observe/traces?namespace=tracing&name=workshop&tenant={attendee_id}&start=15m&limit=100&q=%7B+resource.service.name+%3D+%22orders-api%22+%26%26+name+%3D+%22POST+%2Forders%22+%7D[your Orders traces,window=_blank].
+  If you open **Observe → Traces** from the menu instead, choose the **Tempo
+  instance** `tracing / workshop` and the **Tenant** `{attendee_id}`: the
+  tenant it starts on is not yours.
+. Open the newest `POST /orders` trace. A trace can take a minute to appear;
+  reload if the newest one started before your click. One request crosses
+  Orders, Inventory, and Notifications. The `orders-api: POST` spans with no
+  service below them are Orders' calls to Keycloak's token endpoint: the
+  exchange, and the client-credentials request when it needs a new token.
+. Copy the **Trace ID** from the top right of the trace page.
+. In **Observe → Logs**, search for it and click **Run Query** (again if the
+  results do not change). You get one line per API. Click **Details** on each:
++
+--
+* **Orders:** `username` `manager`, `client_id` `spa`.
+* **Inventory:** `username` still `manager`, but `client_id` `orders-api`.
+* **Notifications:** `username` `service-account-orders-api`. No user is
+  involved.
+--
++
+`client_id` is the token's `azp`. Inventory and Notifications both see
+`orders-api` as the party that asked, but for different subjects: the user, and
+Orders itself.
+. Click **Create a sample order** as `reader`. It returns 403 from Orders, and
+  the trace has no Inventory or Notifications span: no token was exchanged for
+  a user who may not order. Sign out.
+
+== Check
+
+* A manager's order returns 201 end to end.
+* The logs for one trace show `client_id` `orders-api` at Inventory and at
+  Notifications, with the user at Inventory and the service account at
+  Notifications.
+* The test task passes.
+
+== Explain
+
+. Why not use client credentials for Inventory too? It would be simpler.
++
+.Answer
+[%collapsible]
+====
+Inventory would then see Orders, not the user. It could no longer check the
+user's roles or record who reserved the stock, and Orders' service account
+would need every permission any user might need, which makes it a much more
+valuable thing to steal.
+====
+. The exchange calls Keycloak on every order. What does that cost?
++
+.Answer
+[%collapsible]
+====
+Availability and latency: if Keycloak is slow or down, every order fails, even
+for a user with a valid token. You reason through this in Module 7. The client
+credentials token, by contrast, is cached until it nears expiry.
+====
+
+== At your desk
+
+For every call from one service to another, ask whose action it is:
+
+* **The user's:** exchange the user's token for one with the callee's audience.
+  Never forward the user's token.
+* **The system's:** use client credentials, cache the token, and give the
+  service account only the roles that call needs.

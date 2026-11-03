@@ -1,0 +1,8 @@
+# Build output from running the exercises locally or in Dev Spaces.
+node_modules/
+target/
+dist/
+__pycache__/
+d5-bff/bff/starter/src/main/resources/static/
+# The repository ignores bin/ (.NET output); this one holds the exercise script.
+!/bin/

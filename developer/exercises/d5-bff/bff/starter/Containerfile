@@ -1,0 +1,6 @@
+FROM registry.access.redhat.com/ubi9/openjdk-25@sha256:59b7920169daa365dda564ff96f482d12acb426cb23eef7fd681825822c11554
+WORKDIR /deployments
+COPY --chmod=0644 target/bff.jar /deployments/bff.jar
+USER 1001
+EXPOSE 8080
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-jar", "/deployments/bff.jar"]

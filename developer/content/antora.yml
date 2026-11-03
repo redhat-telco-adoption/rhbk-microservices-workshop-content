@@ -1,0 +1,32 @@
+---
+name: modules
+title: Build secure microservices with Red Hat build of Keycloak
+version: ~
+nav:
+  - modules/ROOT/nav.adoc
+asciidoc:
+  attributes:
+    page-pagination: true
+    lab_name: Build secure microservices with Red Hat build of Keycloak
+    # Showroom user data replaces these placeholders for each seat.
+    user: not-assigned
+    password: not-assigned
+    openshift_console_url: https://console.example.invalid
+    openshift_cluster_ingress_domain: apps.example.invalid
+    attendee_id: not-assigned
+    attendee_namespace: namespace-not-assigned
+    keycloak_origin: https://keycloak.example.invalid
+    realm_name: realm-not-assigned
+    issuer: https://keycloak.example.invalid/realms/realm-not-assigned
+    reader_password: not-assigned
+    manager_password: not-assigned
+    spa_url: https://spa.example.invalid
+    bff_url: https://bff.example.invalid
+    proxy_url: https://proxy.example.invalid
+    reports_url: https://reports.example.invalid
+    orders_api_url: https://orders-api.example.invalid
+    # Where Dev Spaces clones the exercises from. Set content_ref to the named
+    # ref this guide is published on (workshop/developer/showroom/README.md).
+    content_repo_url: https://github.com/redhat-telco-adoption/rhbk-microservices-workshop-content
+    content_ref: developer-guide-20261103
+    exercises_path: developer/exercises

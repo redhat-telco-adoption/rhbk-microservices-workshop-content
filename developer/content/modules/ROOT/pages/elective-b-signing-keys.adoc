@@ -1,0 +1,148 @@
+= Elective B: Signing keys in your validator
+:navtitle: B. Signing keys in your validator
+
+*Time:* 25 minutes +
+*Before you start:* Module 4, and the terminal setup from xref:electives.adoc#_the_terminal[Electives] +
+*By the end, you can:* explain how an API picks the key for a token; say what your validator does with an unknown key or algorithm; tell operations what your APIs need from a key rotation
+
+== Why it matters
+
+Operations replaces the realm's signing keys from time to time: on a schedule,
+when a key policy changes, or when a key may have leaked. Whether your
+applications notice depends on your validator, not on Keycloak. An API that
+caches keys forever rejects every token after a rotation; an API that accepts
+whatever algorithm a token names can be fooled by a token an attacker signed.
+
+You look at how the keys are published, then send Orders tokens with a key and
+an algorithm it does not know.
+
+== See it: keys, key IDs, and the JWKS
+
+. In the
+  link:{keycloak_origin}/admin/master/console/#/{realm_name}[Keycloak administration console,window=_blank],
+  open **Realm settings → Keys**. The **Keys list** shows several keys. Only
+  the `RS256` key signs access tokens. The `HS512` key signs Keycloak's own
+  internal tokens, such as refresh tokens, and the `RSA-OAEP` and `AES` keys
+  are for encryption. Note the **Kid** of the `RS256` key.
+. In the **oc** terminal, list the published keys:
++
+[source,bash]
+----
+curl -s "$ISSUER/protocol/openid-connect/certs" | jq '.keys[] | {kid, alg, use}'
+----
++
+Only asymmetric public keys appear. The HMAC (hash-based message
+authentication code) and AES (Advanced Encryption Standard) keys are secrets
+and are never published.
+. Look at the header of a fresh token: `jwt_part "$(service_token)" 1`. Its
+  `kid` matches the `RS256` key. An API uses it to pick the public key from
+  the JWKS it has cached, without calling Keycloak for each request.
+
+== Do: a key your validator does not know
+
+The `jwt_edit` helper from the setup block rewrites a token's header and keeps
+its payload and signature, as an attacker could.
+
+. Sign in to the link:{spa_url}[SPA,window=_blank] as `manager`, click **View
+  orders**, copy the token, and run `paste_token`. Check that it works:
+  `call_orders "$TOKEN"` prints `200`.
+. **Predict:** what will Orders do with the same token naming a `kid` that is
+  not in its cache? Write it down, then try it:
++
+[source,bash]
+----
+call_orders "$(jwt_edit "$TOKEN" 1 '.kid = "rotated-key"')"
+----
++
+.What happened
+[%collapsible]
+====
+`401`. Orders did not find the `kid` in its cache, so it downloaded the JWKS
+again, still did not find it, and refused the token. Orders (Spring Security),
+Inventory (PyJWT), and Notifications (`jose`) all download the JWKS again for
+an unknown `kid`. That is what makes a rotation painless: when operations adds
+a new key, the first token that names it makes each API fetch it, with no
+restart.
+====
+
+== Break it: an algorithm your validator does not accept
+
+. **Predict:** the same token, with a header that claims `ES256`, a different
+  signature algorithm, and then `none`, no signature at all. What will Orders
+  return for each?
++
+[source,bash]
+----
+call_orders "$(jwt_edit "$TOKEN" 1 '.alg = "ES256"')"
+call_orders "$(jwt_edit "$TOKEN" 1 '.alg = "none"')"
+----
++
+.What happened
+[%collapsible]
+====
+`401` both times. Since Module 4, Orders accepts only `RS256`, whatever the
+header says. A validator that trusted the header could be talked into a weaker
+check, or no check at all. The Module 4 tests also cover the case these
+commands cannot: a token properly signed with `HS256` or `ES256` by a key the
+attacker holds (the `hs256` and `es256` forgeries).
+====
+. Sign out of the SPA, and run `unset TOKEN`.
+
+== Check
+
+* Orders returned `200` for the real token, and `401` for the unknown `kid`,
+  `ES256`, and `none` versions of it.
+* You can say what your APIs do when a token names a key they have not
+  cached.
+
+== Explain
+
+. Operations plans to rotate the realm's key next week. What do they need to
+  know about your APIs?
++
+.Answer
+[%collapsible]
+====
+How long each API caches the JWKS, and whether it downloads it again for an
+unknown `kid`. With refresh on unknown `kid`, operations can add the new key
+with a higher priority, keep the old one published (passive) for the longest
+token lifetime, then disable it. With a long cache and no refresh, they must
+first publish the new key without using it, and wait longer than your cache
+lifetime.
+====
+. Operations wants to sign access tokens with `ES256` instead of `RS256`. In
+  which order must that change happen?
++
+.Answer
+[%collapsible]
+====
+APIs first: add `ES256` to every API's allowlist and deploy, then switch the
+realm or client to `ES256`, then remove `RS256` from the allowlists. Switching
+Keycloak first makes every API return 401, as you just saw.
+====
+. Why does an API never need Keycloak's private key?
++
+.Answer
+[%collapsible]
+====
+Only Keycloak signs; everyone else verifies, which needs only the public key.
+If any API held the private key, a compromise of that API would let an
+attacker mint tokens for every API that trusts the realm.
+====
+
+== At your desk
+
+* Pin the accepted algorithms in every API, in one line:
++
+[source,java]
+----
+NimbusJwtDecoder.withJwkSetUri(jwkSetUri).jwsAlgorithm(SignatureAlgorithm.RS256)
+----
++
+[source,python]
+----
+jwt.decode(token, signing_key, algorithms=["RS256"], audience="inventory-api", issuer=ISSUER)
+----
+* Check that each JWKS client refreshes on an unknown `kid` and has a bounded
+  cache lifetime. Both are defaults in the libraries used here.
+* Test with forged tokens: an unknown `kid`, another algorithm, and `none`.

@@ -1,0 +1,94 @@
+= Lab environment and preparation
+:navtitle: Preparation
+
+== Your credentials
+
+Use this account for the Keycloak administration console, the OpenShift
+Console, and OpenShift Dev Spaces. Keep the password to yourself.
+
+[cols="1,2",options="header"]
+|===
+|Item |Value
+|Username |`{user}`
+|Password |`{password}`
+|Keycloak administration console (read-only) |link:{keycloak_origin}/admin/master/console/#/{realm_name}[Your realm in the Keycloak administration console,window=_blank]
+|OpenShift Console |link:{openshift_console_url}[{openshift_console_url},window=_blank] (sign in on the page titled **Sign in to sso**)
+|OpenShift Dev Spaces |link:https://devspaces.{openshift_cluster_ingress_domain}[Dev Spaces dashboard,window=_blank] (sign in with **Log in with OpenShift**, then on **Sign in to sso**)
+|===
+
+Open each console in its own browser tab. The OpenShift Console cannot be shown
+inside this guide's split view: its tab there opens the Console in a new
+browser tab and leaves an error in the pane, which you can ignore. Open Dev
+Spaces in its own browser tab too, with the link above: the OpenShift and
+Keycloak sign-in pages refuse to be shown inside another page, so a sign-in
+cannot complete in the guide's **Dev Spaces** tab. Module 3 shows how to start
+your workspace.
+
+The **Terminal** tab is a shell with `curl` and `jq` in your Showroom. It
+cannot read anything in your OpenShift namespace. Module 1 uses it; later
+modules use terminals in your Dev Spaces workspace, which can.
+
+== Your session values
+
+[cols="1,2",options="header"]
+|===
+|Value |Provided value
+|Attendee identifier (ID) |{attendee_id}
+|Your developer namespace |{attendee_namespace}
+|Your realm (prepared by operations) |{realm_name}
+|Issuer |`pass:a[{issuer}]`
+|SPA address |link:{spa_url}[{spa_url},window=_blank]
+|BFF address |link:{bff_url}[{bff_url},window=_blank]
+|Proxy address |link:{proxy_url}[{proxy_url},window=_blank]
+|Reports address (Module 8) |link:{reports_url}[{reports_url},window=_blank]
+|Orders API address |`pass:a[{orders_api_url}]`
+|===
+
+== Your lab users
+
+Operations created two users in your realm. Sign in to the apps as them, never
+with your own account.
+
+[cols="1,1,2",options="header"]
+|===
+|User |Password |Roles
+|`reader` |`{reader_password}` |`user`: may view orders
+|`manager` |`{manager_password}` |`manager`, which includes `user`: may view and create orders
+|===
+
+If a value shows `not-assigned`, `namespace-not-assigned`, `realm-not-assigned`,
+or an `example.invalid` address, stop and ask the facilitator. Do not guess an
+endpoint or use another attendee's realm.
+
+== What operations prepared
+
+* **Your realm**, `{realm_name}`, with every client, role, scope, and service
+  account the apps need. You can read all of it in the Keycloak administration
+  console, but you cannot change it: your account has view rights only. When
+  you need a change, you ask operations, as you would at work.
+* **Your developer namespace**, `{attendee_namespace}`, with the SPA frontend,
+  BFF, proxy (and its Redis session store), the Orders, Inventory, and
+  Notifications APIs, and the `reports` app for Module 8. All of them except
+  `reports` are already connected to your realm: their ConfigMaps hold your
+  issuer, and their Secrets hold their client secrets.
+* **Your Dev Spaces workspace**, with Java and Maven, Python, Node.js, and
+  `oc`, and the exercise sources. It may build and roll out applications in
+  your developer namespace only. Builds stay in your namespace; nothing you
+  build reaches any other attendee or the images the lab ships with.
+* **Cluster logging and distributed tracing.** Your applications send logs and
+  traces automatically; you read them in the OpenShift Console under
+  **Observe → Logs** and **Observe → Traces**. Both show only your own data:
+  logs from your namespace, and traces in your own tenant, `{attendee_id}`.
+
+== Stop conditions
+
+Pause and contact the facilitator if your namespace is not the one assigned to
+you, your realm belongs to someone else, an app address belongs to another
+attendee, or the Keycloak administration console lets you change settings.
+Do not try to fix shared cluster or Keycloak settings yourself.
+
+== Ground rules
+
+Work only in your realm `{realm_name}` and namespace `{attendee_namespace}`.
+Never put passwords, client secrets, tokens, or cookies in chat, tickets, or
+screenshots.

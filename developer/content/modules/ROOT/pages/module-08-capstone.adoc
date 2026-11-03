@@ -1,0 +1,198 @@
+= Module 8: Capstone: ship a new consumer
+:navtitle: 8. Capstone: ship a new consumer
+
+*Time:* 40 minutes, plus the time operations takes to answer your request +
+*Before you start:* Modules 1 to 7 +
+*By the end, you can:* turn an application's requirements into an exact client request for operations; wire an application to the client and secret operations returns, without exposing the secret; prove least privilege in the token and in the application
+
+== Why it matters
+
+Every new application that signs users in needs a client in Keycloak. At work
+you do not create it yourself: you ask operations. A vague request ("we need
+Keycloak for the reports app") gets a client with whatever defaults the person
+on duty picks, and defaults are rarely least privilege. A precise request is
+quick to review, and what you ask for is what you get.
+
+The reporting team has built `reports`, a server-side web application already
+running in your namespace at link:{reports_url}[{reports_url},window=_blank].
+It runs the BFF image with its own configuration, so its page looks like the
+BFF's. It must sign in as client `reports`, which does not exist yet.
+
+The client must satisfy these requirements:
+
+. Users sign in through Keycloak, and the application runs on a server.
+. Its tokens are accepted by Orders and by no other API.
+. Its tokens never carry `manager`, even for a manager. Reports must never be
+  able to create orders.
+. After sign-in, Keycloak may send users back only to
+  `pass:a[{reports_url}/login/oauth2/code/keycloak]`. After sign-out, only to
+  `pass:a[{reports_url}/]`.
+. The application never handles a user's password and never acts on its own
+  behalf.
+. Sign-in codes are protected against interception, as for every client in
+  this lab that signs users in.
+
+== Code: write the request and the configuration
+
+The exercise is in `d8-reports/reports/` and has two files in `starter/`:
+
+[cols="1,3",options="header"]
+|===
+|File |What it is
+|`client-request.yaml` |Your request to operations: the Keycloak client settings `reports` needs. `@REPORTS_URL@` stands for your `reports` address.
+|`reports-config.env` |The runtime configuration of the `reports` Deployment. The client secret is not in it: it goes in the `reports-client` Secret.
+|===
+
+. Run the task **Test the d8-reports/reports starter**. The tests check the
+  request against the requirements above, then sign a token the way that
+  client would and check it with Orders' rules. They fail.
+. In `client-request.yaml`, correct the six settings marked `ANTI-PATTERN`.
+  For each one, name the requirement it breaks.
+. In `reports-config.env`, at the `ANTI-PATTERN` comment, make the application
+  sign in as `reports`, not as the BFF's client.
+. Run the test task again until every test passes.
++
+.Reference solution
+[%collapsible]
+====
+`client-request.yaml`, with the requirement each setting meets:
+
+[source,yaml]
+----
+clientId: reports
+publicClient: false                  # 1: runs on a server, so it can keep a secret
+standardFlowEnabled: true            # 1: users sign in through Keycloak
+implicitFlowEnabled: false
+directAccessGrantsEnabled: false     # 5: never handles a password
+serviceAccountsEnabled: false        # 5: never acts on its own behalf
+redirectUris:
+  - "@REPORTS_URL@/login/oauth2/code/keycloak"   # 4: exact, no wildcard
+postLogoutRedirectUris:
+  - "@REPORTS_URL@/"
+pkceCodeChallengeMethod: S256        # 6: codes protected against interception
+fullScopeAllowed: false              # 3: only the roles allowed below
+realmRoleScopeMappings:
+  - user                             # 3: never manager
+defaultClientScopes:
+  - orders-api-aud                   # 2: Orders, and no other API
+----
+
+`reports-config.env`:
+
+[source,text]
+----
+SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_CLIENTID=reports
+----
+====
+
+== Do: file the request with operations
+
+. In your workspace's **oc** terminal, go to the exercises and print your
+  request with your `reports` address filled in:
++
+[source,bash,subs="attributes+"]
+----
+cd "$PROJECT_SOURCE/{exercises_path}"
+bin/exercise.sh request d8-reports/reports
+----
+. Hand the printed request to operations. In this lab, operations is your
+  facilitator, who tells you how to send it and how you receive the secret.
+  The request holds no secret, so it may travel in any channel.
+. Operations reviews the request against the requirements and either creates
+  the client in your realm or sends the request back with a reason. While you
+  wait, do the next section's prediction.
+. When operations confirms the client exists, open your realm in the
+  link:{keycloak_origin}/admin/master/console/#/{realm_name}[Keycloak administration console,window=_blank]
+  and check **Clients → reports**: its settings are the ones you asked for.
+
+The client secret operations returns is a credential. Receive it only in a
+private channel, paste it only into the command below, and never into chat,
+tickets, files, or a command line.
+
+== Ship it
+
+. In the **oc** terminal, store the secret in the `reports-client` Secret:
++
+[source,bash]
+----
+bin/exercise.sh secret d8-reports/reports
+----
++
+It asks for the secret without showing what you type, and passes it to `oc`
+through a pipe, never as an argument. Paste the secret and press Enter.
+. Run the task **Build d8-reports/reports in the developer namespace and roll
+  it out**. It writes your `reports-config.env` to the `reports-config`
+  ConfigMap, with your issuer filled in, and restarts `reports`. It ends with
+  `successfully rolled out`.
+
+== Prove it in the token
+
+. **Predict:** for `manager`, what will `aud` and `realm_access.roles` be in a
+  `reports` token? Write it down.
+. In the Keycloak administration console, open **Clients → reports → Client
+  scopes → Evaluate**. Pick `manager` in **Users**, click **Effective role
+  scope mappings**, then **Generated access token**.
++
+.What you should see
+[%collapsible]
+====
+`aud` is `orders-api` only, and `realm_access.roles` lists `user` but not
+`manager`. The manager still has the `manager` role; this client never
+receives it.
+====
+
+== Prove it in the application
+
+. Sign out of every app first (Module 2).
+. **Predict:** signed in to `reports` as `manager`, what will **View orders**
+  and **Create a sample order** return?
+. Open link:{reports_url}[reports,window=_blank], sign in as `manager`, and try
+  both.
++
+.What happened
+[%collapsible]
+====
+**View orders** returns 200 and **Create a sample order** returns 403. Orders
+sees only `user`. In **Observe → Logs**, search for `missing_role` and click
+**Run Query**. Click **Details** on the newest `request completed` line, which
+is Orders' line: `client_id` `reports` and `reason` `missing_role`.
+====
+. Sign out, sign in as `reader`, and check that **View orders** returns 200.
+  Sign out.
+
+== Check
+
+* `reports` reads orders as `reader` and as `manager`, and gets 403 for a
+  manager's write.
+* The manager's `reports` token has `aud` `orders-api` only and no `manager`
+  role.
+* The test task passes.
+
+== Explain
+
+Six months later, the reporting team asks for one new feature: managers may
+resubmit a failed order from the reports screen. What would you ask
+operations for?
+
+.Answer
+[%collapsible]
+====
+Not `manager` on the `reports` scope. Every manager's `reports` token could
+then create *any* order, so a stolen `reports` token would be worth much more.
+Ask instead for a narrow role, such as `order-resubmitter`, added to the
+`reports` scope and checked by a new endpoint in Orders that only resubmits;
+or send the user to an app that already holds that permission. Either keeps
+"reports can read" true for everything else.
+====
+
+== At your desk
+
+A client request names, for each setting, the requirement behind it:
+
+* the client type and the only flow it needs;
+* exact redirect addresses, with no wildcard;
+* PKCE `S256`;
+* no full scope, and only the roles the application needs;
+* the audience of the one API it calls;
+* no password grant and no service account unless the application truly acts
+  on its own behalf.

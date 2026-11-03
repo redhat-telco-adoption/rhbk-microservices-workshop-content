@@ -1,0 +1,141 @@
+= Elective C: Local validation or introspection
+:navtitle: C. Introspection
+
+*Time:* 20 minutes +
+*Before you start:* Module 7, Scenario 2, and the terminal setup from xref:electives.adoc#_the_terminal[Electives] +
+*By the end, you can:* call Keycloak's introspection endpoint as an API; explain why it and local validation disagree after sign-out; choose between them for an operation
+
+== Why it matters
+
+In Module 7, a token kept working after its user signed out, because Orders
+validates tokens *locally*: it checks the signature with cached public keys
+and never asks Keycloak whether the session still exists. That is fast and
+keeps working when Keycloak is briefly unreachable.
+
+*Token introspection*, defined in Request for Comments (RFC) 7662, is the
+alternative. The API sends the token to Keycloak's introspection endpoint and
+asks whether it is still active. You compare the two answers for the same
+token.
+
+Steps 1 to 6 must fit inside the token's five-minute lifetime. Read them
+through first.
+
+== Do: one token, two answers
+
+. Paste this helper into the **oc** terminal. It introspects `$TOKEN`,
+  authenticated as the `orders-api` client:
++
+[source,bash]
+----
+introspect() { as_orders_api -d "token=$TOKEN" "$ISSUER/protocol/openid-connect/token/introspect" | jq '{active, username, client_id, aud, exp}'; }
+----
+. In the link:{spa_url}[SPA,window=_blank], sign out if you are signed in,
+  sign in as `reader`, and click **View orders**.
+. Copy the `Authorization` value of the `orders` request, run `paste_token`,
+  and paste it.
+. Ask Orders, which validates locally: `call_orders "$TOKEN"` prints `200`.
+. Ask Keycloak: `introspect`. `active` is `true`, with the user, the client
+  that obtained the token (`spa`), and its audience.
+. In the SPA, click **Sign out**, and **Logout** if Keycloak asks. This ends
+  the user's session in Keycloak.
+. **Predict:** what will each command print now? Write it down, then run
+  `call_orders "$TOKEN"` and `introspect` again.
++
+.What happened
+[%collapsible]
+====
+Orders still returns `200`. Introspection returns only `{"active": false}`, so
+the other fields print as `null`. Keycloak knows the session is gone; Orders
+cannot know without asking. If Orders prints `401`, the token expired; start
+again from step 2.
+====
+
+== Break it: who may ask
+
+. Introspect with a wrong secret, printing only the status code:
++
+[source,bash]
+----
+printf 'user = "orders-api:wrong"\n' | curl -s -K - -o /dev/null -w '%{http_code}\n' \
+  -d "token=$TOKEN" "$ISSUER/protocol/openid-connect/token/introspect"
+----
++
+Keycloak refuses with `401`: only an authenticated client may introspect.
+. Consider the first answer again. `orders-api` introspected a token issued to
+  `spa` and got the user back, because `orders-api` is in that token's `aud`. A
+  client that authenticates but is not in the audience gets only
+  `{"active": false}`, even for a live token, so `false` does not always mean
+  revoked.
+. Run `unset TOKEN`.
+
+== Check
+
+After sign-out, Orders still returned `200` for the token while introspection
+returned `"active": false`, and you can say why they differ.
+
+== Explain
+
+. Orders handles a high volume of reads. Should it introspect every request?
++
+.Answer
+[%collapsible]
+====
+Usually not. Introspection adds a Keycloak call to every request, so latency
+and Keycloak's availability become part of every read (Module 7, Scenario 3).
+Short access-token lifetimes plus local validation are the common default. If
+you do introspect, cache the result briefly, and accept that the cache brings
+back a little of the delay you wanted to remove.
+====
+. Which operations would justify introspection?
++
+.Answer
+[%collapsible]
+====
+Operations where five minutes of a signed-out user's access is too long:
+moving money, changing account security settings, administrative actions. A
+common design validates locally for everything and introspects only for those
+operations, or at the gateway in front of them.
+====
+. Keycloak can issue *lightweight* access tokens, which omit most claims. How
+  would an API that receives them make decisions?
++
+.Answer
+[%collapsible]
+====
+It cannot read roles from the token, so it must introspect to get them.
+Lightweight tokens keep personal data and roles out of the browser and out of
+logs that capture headers, at the price of an introspection call. Operations
+turns them on per client.
+====
+
+== At your desk
+
+[cols="1,2,2",options="header"]
+|===
+| |Local validation |Introspection
+|Detects an ended session |No; the token is valid until it expires |Yes, on the next call
+|Keycloak in the request path |No; only for occasional JWKS downloads |Yes; every uncached request
+|Works with opaque or lightweight tokens |No |Yes
+|Secret needed by the API |None |A client secret for the introspection call
+|===
+
+In Spring Security, local JWT validation starts from:
+
+[source,yaml]
+----
+spring.security.oauth2.resourceserver.jwt.issuer-uri: ${ISSUER}
+----
+
+Introspection starts from:
+
+[source,yaml]
+----
+spring.security.oauth2.resourceserver.opaquetoken:
+  introspection-uri: ${ISSUER}/protocol/openid-connect/token/introspect
+  client-id: orders-api
+  client-secret: ${ORDERS_API_CLIENT_SECRET}
+----
+
+Orders defines its decoder in code, with the checks you added in Module 4, so
+these properties alone do not change how it validates. With introspection you
+must add the audience and role checks again, from the introspection response.

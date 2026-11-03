@@ -1,0 +1,269 @@
+= Module 4: Validate tokens in an API
+:navtitle: 4. Validate tokens in an API
+
+*Time:* 90 minutes +
+*Before you start:* Module 3, with your workspace running +
+*By the end, you can:* make the six checks an API owes every token, in Java, Python, and JavaScript; tell when to answer 401 and when 403; prove your checks against forged tokens, in tests and against a live API
+
+== Why it matters
+
+An API is the last line of defense: whatever the browser app does, anyone can
+send a request straight to it with a token they found, made, or borrowed. A
+token that decodes is not a token you may trust. Before an API looks at the
+roles, it must check:
+
+[cols="1,3",options="header"]
+|===
+|Check |What it stops
+|*Signature*, with a key from the realm's JWKS |A token someone made or changed.
+|*Algorithm*: `RS256` only |A token signed some other way, for example with a shared secret (`HS256`) the attacker chose.
+|*Issuer* (`iss`) equals yours exactly |A token from another realm or another Keycloak.
+|*Audience* (`aud`) names this API |A real token from your realm, meant for another API.
+|*Expiry* (`exp`), with a small allowance for clock differences |A token that leaked hours ago.
+|*Type* (`typ`) is `Bearer` |An ID token or a refresh token presented as an access token.
+|===
+
+The answer matters too. A token that fails any of these checks gets *401
+Unauthorized*: the API does not know who is calling. A valid token without the
+right role or client gets *403 Forbidden*: the API knows who is calling and
+refuses.
+
+The three starters check the signature, expiry, and type, but trust any
+algorithm the realm publishes keys for, any audience, and any issuer. That is
+an easy state to ship: every normal request works, and every test that sends a
+good token passes.
+
+== Predict
+
+Orders' starter does not check `aud`. The `orders-api` client also has a
+service account, whose tokens are meant for Notifications. If you sent one of
+those tokens to the starter's `GET /orders`, which status would it return: 200,
+401, or 403? Write it down; you try it below.
+
+== Do: set up a terminal for the live checks
+
+In your workspace, open the menu (☰) and choose **Terminal → New Terminal**.
+When it asks for a container, choose **oc**. Paste this block. It defines the
+helpers from Module 1, one that edits a token the way an attacker could, two
+addresses, and a way to get the Orders service account's token without showing
+its secret.
+
+[source,bash,subs="attributes+"]
+----
+cd "$PROJECT_SOURCE/{exercises_path}"
+DEV_NS="${DEVWORKSPACE_NAMESPACE%-devspaces}-rhbk-dev"
+ISSUER='{issuer}'
+ORDERS='{orders_api_url}'
+paste_token() { read -rsp 'Access token: ' TOKEN; echo; TOKEN=${TOKEN#Bearer }; }
+jwt_part() { local p; p=$(cut -d. -f"$2" <<<"$1" | tr '_-' '/+'); while (( ${#p} % 4 )); do p+='='; done; base64 -d <<<"$p" | jq .; }
+# Rewrite part $2 (1 header, 2 payload) of token $1 with the jq filter $3; the signature stays as it was.
+jwt_edit() { local parts; IFS=. read -ra parts <<<"$1"; parts[$2-1]=$(jwt_part "$1" "$2" | jq -c "$3" | base64 -w0 | tr '+/' '-_' | tr -d '='); (IFS=.; echo "${parts[*]}"); }
+# A client-credentials token for orders-api. The secret goes through a pipe, never an argument.
+service_token() {
+  local secret; secret=$(oc get secret orders-api-client -n "$DEV_NS" -o jsonpath='{.data.client-secret}' | base64 -d)
+  printf 'user = "orders-api:%s"\n' "$secret" |
+    curl -s -K - -d grant_type=client_credentials "$ISSUER/protocol/openid-connect/token" | jq -r .access_token
+}
+call_orders() { curl -s -o /dev/null -w '%\{http_code}\n' -H "Authorization: Bearer $1" "$ORDERS/orders" "${@:2}"; }
+----
+
+If you open a new terminal later, paste the block again: each terminal starts
+empty.
+
+== Ship it first: the starter, as it is
+
+. Run the task **Build d4-token-checks/orders-api in the developer namespace
+  and roll it out**. It builds the starter unchanged and rolls out the
+  `orders-api` Deployment with it. It takes a few minutes.
+. In the **oc** terminal, get a service account token and look at it:
++
+[source,bash]
+----
+SA_TOKEN=$(service_token)
+jwt_part "$SA_TOKEN" 2 | jq '{iss, azp, aud, realm_access, resource_access}'
+----
++
+Its `aud` names `notifications-api`, not `orders-api`, and it has no `user` role.
+. Call Orders with it: `call_orders "$SA_TOKEN"`.
++
+.What happened
+[%collapsible]
+====
+It returns 403. The starter accepted the token as valid authentication and only refused
+it because it lacks the `user` role. Had operations ever given that service
+account `user`, the starter would have returned every order. The token was
+never meant for Orders; the API should not have got as far as the roles.
+====
+
+== Code: Orders, in Java
+
+. Run the task **Test the d4-token-checks/orders-api starter**. The tests sign
+  forged tokens with a local mock JWKS: wrong audience, wrong issuer, expired,
+  unknown key, `HS256`, `ES256`, and a broken signature. Several are accepted.
+. Fix the three places marked `ANTI-PATTERN` under
+  `d4-token-checks/orders-api/starter/src/main/java/com/example/orders/security/`:
+.. In `JwtAudienceValidator.java`, succeed only when `aud` contains
+   `orders-api`, and otherwise fail with the `OAuth2Error` `bad_audience`.
+.. In `SecurityConfiguration.java`, allow only `SignatureAlgorithm.RS256`.
+.. In the same file, add a `JwtIssuerValidator` for the configured issuer to
+   the validator chain.
+. Run the test task again until every test passes.
++
+.Reference solution
+[%collapsible]
+====
+[source,java]
+----
+@Override public OAuth2TokenValidatorResult validate(Jwt jwt) {
+    if (jwt.getAudience() != null && jwt.getAudience().contains("orders-api"))
+        return OAuth2TokenValidatorResult.success();
+    return OAuth2TokenValidatorResult.failure(new OAuth2Error("bad_audience"));
+}
+
+// SecurityConfiguration.jwtDecoder
+NimbusJwtDecoder decoder = NimbusJwtDecoder.withJwkSetUri(jwkSetUri)
+        .jwsAlgorithm(SignatureAlgorithm.RS256)
+        .restOperations(rest).build();
+decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(
+        timestamps, typ, expiry, subject, new JwtIssuerValidator(issuer), new JwtAudienceValidator()));
+----
+====
+
+== Ship it and replay
+
+. Run the task **Build d4-token-checks/orders-api in the developer namespace
+  and roll it out** again, and wait for `successfully rolled out`.
+. Replay the service account token: `call_orders "$SA_TOKEN"`. It now
+  returns 401. If the token expired (after five minutes), get a new one with
+  `SA_TOKEN=$(service_token)` first.
+. In the OpenShift Console, open **Observe → Logs**, search for
+  `bad_audience`, and click **Run Query**. Orders' `request completed` line
+  names the reason, and no token.
+. Now a user's token. Sign in to your link:{spa_url}[SPA,window=_blank] as
+  `reader`, click **View orders**, and copy the `Authorization` value of the
+  `orders` request as in Module 1. In the terminal, run `paste_token` and paste
+  it.
+. Replay it three ways. The second line gives the reader the `manager` role in
+  the payload and keeps Keycloak's signature:
++
+[source,bash]
+----
+WRITE=(-X POST -H 'Content-Type: application/json' -d '{"item":"widget","quantity":1}')
+call_orders "$TOKEN"                                                         # a good token, a read: 200
+call_orders "$(jwt_edit "$TOKEN" 2 '.realm_access.roles += ["manager"]')" "${WRITE[@]}"   # promoted: 401
+call_orders "$TOKEN" "${WRITE[@]}"                                           # a reader's write: 403
+----
++
+The edited token claims `manager`, but its signature no longer matches its
+contents, so Orders never looks at its roles. Sign out of the SPA.
+
+== Code: Inventory, in Python
+
+Inventory is only called by Orders, but it validates every token as if it were
+public.
+
+. Run the task **Test the d4-token-checks/inventory-api starter**. Forgeries
+  that should get 401 are accepted.
+. In `d4-token-checks/inventory-api/starter/main.py`, fix `verify_token`, at
+  the `ANTI-PATTERN` comment: allow only `RS256`, require the audience
+  `inventory-api`, and require `iss` to equal `ISSUER`. Remove the option that
+  turns the audience check off.
+. Run the test task again until every test passes.
++
+.Reference solution
+[%collapsible]
+====
+[source,python]
+----
+claims = jwt.decode(
+    token,
+    signing_key,
+    algorithms=["RS256"],
+    audience="inventory-api",
+    issuer=ISSUER,
+    leeway=30,
+    options={"require": ["exp", "sub"], "verify_nbf": True},
+)
+----
+
+PyJWT raises `InvalidAudienceError` and `InvalidIssuerError`, which the
+existing handlers already turn into 401 with a reason.
+====
+. Run the task **Build d4-token-checks/inventory-api in the developer
+  namespace and roll it out**.
+
+== Code: Notifications, in JavaScript
+
+. Run the task **Test the d4-token-checks/notifications-api starter**.
+. In `d4-token-checks/notifications-api/starter/src/server.js`, at the
+  `ANTI-PATTERN` comment, pass the issuer, the audience `notifications-api`,
+  and an algorithm list with only `RS256` to `jwtVerify`.
+. Run the test task again until every test passes.
++
+.Reference solution
+[%collapsible]
+====
+[source,javascript]
+----
+const verified = await jwtVerify(token, jwks, {
+  issuer,
+  audience: 'notifications-api',
+  algorithms: ['RS256'],
+  clockTolerance: 30,
+});
+----
+====
+. Run the task **Build d4-token-checks/notifications-api in the developer
+  namespace and roll it out**.
+
+== See it: an order end to end
+
+. Sign in to the link:{spa_url}[SPA,window=_blank] as `manager` and click
+  **Create a sample order**. It returns 201: Orders, Inventory, and
+  Notifications each accepted the token sent to it.
+. Sign out.
+
+If the order fails with 502, one of the three APIs refused a token it should
+accept. Open **Observe → Logs**, search for `request completed`, and read the
+`reason` on the newest line from each API.
+
+== Check
+
+* All three test tasks pass.
+* Against the live Orders, the service account token and the promoted token
+  get 401, the reader's write gets 403, and the reader's read gets 200.
+* A manager's order succeeds.
+
+== Explain
+
+. Why must the starter's answer to the service account token have been 401,
+  not 403?
++
+.Answer
+[%collapsible]
+====
+A 403 says "I know who you are, and you may not". The starter decided that
+from a token that was never meant for it, so any role that token happened to
+carry would have counted. Rejecting it at authentication means the roles of a
+token for another API are never considered.
+====
+. Why allow only `RS256`, when the realm also publishes other keys?
++
+.Answer
+[%collapsible]
+====
+An API should accept exactly what its issuer uses for access tokens, nothing
+more. Each extra algorithm is extra code an attacker can aim at. The classic
+case is a library that, given `HS256`, uses the public key as the shared
+secret, which anyone can download.
+====
+
+== At your desk
+
+Ask of every API you own:
+
+* Does it pin the algorithm, the issuer, and its own audience, or does it only
+  "verify the token"?
+* Do its tests send forged tokens, or only good ones?
+* Does it answer 401 for a bad token and 403 for a refused one, and log the
+  reason without the token?

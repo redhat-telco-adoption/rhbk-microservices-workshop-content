@@ -1,0 +1,80 @@
+= Troubleshooting
+:navtitle: Troubleshooting
+
+Most problems in this lab have one of a few causes. Check these first, then ask
+the facilitator.
+
+== Dev Spaces
+
+* **The Dev Spaces tab of this guide shows a blank page or an error at sign-in.**
+  Sign-in pages cannot be shown inside the guide. Open
+  link:https://devspaces.{openshift_cluster_ingress_domain}[Dev Spaces,window=_blank]
+  in its own browser tab (Module 3).
+* **The workspace is stopped or will not open.** Dev Spaces stops a workspace
+  after 30 minutes without activity. Open it again from the dashboard's
+  **Workspaces** list. Your edits are kept.
+* **A task is missing from Run Task.** Choose **devfile** in the list first;
+  the tasks are grouped under it.
+* **A task in the oc container says it refuses the namespace.** The rollout
+  works only in your developer namespace, `{attendee_namespace}`. Run **Show
+  the oc user and the developer namespace access**: if it does not print your
+  username and `yes` twice, tell the facilitator.
+* **A terminal command says `command not found` for `paste_token` or
+  `call_orders`.** Each terminal starts empty; paste the setup block from
+  Module 4 or xref:electives.adoc#_the_terminal[Electives] again, in a terminal
+  in the **oc** container.
+
+== Tests and rollouts
+
+* **A test task fails after your change.** Read the first failing test's name
+  and message: each names the forgery or the check it expected. Compare your
+  change with the reference solution on the module page.
+* **The BFF rollout fails at the package step.** The BFF task packages your
+  SPA from Module 3 first. Run **Test the d3-spa-pkce/frontend starter**, fix
+  what it reports, and run the BFF task again.
+* **The build fails or times out.** Run the task again. If it fails the same
+  way twice, copy the last lines of its output (they hold no secrets) to the
+  facilitator.
+* **After a rollout, the app shows 503 for a minute.** The new pod is
+  starting. Wait for **1 of 1 pods** in **Workloads → Deployments**.
+* **You want the lab's version back.** Restore the starter's marked lines from
+  the reference solution, run the test task, and roll out again.
+
+== Sign-in problems
+
+* **Signed in as the wrong user.** The apps share one Keycloak session. Sign out
+  of every app you used, then sign in again.
+* **`Client not found` in the sign-in popup.** The app's issuer names another
+  realm, or its client does not exist yet. Check the issuer (Module 2); for
+  `reports`, that operations created the client (Module 8).
+* **The SPA signs you out after a page reload.** Expected after Module 3: its
+  tokens are only in memory.
+
+== Application problems
+
+* **Every request returns 401.** Check the issuer character by character, then
+  decode a token and check `aud`. Search **Observe → Logs** for
+  `request completed` and read the `reason`.
+* **A manager's order returns 502.** One of the downstream calls failed. Follow
+  the trace and search the logs for `/inventory/reserve` and `/notify`
+  (Module 6).
+* **`reports` shows an error page at sign-in.** Expected until operations has
+  created the `reports` client and you have stored its secret and rolled out
+  (Module 8).
+* **Changes to a ConfigMap have no effect.** Pods read ConfigMaps and Secrets
+  at startup; restart the rollout.
+
+== Logs and traces
+
+* Results can take up to a minute to appear. If **Run Query** shows old
+  results, click it again or use the refresh button.
+* **The Traces page shows no Tempo instance or no permission.** Select
+  **Tempo instance** `tracing / workshop`, then **Tenant** `{attendee_id}`.
+  Other tenant names are listed but only yours opens.
+
+== Ground rules
+
+Work only in your realm `{realm_name}` and namespace `{attendee_namespace}`.
+Never put passwords, client secrets, tokens, or cookies in chat, tickets, or
+screenshots. If an app address or realm belongs to someone else, stop and tell
+the facilitator.

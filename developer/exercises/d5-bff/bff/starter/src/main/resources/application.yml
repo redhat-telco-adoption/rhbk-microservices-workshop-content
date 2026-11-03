@@ -1,0 +1,76 @@
+server:
+  port: 8080
+  forward-headers-strategy: framework
+  reactive:
+    session:
+      timeout: 30m
+  netty:
+    connection-timeout: 3s
+spring:
+  application:
+    name: bff
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            provider: keycloak
+            client-id: bff
+            client-secret: ${BFF_CLIENT_SECRET}
+            client-authentication-method: client_secret_basic
+            authorization-grant-type: authorization_code
+            client-settings:
+              require-proof-key: true
+            scope: openid,profile,email
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+        provider:
+          keycloak:
+            issuer-uri: ${OIDC_ISSUER}
+  cloud:
+    gateway:
+      server:
+        webflux:
+          httpclient:
+            connect-timeout: 3000
+            response-timeout: 5s
+          default-filters:
+            - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+          routes:
+            - id: orders-api
+              uri: ${ORDERS_BASE_URL:http://orders-api.apps.svc:8080}
+              predicates:
+                - Path=/api/orders,/api/orders/**
+              # ANTI-PATTERN: relays the browser's Authorization, Origin, and SESSION cookie to
+              # orders-api. Exercise D5: strip Authorization and Origin before TokenRelay, and
+              # the Cookie header after it, as the legacy-api route below does.
+              filters:
+                - StripPrefix=1
+                - TokenRelay
+            - id: legacy-api
+              uri: ${LEGACY_BASE_URL:https://legacy-api.invalid}
+              predicates:
+                - Path=/api/legacy/**
+              filters:
+                - StripPrefix=1
+                - RemoveRequestHeader=Authorization
+                - RemoveRequestHeader=Origin
+                - TokenRelay
+                - RemoveRequestHeader=Cookie
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:http://otel-collector.tracing.svc:4318/v1/traces}
+logging:
+  level:
+    root: INFO

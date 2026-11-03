@@ -1,0 +1,20 @@
+# Client request for operations: the `reports` app (exercise D8).
+# Operations creates this client in your realm and returns its secret. The fields
+# are Keycloak client settings; @REPORTS_URL@ is your reports route, which
+# bin/exercise.sh fills in when it prints the request.
+clientId: reports
+publicClient: false
+standardFlowEnabled: true
+implicitFlowEnabled: false
+directAccessGrantsEnabled: false
+serviceAccountsEnabled: false
+redirectUris:
+  - "@REPORTS_URL@/login/oauth2/code/keycloak"
+postLogoutRedirectUris:
+  - "@REPORTS_URL@/"
+pkceCodeChallengeMethod: S256
+fullScopeAllowed: false
+realmRoleScopeMappings:
+  - user
+defaultClientScopes:
+  - orders-api-aud

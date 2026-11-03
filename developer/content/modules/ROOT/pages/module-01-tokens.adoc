@@ -1,0 +1,224 @@
+= Module 1: The system and its tokens
+:navtitle: 1. The system and its tokens
+
+*Time:* 25 minutes +
+*Before you start:* your username and password, and your lab users, from xref:details.adoc[] +
+*By the end, you can:* map where each sign-in pattern keeps its tokens; find a realm's issuer, endpoints, and public keys; explain `aud`, `azp`, roles, and `scope` in a real token and name the client setting behind each
+
+== Why it matters
+
+Signing in tells an application who you are. It does not decide what you may
+do. That decision belongs to every API that receives a request, and each one
+must check the token itself. Most real incidents in this area come from a
+component that trusted something it should have checked: a button hidden in
+the user interface (UI), a token meant for a different API, or a token kept
+where a script can read it.
+
+As a developer, you rarely configure Keycloak yourself, but you must read what
+it gives you. Every claim in a token comes from a setting operations made. When
+a token does not look the way your code expects, you need to know which
+setting to ask about.
+
+== The pieces
+
+* **Keycloak** authenticates users and issues tokens. An *access token* is a
+  signed statement: who the user is, which application asked for it (`azp`),
+  which APIs may accept it (`aud`), what roles it carries, and when it
+  expires. Anyone holding it can use it until it expires.
+* **Orders** is the protected API. It checks every token and decides.
+* **Inventory** and **Notifications** are called by Orders, not by the
+  browser.
+* The **frontend** is one build served three ways: by its own `frontend`
+  Deployment for the SPA, and from inside the `bff` and `proxy` for the other
+  two patterns.
+
+.The whole system
+image::system-overview.svg["The browser reaches frontend, bff, reports, and proxy, and calls orders-api directly for the SPA. bff, reports, and proxy also call orders-api, and proxy keeps its sessions in proxy-redis. orders-api calls inventory-api and notifications-api. The browser calls Keycloak to sign in, and orders-api calls Keycloak for signing keys, token exchange, and its own token.",link=self,window=_blank]
+
+== Three kinds of token
+
+A sign-in with OpenID Connect (OIDC) returns up to three tokens. Keep them
+apart; mixing them up causes real bugs.
+
+[cols="1,2,2",options="header"]
+|===
+|Token |What it is for |Who reads it
+|*Access token* |Calling APIs. Short-lived (five minutes here). |The APIs. The app that holds it should only pass it along.
+|*ID token* |Telling the signing-in app who the user is. |Only the app that signed the user in. An API must never accept it.
+|*Refresh token* |Getting a new access token without asking the user to sign in again. Longer-lived. |Only Keycloak. Keep it as carefully as a password.
+|===
+
+All three are JavaScript Object Notation (JSON) Web Tokens (JWTs): three
+base64url parts separated by dots, starting with `eyJ`, and signed by Keycloak.
+Signed is not encrypted: anyone can decode and read them, but any change breaks
+the signature. Never put secrets in claims.
+
+== Do: study the three sign-in patterns
+
+For each diagram, find which component receives the browser's return from
+Keycloak (the *callback*), and where the tokens are kept afterwards.
+
+.SPA with PKCE: tokens stay in browser memory
+image::spa-auth-flow.svg[SPA authorization code flow with PKCE,link=self,window=_blank]
+
+.BFF: tokens stay on the server
+image::bff-auth-flow.svg[BFF login and session flow,link=self,window=_blank]
+
+.Reverse proxy: tokens stay in the proxy's Redis session
+image::proxy-auth-flow.svg[Reverse proxy login and session flow,link=self,window=_blank]
+
+.One order, two downstream identities
+image::service-auth-flow.svg[Token exchange to Inventory and client credentials to Notifications,link=self,window=_blank]
+
+== Predict
+
+Copy this table to your notes and fill in every cell. There is no penalty for
+being wrong; you check rows 1–4 in Modules 3 and 5 and reason through row 5 in
+Module 7.
+
+[cols="2,1,1,1",options="header"]
+|===
+|Question |SPA |BFF |Proxy
+|Where is the access token after sign-in? | | |
+|Can JavaScript on the page read the token? | | |
+|What does the browser send to the API: a token or a cookie? | | |
+|Does the app need protection against CSRF? | | |
+|If Keycloak is down for ten minutes, can a signed-in user keep working? | | |
+|===
+
+CSRF is when another website makes your browser send a request to an app,
+hoping the browser attaches that app's cookies by itself. Use that to answer
+row 4.
+
+== Do: read the documents every app trusts
+
+Every token from your realm carries the realm's address as its *issuer*
+(`iss`) and is signed with the realm's private key.
+
+. Open your realm's
+  link:{issuer}/.well-known/openid-configuration[discovery document,window=_blank].
+  It is public. The SPA, BFF, and proxy read it to find their endpoints. Find
+  `issuer` (exactly `pass:a[{issuer}]`), `authorization_endpoint`,
+  `token_endpoint`, and `jwks_uri`.
+. Open the `jwks_uri` address in a new tab. It lists the realm's public keys,
+  each with a key ID (`kid`). It is a JSON Web Key Set (JWKS): APIs download it
+  to check token signatures, and pick the key by the `kid` each token names.
+
+== Do: decode a real token
+
+. Open the **Terminal** tab at the top of the right-hand pane and paste this
+  block. It defines two helpers, and asks for nothing yet.
++
+[source,bash]
+----
+# Store an access token copied from the browser, with or without "Bearer ".
+paste_token() { read -rsp 'Access token: ' TOKEN; echo; TOKEN=${TOKEN#Bearer }; }
+# Show one part of a JWT: 1 is the header, 2 is the payload.
+jwt_part() { local p; p=$(cut -d. -f"$2" <<<"$1" | tr '_-' '/+'); while (( ${#p} % 4 )); do p+='='; done; base64 -d <<<"$p" | jq .; }
+----
+. Open your link:{spa_url}[SPA,window=_blank], click **Sign in**, and sign in
+  as `manager` in the popup.
+. Open the browser's developer tools (**F12**, or **Cmd+Option+I** on a Mac)
+  and its **Network** tab, then click **View orders**. Select the `orders`
+  request (the `GET`, not an `OPTIONS` preflight). Under **Request Headers**,
+  copy the whole value of `Authorization`.
+. In the terminal, run `paste_token`, paste the value, and press Enter. Then
+  run:
++
+[source,bash]
+----
+jwt_part "$TOKEN" 2 | jq '{iss, azp, aud, scope, realm_access, typ, exp}'
+----
+. Write down what each of `aud`, `azp`, `realm_access.roles`, and `scope`
+  says. You find where each one comes from next.
+
+The token is a credential for the next five minutes. Do not paste it anywhere
+but this terminal.
+
+== Do: trace each claim to its client setting
+
+Open your realm in the
+link:{keycloak_origin}/admin/master/console/#/{realm_name}[Keycloak administration console,window=_blank]
+and sign in with your own account. You can open every page; you cannot save.
+
+[cols="1,3,2",options="header"]
+|===
+|Claim |Where to look |What you should find
+|`azp` |**Clients → spa → Settings**, **Client ID** |The client that asked for the token: `spa`.
+|`aud` |**Clients → spa → Client scopes**: the `orders-api-aud` row, type **Default**. Open **Client scopes → orders-api-aud → Mappers** |An **Audience** mapper adds `orders-api` to every `spa` token, so Orders accepts it and no other API does.
+|`realm_access.roles` |**Clients → spa → Client scopes → spa-dedicated → Scope** |**Full scope allowed** is off, and only `user` and `manager` are allowed. A token carries a role only when the user has it *and* the client may receive it.
+|`scope` |**Clients → spa → Client scopes** |The names of the attached scopes that are listed in the token, such as `profile`, `email`, and `orders-api-aud`.
+|===
+
+Then compare with the other two patterns, whose tokens never reach your
+browser:
+
+. Open **Clients → proxy → Client scopes → Evaluate**. Click the **Users**
+  field and pick `manager` from the list (typing alone does not select).
+. Click **Effective role scope mappings**, then **Generated access token**; the
+  token appears only after you switch tabs like this.
+. **Predict:** the proxy's token has one more entry in `aud` than the SPA's.
+  Which one, and why? Write it down, then look.
++
+.What you should see
+[%collapsible]
+====
+`aud` is `orders-api` and `proxy`, and `azp` is `proxy`. The extra audience
+comes from a mapper named `proxy-audience` in **Clients → proxy → Client
+scopes → proxy-dedicated → Mappers**: the proxy's sign-in component checks that
+its own tokens name it. The roles are the same as in the SPA's token.
+====
+. Click **Generated ID token** for the same user. Its `aud` is `proxy`, the app
+  that signed the user in, not `orders-api`. That is why an API must never
+  accept an ID token.
+
+== Check
+
+Pick one token you decoded. In one sentence each, say what `aud`, `azp`,
+`realm_access.roles`, and `scope` mean for the API that receives it, and which
+client setting would change each. Compare with a neighbor or the facilitator.
+
+.Reference answer
+[%collapsible]
+====
+* `aud` (`orders-api`): only Orders may accept it. It comes from the
+  `orders-api-aud` scope attached as Default to the client.
+* `azp` (`spa`): the client that obtained the token. It is the client ID, and
+  APIs that accept calls from only one caller check it (Module 4).
+* `realm_access.roles` (`manager`, `user`): what Orders authorizes on. It is
+  the user's roles, limited to those the client's dedicated scope allows.
+* `scope`: which client scopes were applied. APIs in this lab do not
+  authorize on it; they check `aud` and roles.
+====
+
+== Explain
+
+. An attacker runs their own Keycloak and issues a token with
+  `"realm_access": {"roles": ["manager"]}` and your realm's exact issuer in
+  `iss`. Why does Orders reject it?
++
+.Answer
+[%collapsible]
+====
+The token is signed with the attacker's private key. Orders checks the
+signature with the public keys from your realm's `jwks_uri`, and none of them
+match. A correct-looking issuer string is not enough; the signature proves the
+token came from your realm.
+====
+. Why does `orders-api` need a public Route, but `inventory-api` does not?
++
+.Answer
+[%collapsible]
+====
+In the SPA pattern the browser calls Orders directly. Inventory and
+Notifications are only called by Orders inside the cluster. Every API still
+validates tokens: being internal reduces exposure, it does not replace
+authentication.
+====
+
+== At your desk
+
+When a token surprises your code, decode it before you change anything, and
+name the setting behind the claim that is wrong. That gives operations a
+request they can act on: "client `x` needs scope `y` as Default", not "my
+token is broken".

@@ -1,0 +1,27 @@
+# Client request for operations: the `reports` app (exercise D8).
+# Operations creates this client in your realm and returns its secret. The fields
+# are Keycloak client settings; @REPORTS_URL@ is your reports route, which
+# bin/exercise.sh fills in when it prints the request.
+# Exercise D8: correct each marked defect against the requirements in the guide.
+clientId: reports
+publicClient: false
+standardFlowEnabled: true
+implicitFlowEnabled: false
+# ANTI-PATTERN: lets the app collect users' passwords (resource owner password grant).
+directAccessGrantsEnabled: true
+# ANTI-PATTERN: gives the app an identity of its own, which it must never act as.
+serviceAccountsEnabled: true
+# ANTI-PATTERN: a wildcard lets Keycloak send codes to any path on the route.
+redirectUris:
+  - "@REPORTS_URL@/*"
+postLogoutRedirectUris:
+  - "@REPORTS_URL@/"
+# ANTI-PATTERN: no PKCE method, so an intercepted sign-in code can be redeemed.
+pkceCodeChallengeMethod: ""
+# ANTI-PATTERN: full scope puts every role the user has, manager included, in the token.
+fullScopeAllowed: true
+realmRoleScopeMappings: []
+# ANTI-PATTERN: inventory-api-aud makes the token valid at an API reports never calls.
+defaultClientScopes:
+  - orders-api-aud
+  - inventory-api-aud

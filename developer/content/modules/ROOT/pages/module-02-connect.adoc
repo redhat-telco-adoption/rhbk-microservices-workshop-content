@@ -1,0 +1,157 @@
+= Module 2: Connect an app to an issuer
+:navtitle: 2. Connect an app to an issuer
+
+*Time:* 25 minutes +
+*Before you start:* Module 1 +
+*By the end, you can:* say which values each kind of application needs from Keycloak; find them in runtime configuration; recognize an issuer mismatch from its error and fix it
+
+== Why it matters
+
+Connecting an application to Keycloak takes very few values. From the issuer,
+an application finds every endpoint and key through the discovery document
+you opened in Module 1. What it needs depends on its role:
+
+[cols="1,3",options="header"]
+|===
+|Role |Values
+|Signs users in (SPA, BFF, proxy) |Issuer, client ID, redirect address, and for a confidential client its secret.
+|Accepts tokens (Orders, Inventory, Notifications) |Issuer, and the audience it expects (its own name, usually fixed in code).
+|Calls other services as itself (Orders) |Issuer, client ID, and secret.
+|===
+
+These values change per environment, so they live in configuration, not in
+code. Because one value drives everything, the most common integration bug is
+an issuer that is almost right. Operations hands you the issuer; getting it
+into your configuration exactly is your job.
+
+== Do: read the prepared configuration
+
+. Open the link:{openshift_console_url}[OpenShift Console,window=_blank] in a
+  new browser tab. On the page titled **Sign in to sso**, sign in with your
+  username and password. If a welcome tour opens, click **Skip tour**.
+. Select your project `{attendee_namespace}` and open **Workloads →
+  ConfigMaps → frontend-runtime-config**. Its `config.json` holds `issuer` and
+  `spaClientId`, the two Keycloak values the SPA reads at runtime. The SPA
+  builds its redirect address from its own address. A public client has no
+  secret, so there is none here.
+. Open `bff-config` and find `OIDC_ISSUER`. The BFF's client ID is in its
+  code; its secret is in the `bff-client` Secret, which operations filled in.
+  Do not open the Secret's value.
+. Open `orders-api-config`. It has two issuer values: `ISSUER` for checking
+  incoming tokens and `WORKSHOP_ISSUER` for requesting its own tokens.
+
+== Break it: the BFF with an issuer that is almost right
+
+. Open **Workloads → ConfigMaps → bff-config → Actions → Edit ConfigMap**. It
+  opens an editor for YAML (YAML Ain't Markup Language), a plain-text
+  configuration format. Under `data:`, find `OIDC_ISSUER`. Edit only that
+  line: `OIDC_ISSUER` also appears higher up in the `managedFields` metadata,
+  which you leave alone.
+. Add a trailing slash to the value, a common copy-and-paste slip, so it reads
+  `pass:a[{issuer}/]`. Click **Save**.
+. Open **Workloads → Deployments → bff** and choose **Restart rollout** from
+  the **Actions** menu at the top right of the page.
+. **Predict:** the issuer is one character off. Will the BFF start?
+. Wait a minute, then open **Observe → Logs**, search for
+  `did not match the requested issuer`, and click **Run Query** (click it again
+  if the results do not change). The newest line shows only
+  `Application run failed`; the next is long, with the part that matters at its
+  end:
++
+[subs="attributes+"]
+----
+The Issuer "{issuer}" provided in the configuration metadata did not match
+the requested issuer "{issuer}/"
+----
++
+The BFF compared the issuer in the discovery document with the one it was
+given and stopped, rather than trust tokens from an issuer it cannot match
+exactly.
+. Edit `bff-config` again and remove the trailing slash so `OIDC_ISSUER` is
+  exactly `pass:a[{issuer}]`. The editor may now show the value in single
+  quotes (`+'...'+`); keep the quotes and change only the text between them.
+  Save, and restart the `bff` rollout.
+
+== Break it: the SPA pointed at another realm
+
+. Edit `frontend-runtime-config`. In `config.json`, change the end of `issuer`
+  from `/realms/{realm_name}` to `/realms/master`, and save. `master` is a real
+  realm on the same Keycloak server, but not yours.
+. Restart the `frontend` rollout and wait until it shows **1 of 1 pods**.
+. **Predict:** what will happen when you sign in to the SPA? Write it down,
+  then reload the link:{spa_url}[SPA,window=_blank] page and click **Sign in**.
++
+.What happened
+[%collapsible]
+====
+The popup shows Keycloak's error page, **Client not found**. The issuer names
+the realm, and each realm has its own clients: `master` has no `spa`. An API
+given this issuer would fail differently. It would reject every token from
+your realm with 401, because their `iss` and signing keys do not match.
+====
+. Close the popup. Edit `frontend-runtime-config` back to your issuer,
+  `pass:a[{issuer}]`, save, and restart the `frontend` rollout.
+
+== Check
+
+. Wait until `bff` and `frontend` show **1 of 1 pods**, and check that each
+  pod's **Created** time under **Workloads → Pods** is just now.
+. Open `pass:a[{spa_url}/config.json]` in a new tab. It shows your issuer and
+  `spa`, and no secret.
+. Sign in as `reader` through each app, then sign out: the
+  link:{spa_url}[SPA,window=_blank] (a popup),
+  link:{bff_url}[BFF,window=_blank] (the page goes to Keycloak and back), and
+  link:{proxy_url}[proxy,window=_blank] (Keycloak appears immediately; the
+  whole app is behind the sign-in). All three patterns sign in.
+. The three apps share one Keycloak sign-in in your browser. Sign out of each
+  app before you switch users. If **Sign out** shows Keycloak's "Do you want
+  to log out?" page, click **Logout**. After you sign out of the proxy, close
+  any tab left on Keycloak's sign-in page.
+
+== Explain
+
+. Why did the BFF refuse to start, rather than start and reject tokens later?
++
+.Answer
+[%collapsible]
+====
+Spring Security checks the discovery document's `issuer` against the
+configured one at startup. Failing fast turns a configuration mistake into an
+obvious startup error. An API that fails only per request, like Orders,
+returns 401 to every caller instead, which is harder to trace back to
+configuration.
+====
+. Which of these values could safely be committed to Git: the issuer, the
+  client ID, the redirect address, the client secret?
++
+.Answer
+[%collapsible]
+====
+The issuer, client ID, and redirect address are not secrets; they appear in
+every browser sign-in. The client secret is. It belongs in a Secret or another
+secret store, injected at runtime, and rotated if it leaks.
+====
+
+== At your desk
+
+The BFF's whole Keycloak connection is its Spring Boot `application.yml`:
+
+[source,yaml]
+----
+spring.security.oauth2.client:
+  registration:
+    keycloak:
+      client-id: bff
+      client-secret: ${BFF_CLIENT_SECRET}
+      authorization-grant-type: authorization_code
+      client-settings:
+        require-proof-key: true          # PKCE
+      scope: openid,profile,email
+      redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+  provider:
+    keycloak:
+      issuer-uri: ${OIDC_ISSUER}         # everything else comes from discovery
+----
+
+When an integration fails, check the issuer first, character by character:
+scheme, host, realm, and no trailing slash.

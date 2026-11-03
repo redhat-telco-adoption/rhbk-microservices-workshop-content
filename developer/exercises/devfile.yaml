@@ -1,0 +1,225 @@
+---
+# Developer track workspace for OpenShift Dev Spaces. The guide's Dev Spaces
+# tab opens it with the exercise repository URL; Dev Spaces clones that
+# repository into ${PROJECT_SOURCE} and adds its default editor.
+#
+# The toolchain images are the application base images pinned in
+# versions.lock.yaml (images.ordersApiBase, inventoryApiBase,
+# notificationsApiBase): Java 25 with Maven, Python 3.14, and Node 24. The oc
+# image is the Showroom terminal image the workshop config already pins.
+#
+# Workspaces run oc as the attendee. The seat's role binding allows builds and
+# rollouts only in <user>-rhbk-dev, which the commands derive from the
+# workspace namespace <user>-devspaces.
+#
+# Per running workspace, with the editor's own defaults (about 256Mi request
+# and 1Gi limit), this requests about 2.3Gi of memory and 1 CPU, and is
+# limited to about 7.3Gi and 5.5 CPU.
+schemaVersion: 2.2.2
+metadata:
+  name: rhbk-developer-exercises
+  displayName: RHBK developer exercises
+  description: Java (Maven), Python, Node, and oc for the developer track exercises
+components:
+  - name: java
+    container:
+      image: registry.access.redhat.com/ubi9/openjdk-25@sha256:59b7920169daa365dda564ff96f482d12acb426cb23eef7fd681825822c11554
+      command: [tail, -f, /dev/null]
+      mountSources: true
+      memoryRequest: 1Gi
+      memoryLimit: 3Gi
+      cpuRequest: 500m
+      cpuLimit: '2'
+      env:
+        - name: MAVEN_OPTS
+          value: -Xmx1g -Dmaven.repo.local=/caches/m2/repository
+      volumeMounts:
+        - name: caches
+          path: /caches
+  - name: python
+    container:
+      image: registry.access.redhat.com/ubi9/python-314@sha256:c19e852fe0c935dad0ecc2ef6a90582612e57ed4653ca32ec974606637520ce2
+      command: [tail, -f, /dev/null]
+      mountSources: true
+      memoryRequest: 256Mi
+      memoryLimit: 1Gi
+      cpuRequest: 100m
+      cpuLimit: '1'
+      env:
+        - name: PIP_CACHE_DIR
+          value: /caches/pip
+      volumeMounts:
+        - name: caches
+          path: /caches
+  - name: node
+    container:
+      image: registry.access.redhat.com/ubi9/nodejs-24@sha256:07b369ed90167eaa3249845359f52f565c3a7cab72d833b999976bcee395d069
+      command: [tail, -f, /dev/null]
+      mountSources: true
+      memoryRequest: 512Mi
+      memoryLimit: 1536Mi
+      cpuRequest: 250m
+      cpuLimit: '1'
+      env:
+        - name: npm_config_cache
+          value: /caches/npm
+      volumeMounts:
+        - name: caches
+          path: /caches
+  - name: oc
+    container:
+      image: quay.io/rhpds/openshift-showroom-terminal-ocp@sha256:97ff34b17ad50506c3688460bb8df2b2c4fb060c2194cf05413852bc4576f456
+      command: [tail, -f, /dev/null]
+      mountSources: true
+      memoryRequest: 128Mi
+      memoryLimit: 512Mi
+      cpuRequest: 50m
+      cpuLimit: 500m
+  - name: caches
+    volume:
+      size: 4Gi
+commands:
+  - id: check-access
+    exec:
+      label: Show the oc user and the developer namespace access
+      component: oc
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: >-
+        dev_ns="${DEVWORKSPACE_NAMESPACE%-devspaces}-rhbk-dev" &&
+        oc whoami &&
+        echo "Developer namespace: ${dev_ns}" &&
+        oc auth can-i create buildconfigs -n "${dev_ns}" &&
+        oc auth can-i patch deployments -n "${dev_ns}"
+  # One test command and one rollout command per exercise, all through bin/exercise.sh.
+  # Tests run offline in the language's container. Rollouts run as the attendee in the oc
+  # container: a binary Docker build from the starter (spec section 4) into the developer
+  # namespace's internal registry, then a rollout of that namespace's Deployment. The script
+  # refuses any namespace that does not end in -rhbk-dev, and never pushes to Quay.
+  - id: test-d3-spa-pkce-frontend
+    exec:
+      label: Test the d3-spa-pkce/frontend starter
+      component: node
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: >-
+        cd "$(dirname "$(find "${PROJECT_SOURCE}" -maxdepth 6 -path '*/exercises/bin/exercise.sh' -print -quit)")/.." && bin/exercise.sh test d3-spa-pkce/frontend
+  - id: package-d3-spa-pkce-frontend
+    exec:
+      label: Package the d3-spa-pkce/frontend starter
+      component: node
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: >-
+        cd "$(dirname "$(find "${PROJECT_SOURCE}" -maxdepth 6 -path '*/exercises/bin/exercise.sh' -print -quit)")/.." && bin/exercise.sh package d3-spa-pkce/frontend
+  - id: rollout-d3-spa-pkce-frontend-oc
+    exec:
+      label: Build d3-spa-pkce/frontend in the developer namespace and roll it out
+      component: oc
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: >-
+        cd "$(dirname "$(find "${PROJECT_SOURCE}" -maxdepth 6 -path '*/exercises/bin/exercise.sh' -print -quit)")/.." && bin/exercise.sh rollout d3-spa-pkce/frontend
+  - id: rollout-d3-spa-pkce-frontend
+    composite:
+      label: Package d3-spa-pkce/frontend, then build and roll it out
+      commands: [package-d3-spa-pkce-frontend, rollout-d3-spa-pkce-frontend-oc]
+      parallel: false
+  - id: test-d4-token-checks-orders-api
+    exec:
+      label: Test the d4-token-checks/orders-api starter
+      component: java
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: >-
+        cd "$(dirname "$(find "${PROJECT_SOURCE}" -maxdepth 6 -path '*/exercises/bin/exercise.sh' -print -quit)")/.." && bin/exercise.sh test d4-token-checks/orders-api
+  - id: rollout-d4-token-checks-orders-api
+    exec:
+      label: Build d4-token-checks/orders-api in the developer namespace and roll it out
+      component: oc
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: >-
+        cd "$(dirname "$(find "${PROJECT_SOURCE}" -maxdepth 6 -path '*/exercises/bin/exercise.sh' -print -quit)")/.." && bin/exercise.sh rollout d4-token-checks/orders-api
+  - id: test-d4-token-checks-inventory-api
+    exec:
+      label: Test the d4-token-checks/inventory-api starter
+      component: python
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: >-
+        cd "$(dirname "$(find "${PROJECT_SOURCE}" -maxdepth 6 -path '*/exercises/bin/exercise.sh' -print -quit)")/.." && bin/exercise.sh test d4-token-checks/inventory-api
+  - id: rollout-d4-token-checks-inventory-api
+    exec:
+      label: Build d4-token-checks/inventory-api in the developer namespace and roll it out
+      component: oc
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: >-
+        cd "$(dirname "$(find "${PROJECT_SOURCE}" -maxdepth 6 -path '*/exercises/bin/exercise.sh' -print -quit)")/.." && bin/exercise.sh rollout d4-token-checks/inventory-api
+  - id: test-d4-token-checks-notifications-api
+    exec:
+      label: Test the d4-token-checks/notifications-api starter
+      component: node
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: >-
+        cd "$(dirname "$(find "${PROJECT_SOURCE}" -maxdepth 6 -path '*/exercises/bin/exercise.sh' -print -quit)")/.." && bin/exercise.sh test d4-token-checks/notifications-api
+  - id: rollout-d4-token-checks-notifications-api
+    exec:
+      label: Build d4-token-checks/notifications-api in the developer namespace and roll it out
+      component: oc
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: >-
+        cd "$(dirname "$(find "${PROJECT_SOURCE}" -maxdepth 6 -path '*/exercises/bin/exercise.sh' -print -quit)")/.." && bin/exercise.sh rollout d4-token-checks/notifications-api
+  - id: test-d5-bff-bff
+    exec:
+      label: Test the d5-bff/bff starter
+      component: java
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: >-
+        cd "$(dirname "$(find "${PROJECT_SOURCE}" -maxdepth 6 -path '*/exercises/bin/exercise.sh' -print -quit)")/.." && bin/exercise.sh test d5-bff/bff
+  - id: package-d5-bff-bff
+    exec:
+      label: Package the d5-bff/bff starter
+      component: java
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: >-
+        cd "$(dirname "$(find "${PROJECT_SOURCE}" -maxdepth 6 -path '*/exercises/bin/exercise.sh' -print -quit)")/.." && bin/exercise.sh package d5-bff/bff
+  - id: rollout-d5-bff-bff-oc
+    exec:
+      label: Build d5-bff/bff in the developer namespace and roll it out
+      component: oc
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: >-
+        cd "$(dirname "$(find "${PROJECT_SOURCE}" -maxdepth 6 -path '*/exercises/bin/exercise.sh' -print -quit)")/.." && bin/exercise.sh rollout d5-bff/bff
+  - id: rollout-d5-bff-bff
+    composite:
+      label: Package d5-bff/bff, then build and roll it out
+      commands: [package-d3-spa-pkce-frontend, package-d5-bff-bff, rollout-d5-bff-bff-oc]
+      parallel: false
+  - id: test-d6-service-to-service-orders-api
+    exec:
+      label: Test the d6-service-to-service/orders-api starter
+      component: java
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: >-
+        cd "$(dirname "$(find "${PROJECT_SOURCE}" -maxdepth 6 -path '*/exercises/bin/exercise.sh' -print -quit)")/.." && bin/exercise.sh test d6-service-to-service/orders-api
+  - id: rollout-d6-service-to-service-orders-api
+    exec:
+      label: Build d6-service-to-service/orders-api in the developer namespace and roll it out
+      component: oc
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: >-
+        cd "$(dirname "$(find "${PROJECT_SOURCE}" -maxdepth 6 -path '*/exercises/bin/exercise.sh' -print -quit)")/.." && bin/exercise.sh rollout d6-service-to-service/orders-api
+  - id: test-d8-reports-reports
+    exec:
+      label: Test the d8-reports/reports starter
+      component: python
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: >-
+        cd "$(dirname "$(find "${PROJECT_SOURCE}" -maxdepth 6 -path '*/exercises/bin/exercise.sh' -print -quit)")/.." && bin/exercise.sh test d8-reports/reports
+  - id: rollout-d8-reports-reports
+    exec:
+      label: Build d8-reports/reports in the developer namespace and roll it out
+      component: oc
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: >-
+        cd "$(dirname "$(find "${PROJECT_SOURCE}" -maxdepth 6 -path '*/exercises/bin/exercise.sh' -print -quit)")/.." && bin/exercise.sh rollout d8-reports/reports
+  - id: show-versions
+    exec:
+      label: Show toolchain versions
+      component: java
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: java -version && mvn -v

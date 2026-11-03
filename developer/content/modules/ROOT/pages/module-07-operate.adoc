@@ -1,0 +1,166 @@
+= Module 7: Debug and operate
+:navtitle: 7. Debug and operate
+
+*Time:* 30 minutes +
+*Before you start:* Module 6, your Module 1 predictions table, and the terminal helpers from Module 4 +
+*By the end, you can:* follow a denial from trace to log; tell policy from configuration when a user is refused; explain why ending a session does not revoke a token already issued; reason through a Keycloak outage
+
+== Why it matters
+
+The code you shipped will be run by someone, often you. A user gets a 403 they
+did not expect, a token ends up in a log, Keycloak has an outage. The evidence
+you have used so far (traces, log lines with a reason, and tokens you can
+decode) lets you answer those calls quickly and without guessing. Each
+scenario has a reference answer; write yours first.
+
+== Do: follow a denial end to end
+
+. Sign out of every app first (Module 2).
+. Sign in to the link:{spa_url}[SPA,window=_blank] as `reader`, click **View
+  orders**, then **Create a sample order**.
+. Open
+  link:{openshift_console_url}/observe/traces?namespace=tracing&name=workshop&tenant={attendee_id}&start=15m&limit=100&q=%7B+resource.service.name+%3D+%22orders-api%22+%26%26+name+%3D+%22POST+%2Forders%22+%7D[your Orders traces,window=_blank]
+  and open the denied `POST /orders` trace. Click the Orders span to see the
+  403 status. The request never reached Inventory or Notifications.
+. In **Observe → Logs**, search for `missing_role` and click **Run Query**
+  (again if the results do not change). Click **Details** on the newest
+  `request completed` line, which is Orders' line: `decision` `deny`, status
+  403, and `reason` `missing_role`, with no token or secret in the log. The
+  `orders-api` pod's **Logs** tab (**Workloads → Pods →** _pod_ **→ Logs**)
+  shows the whole line, with `roles` `["user"]`.
+. Sign out.
+
+== Scenario 1: "I can't create orders"
+
+A colleague signed in as `reader` says the app is broken: creating an order
+fails. Using the OpenShift Console, the Keycloak administration console (read
+only), and the logs, decide whether this is a bug or policy, and what would
+change it.
+
+A second colleague, signed in to a new app as `manager`, gets 401 on every
+request, and the Orders line says `reason` `bad_audience`. Is that policy too,
+and whom do you ask?
+
+.Reference answer
+[%collapsible]
+====
+It is policy. The Orders line has status 403 and `reason` `missing_role`, and
+the pod log shows `roles` `["user"]`: authentication worked, and the user
+lacks `manager`. In Keycloak, **Users → reader → Role mapping** confirms it.
+The fix, if the business agrees, is a role assignment by operations, not a code
+change. Check the client side too: a user can have a role and still not get it
+in the token if the client's scope does not allow it.
+
+The second case is not policy. Orders could not accept the token, so it never
+checked roles. `bad_audience` means the new app's tokens do not name
+`orders-api`: its client lacks the `orders-api-aud` scope. Decode a token to
+confirm, then ask operations for that exact change (Module 1, At your desk).
+====
+
+== Scenario 2: a token appears in a support ticket
+
+Someone pasted a request, including its `+Authorization: Bearer ...+` header,
+into a ticket. Try what that token can still do after the user signs out.
+
+. Sign in to the SPA as `reader`, click **View orders**, and copy the
+  `Authorization` value of the `orders` request, as in Module 1.
+. In your workspace's **oc** terminal, with the helpers from Module 4 pasted,
+  run `paste_token` and paste it. Check that it works: `call_orders "$TOKEN"`
+  returns 200.
+. In the SPA, click **Sign out**. If Keycloak asks whether you want to log
+  out, click **Logout**. Signing out of the SPA ends your Keycloak session.
+. **Predict:** the session is gone. What will `call_orders "$TOKEN"` return
+  now? Write it down, then run it.
++
+.What happened
+[%collapsible]
+====
+It still returns 200, unless five minutes have passed since the token was
+issued. Orders validates tokens locally with the realm's public keys and never
+asks Keycloak whether the session still exists. An access token stays valid
+until it expires.
+====
+. Run `unset TOKEN` when you are done.
+
+What do you do about the ticket?
+
+.Reference answer
+[%collapsible]
+====
+. Treat it as an incident: restrict access to the ticket and remove the token
+  from it and any copies.
+. Find out what leaked. An access token expires on its own within minutes. A
+  refresh token, session cookie, or client secret lasts much longer and is the
+  real risk.
+. Ask operations to end the user's sessions in Keycloak. That stops refresh and
+  new tokens but, as you just saw, not an access token already issued.
+. If a client secret leaked, ask operations to regenerate it, then update the
+  Secret and restart the workloads that read it.
+. Check logs for use of that identity during the exposure window.
+. Prevent the next one: keep access tokens short-lived, and never log
+  `Authorization` headers or cookies, in your code or in your Hypertext Transfer Protocol (HTTP) client's
+  debug output.
+====
+
+== Scenario 3: Keycloak is down for ten minutes
+
+Complete row 5 of your Module 1 table: what happens to each pattern, and to an
+order, while Keycloak is unreachable? Think about every call to Keycloak your
+code from Modules 3 to 6 makes.
+
+.Reference answer
+[%collapsible]
+====
+* **Existing users keep working briefly.** APIs check signatures with keys
+  they have already downloaded, so a valid access token keeps working until it
+  expires. New sign-ins fail everywhere.
+* **SPA:** when the token nears expiry, `accessToken()` tries to refresh, the
+  refresh fails, and the user is signed out.
+* **BFF and proxy:** the same limit, at the next token refresh. The session
+  cookie alone is not enough.
+* **Orders:** reads keep working while the user's token is valid. Every
+  *write* fails at once, because `InventoryClient` exchanges a token with
+  Keycloak for each order. Notifications would work until Orders' cached
+  service-account token expires.
+
+Each call to Keycloak in a request path is a dependency. Token exchange per
+request buys precise identity at the price of availability.
+====
+
+== Check your predictions
+
+Compare your completed Module 1 table with this one.
+
+.Reference table
+[%collapsible]
+====
+[cols="2,1,1,1",options="header"]
+|===
+|Question |SPA |BFF |Proxy
+|Where is the access token after sign-in? |Browser memory |BFF server |Proxy's Redis session
+|Can JavaScript on the page read the token? |Yes |No |No
+|What does the browser send to the API: a token or a cookie? |The token |A session cookie |A session cookie
+|Does the app need protection against CSRF? |No |Yes |Yes
+|If Keycloak is down for ten minutes, can a signed-in user keep working? |Reads work until the token expires; writes fail at once |Reads work until the next refresh; writes fail at once |Reads work until the next refresh; writes fail at once
+|===
+====
+
+== Check
+
+You can explain each scenario: which evidence you used, what it showed, and
+what you would change or ask for. Compare with a neighbor or the facilitator.
+
+== At your desk: a production review
+
+Pick one application you work on. Write down, in one line each:
+
+. Which pattern it uses, or should use, and why.
+. The audience its tokens carry, and whether its APIs check it.
+. Whether its APIs pin the algorithm and the issuer.
+. Where its client secret lives and when it was last rotated.
+. What it logs on a denial, and whether any log can contain a token.
+. What happens to it during a Keycloak outage.
+
+Compare your answers with the **At your desk** sections of Modules 1 to 6, and
+discuss one gap with a neighbor or the facilitator: what would you change
+first?

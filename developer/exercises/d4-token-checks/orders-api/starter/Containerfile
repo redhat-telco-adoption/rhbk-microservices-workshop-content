@@ -1,0 +1,14 @@
+# UBI OpenJDK 25 includes Maven; pin the same image for local and OpenShift builds.
+FROM registry.access.redhat.com/ubi9/openjdk-25@sha256:59b7920169daa365dda564ff96f482d12acb426cb23eef7fd681825822c11554 AS build
+USER 0
+WORKDIR /workspace
+COPY pom.xml .
+COPY src ./src
+RUN mvn -B -DskipTests package && cp target/orders-api-1.0.0.jar /tmp/orders-api.jar
+
+FROM registry.access.redhat.com/ubi9/openjdk-25@sha256:59b7920169daa365dda564ff96f482d12acb426cb23eef7fd681825822c11554
+WORKDIR /deployments
+COPY --from=build --chown=1001:0 /tmp/orders-api.jar /deployments/app.jar
+USER 1001
+EXPOSE 8080
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75.0", "-jar", "/deployments/app.jar"]

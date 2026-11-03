@@ -1,0 +1,193 @@
+= Module 5: Sessions on the server: the BFF
+:navtitle: 5. Sessions on the server: the BFF
+
+*Time:* 40 minutes +
+*Before you start:* Module 4. The BFF also serves your SPA from Module 3, so that starter must pass its tests. +
+*By the end, you can:* keep tokens on the server and relay them to an API with `TokenRelay`; strip the browser's credentials from relayed requests; protect a cookie session against CSRF, and prove it with a forged write
+
+== Why it matters
+
+A BFF keeps the tokens on the server and gives the browser only a session
+cookie that JavaScript cannot read. That removes the SPA's biggest risk, a
+script reading the token, and brings two new duties:
+
+* **Relay only what the API should see.** The gateway route adds the user's
+  access token with `TokenRelay`. Whatever else the browser sent, such as its
+  own `Authorization` header, its `Origin`, or the `SESSION` cookie, must not
+  reach the API. Otherwise an API may trust a header the browser made up, and
+  a session cookie travels to a service that has no use for it.
+* **Refuse writes another site starts.** A browser attaches the session cookie
+  to every request to the BFF, even one a page on another site starts. That is
+  cross-site request forgery (CSRF). The BFF must require a second proof on
+  every write: a value from the readable `XSRF-TOKEN` cookie, echoed in the
+  `X-XSRF-TOKEN` header. A page on another site cannot read the cookie, so it
+  cannot send the header.
+
+The starter BFF turns CSRF protection off and relays the browser's headers and
+cookie to Orders.
+
+== Ship it first: the starter, as it is
+
+. Sign out of every app (Module 2).
+. In your workspace, run the task **Package d5-bff/bff, then build and roll it
+  out**. It packages your SPA from Module 3 into the BFF, builds the BFF
+  starter unchanged, and rolls out the `bff` Deployment. The first run downloads the
+  Maven dependencies and takes several minutes; read the next section while it
+  runs.
+. When it ends with `successfully rolled out`, open your
+  link:{bff_url}[BFF,window=_blank] and sign in as `manager`.
+. **Predict:** the app's own **Create a sample order** button sends the CSRF
+  header. A forged request does not. What will a write without it return?
+. Open the developer tools and, in the **Console**, send a write the way a
+  forged request would, without the CSRF header:
++
+[source,javascript]
+----
+await fetch('/api/orders', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ item: 'widget', quantity: 1 }),
+}).then((r) => r.status);
+----
++
+.What happened
+[%collapsible]
+====
+`201`: the order was created. The BFF saw a valid session cookie and relayed
+the request with the manager's token. Orders cannot tell this request from a
+real one: the token is real. Only the BFF can stop it, because only the BFF
+knows the request did not come from its own page.
+
+The cookies here are `SameSite=Lax`, which keeps them off most cross-site
+writes, but not off a request from a sibling host on the same domain, such as
+another app on this cluster.
+====
+. Sign out.
+
+== Code: fix the starter
+
+. Run the task **Test the d5-bff/bff starter**. The tests find a route that
+  relays the browser's `Authorization`, `Origin`, and `Cookie` headers, and a
+  write without the CSRF token that is accepted.
+. In `d5-bff/bff/starter/src/main/resources/application.yml`, find the
+  `orders-api` route at the `ANTI-PATTERN` comment. Make its filters strip
+  `Authorization` and `Origin` before `TokenRelay`, and `Cookie` after it, the
+  way the `legacy-api` route below it already does.
+. In `d5-bff/bff/starter/src/main/java/com/redhat/workshop/bff/SecurityConfiguration.java`,
+  at the `ANTI-PATTERN` comment, replace `csrf.disable()`: use `csrfRepository`
+  (the `XSRF-TOKEN` cookie the SPA echoes) and a
+  `ServerCsrfTokenRequestAttributeHandler`.
+. Run the test task again until every test passes.
++
+.Reference solution
+[%collapsible]
+====
+[source,yaml]
+----
+            - id: orders-api
+              uri: ${ORDERS_BASE_URL:http://orders-api.apps.svc:8080}
+              predicates:
+                - Path=/api/orders,/api/orders/**
+              filters:
+                - StripPrefix=1
+                - RemoveRequestHeader=Authorization
+                - RemoveRequestHeader=Origin
+                - TokenRelay
+                - RemoveRequestHeader=Cookie
+----
+
+[source,java]
+----
+        .csrf(csrf -> csrf.csrfTokenRepository(csrfRepository)
+            .csrfTokenRequestHandler(new ServerCsrfTokenRequestAttributeHandler()))
+----
+
+Add the import
+`org.springframework.security.web.server.csrf.ServerCsrfTokenRequestAttributeHandler`.
+The order of the filters matters: `TokenRelay` reads the session through the
+cookie, so the cookie is removed only after it.
+====
+
+== Ship it and forge again
+
+. Run the task **Package d5-bff/bff, then build and roll it out** again, and
+  wait for `successfully rolled out`.
+. Open your link:{bff_url}[BFF,window=_blank] and sign in as `manager`.
+. Send the same forged write from the **Console**. It now returns `403`, and
+  Orders never sees the request.
+. With **Network** open, click **Create a sample order**. It returns 201. Its
+  request carries an `X-XSRF-TOKEN` header copied from the `XSRF-TOKEN`
+  cookie.
+
+== See it: no token in the browser
+
+. Expand **Where session data is stored** in the app: **Access token in
+  JavaScript memory: No**, and the only app cookie JavaScript can read is
+  `XSRF-TOKEN`.
+. In **Application → Cookies**, find `SESSION`. Its **HttpOnly** box is ticked:
+  JavaScript cannot read it, and it holds only a session ID.
+. In **Network**, click **View orders** and select the `orders` request. It
+  carries a `Cookie` header and no `Authorization` header. The BFF adds the
+  token on the server side.
+. Sign out, sign in as `reader`, and confirm **View orders** succeeds and
+  **Create a sample order** returns 403. Sign out.
+
+== See it: the proxy, with no code of yours
+
+The reverse proxy holds a cookie session too, but its sign-in, token relay,
+and CSRF check are configuration of an off-the-shelf gateway, not code.
+
+. Open your link:{proxy_url}[proxy,window=_blank] and sign in as `manager`.
+  Keycloak's page appears at once, because the whole app sits behind the
+  proxy's sign-in.
+. In **Application → Cookies**, find `_oauth2_proxy`: **HttpOnly**, like the
+  BFF's `SESSION`.
+. In **Network**, click **View orders** and select the `orders` request. It
+  carries a `Cookie` header and no `Authorization` header: the gateway adds the
+  token on the server side.
+. Send the same forged write from the **Console**. The proxy answers with its
+  own `403 Forbidden` page before the request reaches Orders. The app's own
+  button sends a header that a page on another site cannot add.
+. Sign out, and close any tab left on Keycloak's sign-in page.
+
+== Check
+
+* The forged write returns 403, and the app's own write returns 201.
+* No token reaches the browser.
+* The test task passes.
+
+Now complete rows 1 to 4 of your Module 1 table for the BFF and the proxy, and
+row 4 for the SPA (the second Explain question below).
+
+== Explain
+
+. Orders checks the token and the role on every request. Why does it not
+  catch the forged write?
++
+.Answer
+[%collapsible]
+====
+The token is genuine: the BFF attached the manager's own token. CSRF does not
+steal a credential; it borrows the browser's. Only the component that holds
+the session can tell whether a request came from its own page, so the defense
+belongs in the BFF.
+====
+. The SPA in Module 3 needed no CSRF protection. Why?
++
+.Answer
+[%collapsible]
+====
+The SPA sends its token in an `Authorization` header that its own code adds.
+A browser never adds that header by itself, so another site cannot make the
+browser send it. Cookies are sent automatically, and that is what CSRF abuses.
+====
+
+== At your desk
+
+For every app that keeps a cookie session:
+
+* Writes require a token the page echoes from a cookie or a form, and a
+  missing one gets 403.
+* Session cookies are `HttpOnly`, `Secure`, and `SameSite`.
+* Routes to APIs strip the browser's `Authorization`, `Origin`, and `Cookie`
+  headers, and add only the server-held token.

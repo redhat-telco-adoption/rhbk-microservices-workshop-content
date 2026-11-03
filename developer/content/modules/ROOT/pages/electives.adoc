@@ -1,0 +1,62 @@
+= Electives
+:navtitle: Electives
+
+The electives go deeper into questions developers meet once Keycloak is the
+central identity platform: how your validator handles signing keys, when to
+ask Keycloak about a token instead of checking it yourself, fine-grained
+authorization, and tokens from other issuers. They are self-paced, and each
+one is independent of the others. Your environment stays available after the
+session; your facilitator gives you the date it ends.
+
+Each elective starts from the state Module 6 leaves, and changes nothing in
+your namespace or realm.
+
+[cols="3,5,1",options="header"]
+|===
+|Elective |You will |Time
+|xref:elective-b-signing-keys.adoc[B. Signing keys in your validator] |See how your APIs pick a key, and what they do with a key or an algorithm they do not know |25 min
+|xref:elective-c-introspection.adoc[C. Local validation or introspection] |Compare what Orders' local check and Keycloak's introspection endpoint say about a token after sign-out |20 min
+|xref:elective-d-authorization-services.adoc[D. Authorization Services] |Ask Keycloak for a decision with pushed claims, and configure a policy enforcer |40 min
+|xref:elective-e-external-tokens.adoc[E. Tokens from another issuer] |See Orders reject a foreign token, then design how to accept a partner's tokens |20 min
+|===
+
+== The terminal
+
+The electives use an **oc** terminal in your Dev Spaces workspace: open the
+menu (☰), choose **Terminal → New Terminal**, and pick the **oc** container.
+Paste this block each time you open a new terminal. It reads the `orders-api`
+client secret from its Secret in your namespace and passes it to `curl`
+through a pipe, so the secret never appears on the screen or on a command
+line.
+
+[source,bash,subs="attributes+"]
+----
+cd "$PROJECT_SOURCE/{exercises_path}"
+DEV_NS="${DEVWORKSPACE_NAMESPACE%-devspaces}-rhbk-dev"
+ISSUER='{issuer}'
+ORDERS='{orders_api_url}'
+paste_token() { read -rsp 'Access token: ' TOKEN; echo; TOKEN=${TOKEN#Bearer }; }
+jwt_part() { local p; p=$(cut -d. -f"$2" <<<"$1" | tr '_-' '/+'); while (( ${#p} % 4 )); do p+='='; done; base64 -d <<<"$p" | jq .; }
+# Rewrite part $2 (1 header, 2 payload) of token $1 with the jq filter $3; the signature stays as it was.
+jwt_edit() { local parts; IFS=. read -ra parts <<<"$1"; parts[$2-1]=$(jwt_part "$1" "$2" | jq -c "$3" | base64 -w0 | tr '+/' '-_' | tr -d '='); (IFS=.; echo "${parts[*]}"); }
+# curl authenticated as the orders-api client; the secret goes through a pipe.
+as_orders_api() {
+  local secret; secret=$(oc get secret orders-api-client -n "$DEV_NS" -o jsonpath='{.data.client-secret}' | base64 -d)
+  printf 'user = "orders-api:%s"\n' "$secret" | curl -s -K - "$@"
+}
+service_token() { as_orders_api -d grant_type=client_credentials "$ISSUER/protocol/openid-connect/token" | jq -r .access_token; }
+call_orders() { curl -s -o /dev/null -w '%\{http_code}\n' -H "Authorization: Bearer $1" "$ORDERS/orders" "${@:2}"; }
+----
+
+Check it: `jwt_part "$(service_token)" 2 | jq '{iss, azp}'` prints your
+issuer and `orders-api`. If it prints nothing or a `jq` error, check that the
+terminal is in the **oc** container and paste the block again.
+
+To copy a user's token, use the browser's **Network** tab as in Module 1:
+select the `orders` request from **View orders** (the `GET`, not an `OPTIONS`
+preflight), copy the `Authorization` value, then run `paste_token` and paste
+it. Access tokens expire after five minutes; copy a fresh one when a step says
+the token expired.
+
+Treat every token and secret in this terminal as a credential. Do not paste
+them into tickets, chat, or files.

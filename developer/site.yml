@@ -1,0 +1,24 @@
+---
+# The developer track guide. This file is written for its published place,
+# developer/site.yml in the content repository, beside developer/content/
+# (this component's content/). Paths start with ./ so Antora resolves them
+# from this file, not from the working directory (#62). scripts/check.sh
+# builds it from a snapshot laid out the same way.
+site:
+  title: Build secure microservices with Red Hat build of Keycloak
+  start_page: modules::index.adoc
+content:
+  sources:
+    - url: ./..
+      branches: HEAD
+      start_path: developer/content
+ui:
+  bundle:
+    url: https://github.com/rhpds/rhdp_showroom_theme/releases/download/latest/ui-bundle.zip
+output:
+  dir: ./../build/www
+runtime:
+  cache_dir: ./../build/antora-cache
+asciidoc:
+  attributes:
+    page-pagination: true

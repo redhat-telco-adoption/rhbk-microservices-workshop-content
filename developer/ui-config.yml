@@ -1,0 +1,28 @@
+---
+# The developer track's Showroom layout. Delivery does not read this file: the
+# Showroom content container takes the layout itself, so the tracks config
+# passes the same YAML inline in
+# ocp4_workload_rhbk_microservices_workshop_track_developer_showroom_ui_config
+# (workshop/deployment/agd/rhbk-microservices-workshop-tracks.yml).
+# scripts/tests/test_guide_developer_site.py fails when the two differ.
+type: showroom
+antora:
+  name: modules
+  dir: www
+  modules: []
+default_width: 45
+persist_url_state: true
+dev_mode: false
+view_switcher:
+  enabled: true
+  default_mode: split
+tabs:
+  - name: Dev Spaces
+    url: 'https://devspaces.${DOMAIN}'
+    external: true
+  - name: Terminal
+    path: /terminal
+    port: 443
+  - name: OpenShift Console
+    url: 'https://console-openshift-console.${DOMAIN}'
+    external: true

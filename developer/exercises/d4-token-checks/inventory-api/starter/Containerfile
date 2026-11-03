@@ -1,0 +1,12 @@
+FROM registry.access.redhat.com/ubi9/python-314@sha256:c19e852fe0c935dad0ecc2ef6a90582612e57ed4653ca32ec974606637520ce2
+
+USER 0
+WORKDIR /opt/app-root/src
+COPY requirements.txt ./requirements.txt
+RUN python -c 'import sys; assert sys.version_info[:3] == (3, 14, 8), sys.version' \
+    && pip install --no-cache-dir --no-compile -r requirements.txt \
+    && chown -R 1001:0 /opt/app-root/src
+COPY --chown=1001:0 main.py ./main.py
+USER 1001
+EXPOSE 8080
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080", "--no-access-log"]

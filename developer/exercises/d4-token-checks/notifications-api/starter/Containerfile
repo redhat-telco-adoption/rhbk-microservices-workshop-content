@@ -1,0 +1,9 @@
+FROM registry.access.redhat.com/ubi9/nodejs-24@sha256:07b369ed90167eaa3249845359f52f565c3a7cab72d833b999976bcee395d069
+WORKDIR /opt/app-root/src
+COPY --chown=1001:0 package.json package-lock.json ./
+RUN npm ci --omit=dev
+COPY --chown=1001:0 src ./src
+ENV NODE_ENV=production PORT=8080
+EXPOSE 8080
+USER 1001
+CMD ["npm", "start"]

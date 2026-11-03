@@ -1,0 +1,99 @@
+= Build secure microservices with Red Hat build of Keycloak
+:navtitle: Welcome
+
+Welcome to the developer track of this hands-on lab. Your operations team
+already runs Red Hat build of Keycloak, called Keycloak from here on, and has
+prepared a realm for you. You work on the application side: how three kinds
+of browser app obtain and use tokens, how an application programming
+interface (API) validates them, and how services call each other safely.
+
+You write code. Most modules give you a copy of one of the lab's services with
+a security check removed or broken on purpose. You fix it, prove the fix with
+unit tests that need no cluster, then build and roll it out to your own
+OpenShift namespace and check it against the live system.
+
+== What you will be able to do
+
+By the end of the lab you can:
+
+* read an access token and explain where each claim comes from;
+* connect an application to a Keycloak realm, and recognize an issuer that is
+  almost right from its error;
+* write the sign-in code of a browser single-page application (SPA) that uses
+  Proof Key for Code Exchange (PKCE) and keeps tokens in memory;
+* make the six checks every API owes every token, in Java, Python, and
+  JavaScript, and tell 401 from 403;
+* protect a backend for frontend (BFF) against leaking credentials and against
+  cross-site request forgery (CSRF);
+* choose between token exchange and client credentials for a call to another
+  service, and implement both;
+* ask operations for exactly the client a new application needs, and wire the
+  application to it.
+
+== How each module works
+
+Most activities follow the same loop:
+
+[cols="1,4"]
+|===
+|*Why it matters* |The failure or attack the code prevents.
+|*Predict* |Write down what you expect before you look.
+|*Code* |Fix the starter. The tests tell you when it is right.
+|*Ship it* |Build and roll out your code to your own namespace.
+|*See it* |Look at the token, the cookie, the trace, or the log.
+|*Break it* |Run something broken on purpose and read the error.
+|*Explain* |Answer a question; open the answer to compare.
+|*At your desk* |The code or checklist item to take home.
+|===
+
+Answers and reference solutions are hidden behind a click so you can try
+first.
+
+== The modules
+
+[cols="3,5,1",options="header"]
+|===
+|Module |You will |Time
+|xref:module-01-tokens.adoc[1. The system and its tokens] |Map the three sign-in patterns, and trace each claim of a real token to the client setting that put it there |25 min
+|xref:module-02-connect.adoc[2. Connect an app to an issuer] |Break and fix the issuer of two apps, and read the error each one gives |25 min
+|xref:module-03-spa-pkce.adoc[3. A SPA with PKCE] |Write the SPA's sign-in code, keep its tokens out of browser storage, and refresh them in time |45 min
+|xref:module-04-token-checks.adoc[4. Validate tokens in an API] |Add the issuer, audience, and algorithm checks to three APIs, and replay bad tokens against a live one |90 min
+|xref:module-05-bff.adoc[5. Sessions on the server: the BFF] |Restore header stripping and CSRF protection in the BFF, and forge a write |40 min
+|xref:module-06-service-to-service.adoc[6. Service to service] |Implement token exchange and client credentials in Orders, and follow both in a trace |50 min
+|xref:module-07-operate.adoc[7. Debug and operate] |Work through three incidents and check your Module 1 predictions |30 min
+|xref:module-08-capstone.adoc[8. Capstone: ship a new consumer] |Request the right client from operations, then wire and test the `reports` app |40 min
+|===
+
+The modules take about 5 hours 45 minutes, plus breaks. Your environment
+stays available after the session, so you can finish at your own pace. Your
+facilitator gives you the date it ends. Four self-paced
+xref:electives.adoc[electives] go further: signing keys, introspection,
+Authorization Services, and tokens from other issuers.
+
+The xref:glossary.adoc[Glossary] explains every acronym and technical term
+the guide uses.
+
+== The application
+
+Orders is the protected API. It allows reads to users with the `user` role and
+writes to users with the `manager` role. When it creates an order, it calls
+Inventory on the user's behalf and Notifications as itself.
+
+The same browser frontend is served three ways, once per sign-in pattern:
+
+* **SPA:** the browser signs in and calls Orders with an access token it keeps
+  in memory.
+* **BFF:** a server signs in for the browser, keeps the tokens, and gives the
+  browser only a session cookie.
+* **Reverse proxy:** a gateway in front of the app signs the user in, keeps the
+  tokens, and adds the token to API calls.
+
+== Start here
+
+. Open xref:details.adoc[] for your username, password, console links,
+  application addresses, and lab users.
+. Keep paper or a text file handy for your predictions.
+
+Everything works when you start: operations has already set up your realm and
+connected every app to it. You break and fix things on purpose from Module 2
+on.

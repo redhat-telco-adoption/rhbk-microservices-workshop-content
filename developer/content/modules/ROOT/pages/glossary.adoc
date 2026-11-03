@@ -1,0 +1,97 @@
+= Glossary
+:navtitle: Glossary
+
+Each acronym is also spelled out the first time the guide uses it. Terms in
+bold inside a definition have their own entry.
+
+== Acronyms
+
+[cols="1,2,4",options="header"]
+|===
+|Acronym |Stands for |Meaning in this lab
+
+|**ABAC** |Attribute-based access control |Deciding access from attributes of the user, the resource, and the request (such as region or network), not only from roles. Elective D.
+|**AES** |Advanced Encryption Standard |A symmetric encryption algorithm. Keycloak keeps an AES key for its own internal use; it is never published.
+|**API** |Application programming interface |A service that other programs call over HTTP. Orders, Inventory, and Notifications are APIs.
+|**BFF** |Backend for frontend |A server that signs users in for a browser application, keeps their tokens, and gives the browser only a session cookie.
+|**CIP** |Claim Information Point |The part of a policy enforcer that collects facts from a request or another system and sends them as *pushed claims* for policies to use. Elective D.
+|**CSRF** |Cross-site request forgery |An attack where another site makes the browser send a request with the user's cookies. The BFF and proxy block it on writes.
+|**HMAC** |Hash-based message authentication code |A signature made with a shared secret key. Keycloak signs its internal tokens, such as refresh tokens, with an HMAC key (`HS512`).
+|**HTTP** |Hypertext Transfer Protocol |The protocol browsers and APIs use for requests and responses. HTTPS is HTTP over TLS.
+|**ID** |Identifier |A name or number that identifies something, as in client ID or trace ID. An *ID token* is a different thing; see Terms.
+|**JSON** |JavaScript Object Notation |A text format for structured data, used for tokens, API responses, and configuration.
+|**JWKS** |JSON Web Key Set |The list of a realm's public keys, published at its `jwks_uri`. APIs use it to check token signatures.
+|**JWT** |JSON Web Token |A signed token in three base64url parts separated by dots: header, payload, signature. Keycloak's access, ID, and refresh tokens are all JWTs.
+|**OIDC** |OpenID Connect |The sign-in layer on top of OAuth 2.0. It adds the *ID token* and standard user information.
+|**PKCE** |Proof Key for Code Exchange |A one-time secret the client creates for each sign-in, so a stolen authorization code cannot be redeemed. Every client in this lab that signs users in requires it (method `S256`).
+|**RFC** |Request for Comments |The numbered documents in which Internet standards are published, such as RFC 8693 for token exchange and RFC 7662 for introspection.
+|**SPA** |Single-page application |A browser application that runs as JavaScript in one page. In the SPA pattern, the browser itself holds the tokens.
+|**TLS** |Transport Layer Security |Encryption for network connections, the "S" in HTTPS.
+|**UI** |User interface |The screens and buttons a person uses.
+|**UMA** |User-Managed Access |The protocol behind Keycloak Authorization Services, used to ask Keycloak for permission decisions. Elective D.
+|**URL** |Uniform resource locator |A web address, such as your SPA's address.
+|**XSS** |Cross-site scripting |An attack that runs the attacker's script inside your page, where it can use anything the page can, including tokens in memory.
+|**YAML** |YAML Ain't Markup Language |A plain-text configuration format, used by OpenShift resources and Spring Boot's `application.yml`.
+|===
+
+== Terms
+
+[cols="1,4",options="header"]
+|===
+|Term |Meaning in this lab
+
+|**Access token** |The token an application sends to an API to call it. It names the user (`sub`), the intended APIs (`aud`), and the roles. Short-lived: five minutes here.
+|**Algorithm allowlist** |The signature algorithms an API accepts, whatever a token's header says. Every API in this lab accepts only `RS256`.
+|**Audience (`aud`)** |The claim listing the APIs a token is meant for. Each API rejects tokens that do not name it.
+|**Authorization code flow** |The sign-in flow where the browser signs in at Keycloak and returns with a one-time code, which the client redeems for tokens.
+|**Authorization Services** |Keycloak's optional policy engine: *resources*, *scopes*, *policies*, and *permissions* evaluated centrally. Elective D.
+|**Authorized party (`azp`)** |The claim naming the client a token was issued to. Logs in this lab show it as `client_id`.
+|**Bearer token** |A token that works for whoever presents it, like cash. That is why tokens must not leak.
+|**Binary build** |An OpenShift build that takes its source from files uploaded by the client, here your workspace, rather than from a Git repository. The rollout tasks use it.
+|**Callback** |The address in an application that receives the browser's return from Keycloak; a redirect address names it.
+|**Claim** |One named value inside a token, such as `sub`, `aud`, or `realm_access.roles`.
+|**Client** |An application registered in Keycloak. Public clients (such as the SPA) cannot keep a secret; confidential clients (such as the BFF) can.
+|**Client credentials** |A flow where a service signs in as itself with its own secret, with no user. Orders uses it to call Notifications.
+|**Client request** |What you send operations to get a new client: its settings, each tied to a requirement. Module 8.
+|**Client scope** |Reusable token settings, such as an audience mapper, that operations attaches to clients as Default (always) or Optional (on request).
+|**ConfigMap** |An OpenShift object that holds non-secret configuration for pods.
+|**Context attribute** |A fact supplied with an authorization request rather than read from the token, such as a *pushed claim*.
+|**Deployment** |The OpenShift object that runs and restarts an application's pods.
+|**Dev Spaces** |OpenShift Dev Spaces: browser-based development workspaces that run in the cluster. Yours holds the exercises and the toolchains.
+|**Devfile** |The file that describes a Dev Spaces workspace: its containers and its tasks.
+|**Discovery document** |The public JSON document at `/.well-known/openid-configuration` under a realm's issuer, listing its endpoints and `jwks_uri`.
+|**ID token** |The token that tells the application who signed in. It is meant for the application, never sent to APIs.
+|**Identity brokering** |Signing users in to your realm through another identity provider. Elective E.
+|**Introspection** |Asking Keycloak whether a token is still active, instead of checking it locally. Elective C.
+|**Issuer (`iss`)** |The realm that issued a token, as an address. APIs accept tokens only from the issuer they trust.
+|**Key ID (`kid`)** |The token header value naming the key that signed it, so an API can pick the right key from the JWKS.
+|**Keycloak** |The identity server in this lab. This lab runs Red Hat build of Keycloak, Red Hat's supported distribution of it; after first use, this guide calls it Keycloak.
+|**Mapper** |A Keycloak setting that adds a claim to tokens, such as an audience or a user attribute.
+|**OAuth 2.0** |The standard for delegated access with tokens that Keycloak implements. OIDC builds on it.
+|**Permission** |In Authorization Services, the rule that combines policies for a resource or scope, with a decision strategy.
+|**Pod** |A running instance of an application in OpenShift.
+|**Policy** |In Authorization Services, one condition, such as having the role `manager` or having the claim `region` match `north`.
+|**Policy enforcer** |A library in an API that maps requests to Authorization Services resources and scopes and asks Keycloak for a decision. Elective D.
+|**Preflight** |An `OPTIONS` request the browser sends first, to ask whether a cross-origin call is allowed. It carries no token.
+|**Pushed claim** |A claim a confidential client sends with an authorization request for policies to evaluate. Elective D.
+|**Realm** |An isolated set of users, roles, clients, and keys in Keycloak. Operations prepared one for you.
+|**Realm role** |A role defined for the whole realm, such as `user` and `manager`.
+|**Redis** |The in-memory store that holds the reverse proxy's sessions in this lab.
+|**Refresh token** |A longer-lived token a client uses to get new access tokens without another sign-in. It never goes to APIs.
+|**Resource server** |An API that accepts tokens; in Elective D, the client that owns resources.
+|**Reverse proxy** |A server in front of an application that handles sign-in for it. The application never sees the sign-in.
+|**Rollout** |Replacing an application's pods, for example to run a new image or read new configuration.
+|**Route** |The OpenShift object that makes a service reachable from outside the cluster.
+|**Secret** |An OpenShift object that holds sensitive values such as client secrets.
+|**Service account** |The identity a client uses when it signs in as itself with client credentials.
+|**Session** |The record that a user is signed in: in Keycloak, and separately in the BFF or proxy.
+|**Showroom** |The lab environment that shows this guide, with its Terminal, Dev Spaces, and OpenShift Console tabs.
+|**Signing key** |The realm's private key that signs tokens. APIs verify with the matching public key from the JWKS. Elective B.
+|**Span** |One timed step inside a *trace*, such as one service handling a request or calling another.
+|**Starter** |An exercise's copy of a lab service with a security check removed or broken on purpose, marked `ANTI-PATTERN`.
+|**Subject (`sub`)** |The claim identifying the user (or service account) a token is about.
+|**Tenant** |Your private area in the shared tracing service.
+|**Token exchange** |A flow where a service trades a user's token for a new one meant for another API, keeping the user's identity. Orders uses it to call Inventory.
+|**`TokenRelay`** |The Spring Cloud Gateway filter that adds the session's access token to a request the BFF forwards. Module 5.
+|**Trace** |The record of one request as it crosses services, shown in the OpenShift Console under Observe → Traces.
+|===

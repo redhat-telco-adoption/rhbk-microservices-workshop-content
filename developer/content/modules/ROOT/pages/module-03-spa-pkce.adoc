@@ -1,0 +1,215 @@
+= Module 3: A SPA with PKCE
+:navtitle: 3. A SPA with PKCE
+
+*Time:* 45 minutes, including about 10 to start your workspace +
+*Before you start:* Module 2, with all three patterns signing in +
+*By the end, you can:* configure the authorization code flow with PKCE in a browser app; keep its tokens in memory, out of browser storage; refresh an access token before it expires
+
+== Why it matters
+
+A browser app is a *public* client: anything shipped to a browser can be read,
+so it cannot keep a secret. Two things protect its sign-in and its tokens:
+
+* **PKCE.** For each sign-in, the app makes a one-time secret, sends a hash of
+  it to Keycloak, and later proves it knows the secret when it redeems the
+  sign-in code. A code stolen on the way back is useless without it.
+* **Where the tokens live.** Any script on the page can read
+  `localStorage`, and it outlives the tab. Tokens held in JavaScript memory
+  vanish when the tab closes and are harder to reach.
+
+Access tokens here last five minutes, so the app must also get a new one
+before the old one expires, without making the user sign in again.
+
+The starter is the lab's SPA with all three of these broken. Each defect is
+marked with an `ANTI-PATTERN` comment, as every starter in this lab is.
+
+== Do: start your workspace
+
+Your workspace runs in OpenShift Dev Spaces. It holds the exercise sources and
+a container for each toolchain: Java, Python, Node.js, and `oc`.
+
+. Open
+  link:https://devspaces.{openshift_cluster_ingress_domain}/#{content_repo_url}/tree/{content_ref}?devfilePath={exercises_path}/devfile.yaml[your workspace,window=_blank]
+  in a new browser tab. Do not use the **Dev Spaces** tab of this guide to
+  sign in: the OpenShift and Keycloak sign-in pages refuse to be shown inside
+  another page, so the sign-in cannot complete there. If the link does not
+  open, go to `pass:a[https://devspaces.{openshift_cluster_ingress_domain}]` in
+  a new browser tab.
+. Click **Log in with OpenShift**, then sign in on the page titled **Sign in to
+  sso** with your username and password. If Dev Spaces asks to authorize
+  access to your account, allow it.
+. Wait while the workspace starts. The first start pulls several container
+  images and takes a few minutes.
++
+If the link opens the Dev Spaces dashboard without starting a workspace, open
+**Create Workspace**, paste the address below, a uniform resource locator
+(URL), into **Git Repo URL**, and click
+**Create & Open**:
++
+[source,text,subs="attributes+"]
+----
+{content_repo_url}/tree/{content_ref}?devfilePath={exercises_path}/devfile.yaml
+----
++
+If your workspace already exists, open it from the dashboard's **Workspaces**
+list instead of creating a second one. Dev Spaces stops a workspace after 30
+minutes without activity; open it again the same way. Your edits are kept.
+. If the editor asks whether you trust the authors of the files, choose to
+  trust them. The files are this lab's exercises.
+. Open the menu (☰) at the top left and choose **Terminal → Run Task…**, then
+  **devfile**, then **Show the oc user and the developer namespace access**.
+  It prints your username, `Developer namespace: {attendee_namespace}`, and
+  `yes` twice: your workspace may build and roll out there.
+
+Every task in this guide runs the same way: **Terminal → Run Task… → devfile**,
+then the task named in the step. Tasks run in their own terminal panel and
+print what they do.
+
+The exercises are in the `{exercises_path}` folder of the workspace. This
+module's are in `d3-spa-pkce/frontend/`:
+
+[cols="1,3",options="header"]
+|===
+|Folder |What it holds
+|`starter/` |The code you edit: the SPA with its defects.
+|`solution/` |Only the files the exercise changes, as the lab's SPA has them. Open them only to compare.
+|`tests/` |The tests, added to a scratch copy of your starter when they run.
+|===
+
+== Predict
+
+The `spa` client in your realm requires the PKCE method `S256`. The starter
+turns PKCE off. If you rolled out the starter as it is, what would happen when
+a user signs in? Write it down.
+
+.Answer
+[%collapsible]
+====
+Keycloak would refuse the sign-in in the popup with an error page, because the
+request has no code challenge and the client requires one. The server side of
+PKCE is already enforced; the app has to do its half.
+====
+
+== Code: fix the starter
+
+. Run the task **Test the d3-spa-pkce/frontend starter**. The first run
+  installs the dependencies. The tests fail: they find PKCE off, tokens
+  written to `localStorage`, and an expired token handed to the API.
+. Open `d3-spa-pkce/frontend/starter/src/auth.ts` and fix the three places
+  marked `ANTI-PATTERN`:
+.. Remove `disablePKCE: true`. With nothing set, `oidc-client-ts` uses PKCE
+   with `S256` for every sign-in.
+.. Keep the user and the sign-in state in memory: give `userStore` and
+   `stateStore` a `WebStorageStateStore` over an `InMemoryWebStorage`, which
+   you import from `oidc-client-ts`.
+.. In `accessToken()`, when the token expires within 30 seconds, call
+   `refresh()` first and return the new token. `user.expires_at` is the expiry
+   in seconds since 1970.
+. Run the test task again until every test passes.
++
+.Reference solution
+[%collapsible]
+====
+[source,typescript]
+----
+import { UserManager, WebStorageStateStore, InMemoryWebStorage, type User } from 'oidc-client-ts';
+
+    // in the UserManager settings, with disablePKCE removed:
+    userStore: new WebStorageStateStore({ store: new InMemoryWebStorage() }),
+    stateStore: new WebStorageStateStore({ store: new InMemoryWebStorage() }),
+
+export async function accessToken(): Promise<string | null> {
+  if (!manager || !user) return null;
+  const expiry = user.expires_at ?? 0;
+  if (expiry * 1000 - Date.now() < 30_000) {
+    const refreshed = await refresh();
+    return refreshed?.access_token ?? null;
+  }
+  return user.access_token;
+}
+----
+
+`refresh()` already shares one refresh between concurrent calls, so two API
+calls at the same moment cause one token request, not two.
+====
+
+== Ship it
+
+. Run the task **Package d3-spa-pkce/frontend, then build and roll it out**.
+  It builds the SPA in the workspace, uploads it to a build in your namespace,
+  and rolls out the `frontend` Deployment with the new image. It takes a few
+  minutes and ends with `successfully rolled out`.
+. If it stops with an error, read the last lines: it says which step failed.
+  Run the test task first if the build reports a TypeScript error.
+
+== See it: PKCE, memory, and refresh
+
+. Open your link:{spa_url}[SPA,window=_blank] in a new tab and open the
+  developer tools before you sign in. In the **Network** tab, tick **Preserve
+  log**.
+. Click **Sign in** and sign in as `reader`. In **Network**, select the
+  `token` request (a `POST` to your realm's token endpoint). Its **Payload**
+  has `grant_type` `authorization_code` and a `code_verifier`: the one-time
+  secret that proves this browser started the sign-in.
+. Open the **Application** tab (**Storage** in Firefox) and look under
+  **Local storage** and **Session storage** for your SPA address. No entry
+  starts with `oidc.`: the tokens are only in memory. Expand **Where session
+  data is stored** in the app: **Access token in JavaScript memory: Yes**.
+. Reload the page. You are signed out: a token kept only in memory is gone with
+  the page. Sign in again as `reader`.
+. Leave the tab open for five minutes, the access token's lifetime, then click
+  **View orders**. In **Network**, a new `token` request appears before the
+  `orders` request, with `grant_type` `refresh_token`, and **View orders**
+  returns 200. The `orders` request carries the new token in its
+  `Authorization` header. Sign out.
+
+== Check
+
+* Sign-in works, and the `token` request carries a `code_verifier`.
+* No `oidc.` entry is in local or session storage.
+* After five minutes, the app refreshed its token and the API call succeeded.
+
+Now complete rows 1 to 3 of your Module 1 table for the SPA.
+
+== Explain
+
+. A script injected into the page cannot read `localStorage` any more. Is the
+  SPA's token now safe from it?
++
+.Answer
+[%collapsible]
+====
+No. The script runs in the same page, so it can call the app's own functions
+or wrap `fetch` and capture the `Authorization` header. Memory storage shrinks
+the window: nothing survives the tab, and no other tab can read it. Preventing
+cross-site scripting (XSS) and keeping tokens short-lived are still the SPA's
+main defenses.
+====
+. Why does the SPA refresh 30 seconds early instead of waiting for a 401?
++
+.Answer
+[%collapsible]
+====
+A request sent with a token that expires on the way is refused, and the user
+sees an error for something the app could have prevented. Refreshing a little
+early also covers small clock differences between the browser and the API.
+====
+
+== At your desk
+
+The SPA's whole Keycloak setup, with `oidc-client-ts`:
+
+[source,typescript]
+----
+new UserManager({
+  authority: config.issuer,
+  client_id: config.spaClientId,
+  redirect_uri: `${origin}/auth/popup-callback`,
+  response_type: 'code',                 // PKCE (S256) is on unless you disable it
+  userStore: new WebStorageStateStore({ store: new InMemoryWebStorage() }),
+  stateStore: new WebStorageStateStore({ store: new InMemoryWebStorage() }),
+});
+----
+
+Check the client too: public, standard flow only, PKCE `S256` required, exact
+redirect addresses, and a short access-token lifetime.
