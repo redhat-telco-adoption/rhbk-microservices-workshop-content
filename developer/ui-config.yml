@@ -1,0 +1,22 @@
+---
+type: showroom
+antora:
+  name: modules
+  dir: www
+  modules: []
+default_width: 45
+persist_url_state: true
+dev_mode: false
+view_switcher:
+  enabled: true
+  default_mode: split
+tabs:
+  - name: Dev Spaces
+    url: 'https://devspaces.${DOMAIN}'
+    external: true
+  - name: Terminal
+    path: /terminal
+    port: 443
+  - name: OpenShift Console
+    url: 'https://console-openshift-console.${DOMAIN}'
+    external: true

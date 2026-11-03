@@ -1,0 +1,12 @@
+---
+name: modules
+title: Build secure microservices with Red Hat build of Keycloak
+version: ~
+nav:
+  - modules/ROOT/nav.adoc
+asciidoc:
+  attributes:
+    user: not-assigned
+    attendee_namespace: namespace-not-assigned
+    realm_name: realm-not-assigned
+    issuer: https://keycloak.example.invalid/realms/realm-not-assigned

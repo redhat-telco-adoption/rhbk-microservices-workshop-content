@@ -1,0 +1,8 @@
+= Developer track trial
+
+This stub page checks that the developer guide builds from `developer/site.yml`.
+
+* User: `{user}`
+* App namespace: `{attendee_namespace}`
+* Realm: `{realm_name}`
+* Issuer: `{issuer}`
