@@ -162,6 +162,9 @@ rollout_binary() {
     note "Creating binary build $name in $namespace"
     oc new-build --binary --strategy=docker --name="$name" -n "$namespace"
   fi
+  # A docker-strategy build reads ./Dockerfile unless told otherwise; the starters ship a Containerfile.
+  oc patch "buildconfig/$name" -n "$namespace" --type merge \
+    -p '{"spec":{"strategy":{"dockerStrategy":{"dockerfilePath":"Containerfile"}}}}' >/dev/null
   local stage
   stage="$(mktemp -d "${TMPDIR:-/tmp}/exercise-build.XXXXXX")"
   # shellcheck disable=SC2064 # expand now: the trap must remove this staging directory
