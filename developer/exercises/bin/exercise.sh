@@ -196,7 +196,10 @@ rollout_config() {
   done
   if grep -q '@[A-Z_]*@' "$rendered"; then die "reports-config.env has an unknown @...@ placeholder"; fi
   if oc get "configmap/$DEPLOYMENT-config" -n "$namespace" >/dev/null 2>&1; then
-    oc set data "configmap/$DEPLOYMENT-config" --from-env-file="$rendered" -n "$namespace"
+    # oc set data has no --from-env-file (oc 4.21 in the workspace), so pass each KEY=VALUE line.
+    local -a pairs=()
+    mapfile -t pairs < <(grep -Ev '^[[:space:]]*(#|$)' "$rendered")
+    oc set data "configmap/$DEPLOYMENT-config" "${pairs[@]}" -n "$namespace"
   else
     oc create configmap "$DEPLOYMENT-config" --from-env-file="$rendered" -n "$namespace"
   fi
