@@ -103,7 +103,9 @@ never meant for Orders; the API should not have got as far as the roles.
 . Fix the three places marked `ANTI-PATTERN` under
   `d4-token-checks/orders-api/starter/src/main/java/com/example/orders/security/`:
 .. In `JwtAudienceValidator.java`, succeed only when `aud` contains
-   `orders-api`, and otherwise fail with the `OAuth2Error` `bad_audience`.
+   `orders-api`, and otherwise fail with `new OAuth2Error("bad_audience")`,
+   with no description. Orders' log takes its `reason` from this error, so a
+   description of your own would log `invalid_token` instead.
 .. In `SecurityConfiguration.java`, allow only `SignatureAlgorithm.RS256`.
 .. In the same file, add a `JwtIssuerValidator` for the configured issuer to
    the validator chain.

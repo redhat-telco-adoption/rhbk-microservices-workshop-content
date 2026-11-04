@@ -233,7 +233,9 @@ cmd_request() {
   namespace="$(dev_namespace)"
   host="$(oc get route/reports -n "$namespace" -o jsonpath='{.spec.host}')"
   [[ "$host" =~ ^[a-z0-9.-]+$ ]] || die "no reports route in $namespace"
-  sed "s|@REPORTS_URL@|https://$host|g" "$dir/starter/client-request.yaml"
+  # Operations needs the settings, not the exercise's ANTI-PATTERN markers.
+  grep -Ev '^[[:space:]]*# (ANTI-PATTERN|Exercise D8)' "$dir/starter/client-request.yaml" \
+    | sed "s|@REPORTS_URL@|https://$host|g"
 }
 
 cmd_secret() {

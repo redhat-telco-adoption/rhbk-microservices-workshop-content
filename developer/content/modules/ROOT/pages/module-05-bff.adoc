@@ -67,12 +67,12 @@ another app on this cluster.
 == Code: fix the starter
 
 . Run the task **Test the d5-bff/bff starter**. The tests find a route that
-  relays the browser's `Authorization`, `Origin`, and `Cookie` headers, and a
-  write without the CSRF token that is accepted.
+  relays the browser's `Authorization` and `Cookie` headers, and a write
+  without the CSRF token that is accepted.
 . In `d5-bff/bff/starter/src/main/resources/application.yml`, find the
-  `orders-api` route at the `ANTI-PATTERN` comment. Make its filters strip
-  `Authorization` and `Origin` before `TokenRelay`, and `Cookie` after it, the
-  way the `legacy-api` route below it already does.
+  `orders-api` route at the `ANTI-PATTERN` comment. It already strips
+  `Origin`. Make it also strip `Authorization` before `TokenRelay`, and
+  `Cookie` after it, the way the `legacy-api` route below it does.
 . In `d5-bff/bff/starter/src/main/java/com/redhat/workshop/bff/SecurityConfiguration.java`,
   at the `ANTI-PATTERN` comment, replace `csrf.disable()`: use `csrfRepository`
   (the `XSRF-TOKEN` cookie the SPA echoes) and a

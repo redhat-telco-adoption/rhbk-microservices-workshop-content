@@ -54,8 +54,10 @@ If the link opens the Dev Spaces dashboard without starting a workspace, open
 If your workspace already exists, open it from the dashboard's **Workspaces**
 list instead of creating a second one. Dev Spaces stops a workspace after 30
 minutes without activity; open it again the same way. Your edits are kept.
-. If the editor asks whether you trust the authors of the files, choose to
-  trust them. The files are this lab's exercises.
+. The dashboard first asks whether you trust the authors of this repository:
+  click **Continue**. When the editor opens, it asks again whether you trust
+  the authors of the files: choose to trust them. The files are this lab's
+  exercises.
 . Open the menu (☰) at the top left and choose **Terminal → Run Task…**, then
   **devfile**, then **Show the oc user and the developer namespace access**.
   It prints your username, `Developer namespace: {attendee_namespace}`, and

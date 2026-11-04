@@ -40,11 +40,13 @@ spring:
               uri: ${ORDERS_BASE_URL:http://orders-api.apps.svc:8080}
               predicates:
                 - Path=/api/orders,/api/orders/**
-              # ANTI-PATTERN: relays the browser's Authorization, Origin, and SESSION cookie to
-              # orders-api. Exercise D5: strip Authorization and Origin before TokenRelay, and
-              # the Cookie header after it, as the legacy-api route below does.
+              # ANTI-PATTERN: relays the browser's Authorization header and SESSION cookie to
+              # orders-api. Exercise D5: strip Authorization before TokenRelay, and the Cookie
+              # header after it, as the legacy-api route below does. Origin is already stripped:
+              # Orders' CORS check would refuse the BFF's origin before the missing CSRF check showed.
               filters:
                 - StripPrefix=1
+                - RemoveRequestHeader=Origin
                 - TokenRelay
             - id: legacy-api
               uri: ${LEGACY_BASE_URL:https://legacy-api.invalid}

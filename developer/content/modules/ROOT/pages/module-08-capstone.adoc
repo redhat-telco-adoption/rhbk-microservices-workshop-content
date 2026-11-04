@@ -22,8 +22,9 @@ The client must satisfy these requirements:
 
 . Users sign in through Keycloak, and the application runs on a server.
 . Its tokens are accepted by Orders and by no other API.
-. Its tokens never carry `manager`, even for a manager. Reports must never be
-  able to create orders.
+. Its tokens carry the `user` realm role, which Orders needs for reads, and
+  never `manager`, even for a manager. Reports must never be able to create
+  orders.
 . After sign-in, Keycloak may send users back only to
   `pass:a[{reports_url}/login/oauth2/code/keycloak]`. After sign-out, only to
   `pass:a[{reports_url}/]`.
@@ -47,9 +48,13 @@ The exercise is in `d8-reports/reports/` and has two files in `starter/`:
   request against the requirements above, then sign a token the way that
   client would and check it with Orders' rules. They fail.
 . In `client-request.yaml`, correct the six settings marked `ANTI-PATTERN`.
-  For each one, name the requirement it breaks.
+  For each one, name the requirement it breaks. The full-scope fix has two
+  parts: turn off full scope, and map only the `user` realm role in
+  `realmRoleScopeMappings`.
 . In `reports-config.env`, at the `ANTI-PATTERN` comment, make the application
-  sign in as `reports`, not as the BFF's client.
+  sign in as `reports`, not as the BFF's client: set the client ID of its
+  `keycloak` registration. Keep the registration ID `keycloak`, because it is
+  part of the sign-in redirect path.
 . Run the test task again until every test passes.
 +
 .Reference solution
