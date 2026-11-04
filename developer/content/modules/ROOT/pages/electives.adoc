@@ -23,7 +23,8 @@ your namespace or realm.
 == The terminal
 
 The electives use an **oc** terminal in your Dev Spaces workspace: open the
-menu (☰), choose **Terminal → New Terminal**, and pick the **oc** container.
+menu (☰), choose **Terminal → New Terminal (Select a Container)**, and pick
+the **oc** container.
 Paste this block each time you open a new terminal. It reads the `orders-api`
 client secret from its Secret in your namespace and passes it to `curl`
 through a pipe, so the secret never appears on the screen or on a command

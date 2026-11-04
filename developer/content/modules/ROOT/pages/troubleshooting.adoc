@@ -22,16 +22,18 @@ the facilitator.
 * **A terminal command says `command not found` for `paste_token` or
   `call_orders`.** Each terminal starts empty; paste the setup block from
   Module 4 or xref:electives.adoc#_the_terminal[Electives] again, in a terminal
-  in the **oc** container.
+  in the **oc** container: **Terminal → New Terminal (Select a Container)**,
+  then **oc**.
 
 == Tests and rollouts
 
 * **A test task fails after your change.** Read the first failing test's name
   and message: each names the forgery or the check it expected. Compare your
   change with the reference solution on the module page.
-* **The BFF rollout fails at the package step.** The BFF task packages your
-  SPA from Module 3 first. Run **Test the d3-spa-pkce/frontend starter**, fix
-  what it reports, and run the BFF task again.
+* **The BFF rollout fails at the package step.** **Package the d5-bff/bff
+  starter** needs your SPA from Module 3. Run **Test the d3-spa-pkce/frontend
+  starter**, fix what it reports, run **Package the d3-spa-pkce/frontend
+  starter**, and run the BFF tasks again.
 * **The build fails or times out.** Run the task again. If it fails the same
   way twice, copy the last lines of its output (they hold no secrets) to the
   facilitator.

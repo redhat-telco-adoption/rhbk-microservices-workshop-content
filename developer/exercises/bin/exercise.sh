@@ -23,8 +23,9 @@ Usage: bin/exercise.sh <command> [<exercise>] [options]
                                 Copy the starter, or the starter with the solution applied, to <dir>
   package <exercise>            Run the exercise's local build step, if it has one
   rollout <exercise>            Build the starter in your developer namespace and roll it out
-  request <exercise>            Print the D8 client request with your reports address
-  secret <exercise>             Store the D8 client secret (read from the terminal) in reports-client
+  request <exercise> [--print]  File the D8 client request with the ops desk and wait for its
+                                answer; --print only prints the request with your reports address
+  status <exercise>             Wait for the ops desk to issue the D8 client secret into reports-client
 
 <exercise> is a directory under workshop/developer/exercises, for example
 d4-token-checks/orders-api. The developer namespace comes from DEV_NAMESPACE, else from
@@ -221,35 +222,133 @@ cmd_rollout() {
   namespace="$(dev_namespace)"
   case "$BUILD" in
     binary) rollout_binary "$namespace" ;;
-    config) rollout_config "$namespace" ;;
+    config)
+      [[ -n "$(annotation "secret/$client_secret" "$namespace" "$ops_desk/ops-desk-issued")" ]] ||
+        die "the ops desk has not issued the client secret into $client_secret yet; run: bin/exercise.sh request $exercise"
+      rollout_config "$namespace" ;;
     *) die "$exercise has no rollout (BUILD=$BUILD)" ;;
   esac
+}
+
+# The D8 request and its answer. The ops desk (one per reservation) reviews the request
+# against Module 8's requirements, writes its decision as annotations on the request, and on
+# a pass writes the client secret into reports-client. Nobody handles or pastes the secret: this script
+# reads only annotations, never a Secret's data.
+ops_desk=rhbk-workshop
+request_configmap=reports-client-request
+client_secret=reports-client
+
+# One annotation of an object, or nothing; never its data.
+annotation() {
+  oc get "$1" -n "$2" -o "go-template={{with .metadata.annotations}}{{with index . \"$3\"}}{{.}}{{end}}{{end}}" \
+    2>/dev/null || true
+}
+
+wait_seconds() {
+  local seconds="${EXERCISE_WAIT_SECONDS:-90}"
+  [[ "$seconds" =~ ^[0-9]+$ ]] || die "EXERCISE_WAIT_SECONDS must be a number of seconds"
+  printf '%s\n' "$seconds"
+}
+
+reports_url() {
+  local host
+  host="$(oc get route/reports -n "$1" -o jsonpath='{.spec.host}')"
+  [[ "$host" =~ ^[a-z0-9.-]+$ ]] || die "no reports route in $1"
+  printf 'https://%s\n' "$host"
+}
+
+render_request() {
+  # Operations needs the settings, not the exercise's ANTI-PATTERN markers.
+  grep -Ev '^[[:space:]]*# (ANTI-PATTERN|Exercise D8)' "$dir/starter/client-request.yaml" \
+    | sed "s|@REPORTS_URL@|$1|g"
+}
+
+# The same rules the ops desk runs, when this container has python3.
+local_review() {
+  local rendered="$1" url="$2"
+  command -v python3 >/dev/null 2>&1 || return 0
+  python3 -I -B - "$dir/tests" "$rendered" "$url" <<'PY' || true
+import sys
+sys.path.insert(0, sys.argv[1])
+import reports_request
+with open(sys.argv[2], encoding="utf-8") as stream:
+    reasons = reports_request.review(stream.read(), sys.argv[3])
+print("Checked here with the ops desk's rules: " + ("it passes." if not reasons else "it fails:"), file=sys.stderr)
+for requirement, reason in reasons:
+    print(f"  {requirement}: {reason}", file=sys.stderr)
+PY
 }
 
 cmd_request() {
   load "${1:-}"
   [[ -f "$dir/starter/client-request.yaml" ]] || die "$exercise has no client request"
-  local namespace host
+  [[ -z "${2:-}" || "${2:-}" == --print ]] || usage
+  local namespace rendered digest seconds state="" reasons url
   namespace="$(dev_namespace)"
-  host="$(oc get route/reports -n "$namespace" -o jsonpath='{.spec.host}')"
-  [[ "$host" =~ ^[a-z0-9.-]+$ ]] || die "no reports route in $namespace"
-  # Operations needs the settings, not the exercise's ANTI-PATTERN markers.
-  grep -Ev '^[[:space:]]*# (ANTI-PATTERN|Exercise D8)' "$dir/starter/client-request.yaml" \
-    | sed "s|@REPORTS_URL@|https://$host|g"
+  url="$(reports_url "$namespace")"
+  if [[ "${2:-}" == --print ]]; then
+    render_request "$url"
+    return
+  fi
+  seconds="$(wait_seconds)"
+  rendered="$(mktemp "${TMPDIR:-/tmp}/exercise-request.XXXXXX")"
+  # shellcheck disable=SC2064 # expand now: the trap must remove this rendered file
+  trap "rm -f '$rendered'" EXIT
+  render_request "$url" > "$rendered"
+  digest="$(sha256sum "$rendered" | cut -d' ' -f1)"
+  # The request goes in a file, never a command argument. Server-side apply under this
+  # script's own field manager replaces the data and keeps the desk's annotations.
+  note "Filing $request_configmap in $namespace for the ops desk"
+  oc create configmap "$request_configmap" --from-file=client-request.yaml="$rendered" \
+      --dry-run=client -o yaml -n "$namespace" \
+    | oc label --local -f - -o yaml "$ops_desk/ops-desk-request=reports" \
+        "$ops_desk/attendee=${namespace%-rhbk-dev}" \
+    | oc apply --server-side --field-manager=exercise-sh -f - -n "$namespace" >/dev/null
+  note "Waiting up to ${seconds}s for the ops desk"
+  local deadline=$((SECONDS + seconds))
+  while :; do
+    if [[ "$(annotation "configmap/$request_configmap" "$namespace" "$ops_desk/ops-desk-request-sha256")" == "$digest" ]]; then
+      state="$(annotation "configmap/$request_configmap" "$namespace" "$ops_desk/ops-desk-state")"
+      [[ "$state" == approved || "$state" == rejected ]] && break
+    fi
+    (( SECONDS < deadline )) || break
+    sleep 3
+  done
+  case "$state" in
+    approved)
+      note "The ops desk approved the request and created the reports client"
+      note "Next: bin/exercise.sh status $exercise" ;;
+    rejected)
+      reasons="$(annotation "configmap/$request_configmap" "$namespace" "$ops_desk/ops-desk-reasons")"
+      printf 'The ops desk rejected the request. Requirement and reason:\n' >&2
+      printf '%s\n' "$reasons" | sed 's/^/  /' >&2
+      die "fix $exercise/starter/client-request.yaml and run: bin/exercise.sh request $exercise" ;;
+    *)
+      local_review "$rendered" "$url"
+      die "the ops desk has not answered yet; run bin/exercise.sh request $exercise again in a minute" ;;
+  esac
 }
 
-cmd_secret() {
+cmd_status() {
   load "${1:-}"
   [[ "$BUILD" == config ]] || die "$exercise has no client secret"
-  local namespace secret
+  local namespace seconds issued=""
   namespace="$(dev_namespace)"
-  [[ -t 0 ]] || die "run this in a terminal: it reads the secret without echoing it"
-  read -r -s -p "Client secret operations returned for reports: " secret
-  printf '\n' >&2
-  [[ -n "$secret" ]] || die "no secret entered"
-  # The value goes through a pipe, never a command argument.
-  printf '%s' "$secret" | oc set data secret/reports-client --from-file=BFF_CLIENT_SECRET=/dev/stdin -n "$namespace"
-  note "Stored the secret in reports-client; now run: bin/exercise.sh rollout $exercise"
+  seconds="$(wait_seconds)"
+  local deadline=$((SECONDS + seconds))
+  while :; do
+    issued="$(annotation "secret/$client_secret" "$namespace" "$ops_desk/ops-desk-issued")"
+    [[ -n "$issued" ]] && break
+    (( SECONDS < deadline )) || break
+    sleep 3
+  done
+  if [[ -z "$issued" ]]; then
+    local state
+    state="$(annotation "configmap/$request_configmap" "$namespace" "$ops_desk/ops-desk-state")"
+    die "the ops desk has not issued the secret into $client_secret (request: ${state:-not filed or not reviewed}); run: bin/exercise.sh request $exercise"
+  fi
+  note "The ops desk wrote the client secret into $client_secret at $issued"
+  note "Next: bin/exercise.sh rollout $exercise"
 }
 
 command="${1:-}"
@@ -262,7 +361,7 @@ case "$command" in
   package) cmd_package "$@" ;;
   rollout) cmd_rollout "$@" ;;
   request) cmd_request "$@" ;;
-  secret) cmd_secret "$@" ;;
+  status) cmd_status "$@" ;;
   -h|--help|help) usage ;;
   *) usage ;;
 esac

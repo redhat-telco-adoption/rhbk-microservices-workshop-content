@@ -1,9 +1,9 @@
 = Module 8: Capstone: ship a new consumer
 :navtitle: 8. Capstone: ship a new consumer
 
-*Time:* 40 minutes, plus the time operations takes to answer your request +
+*Time:* 40 minutes, plus about a minute for the ops desk +
 *Before you start:* Modules 1 to 7 +
-*By the end, you can:* turn an application's requirements into an exact client request for operations; wire an application to the client and secret operations returns, without exposing the secret; prove least privilege in the token and in the application
+*By the end, you can:* turn an application's requirements into an exact client request for operations; wire an application to the client and secret operations issues, without anyone handling the secret; prove least privilege in the token and in the application
 
 == Why it matters
 
@@ -94,39 +94,45 @@ SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_CLIENTID=reports
 
 == Do: file the request with operations
 
-. In your workspace's **oc** terminal, go to the exercises and print your
-  request with your `reports` address filled in:
+In this lab, operations is an automated ops desk. It reviews your request
+against the six requirements, like a person on duty would, and answers within
+a minute.
+
+. In your workspace's **oc** terminal, go to the exercises and file your
+  request, with your `reports` address filled in:
 +
 [source,bash,subs="attributes+"]
 ----
 cd "$PROJECT_SOURCE/{exercises_path}"
 bin/exercise.sh request d8-reports/reports
 ----
-. Hand the printed request to operations. In this lab, operations is your
-  facilitator, who tells you how to send it and how you receive the secret.
-  The request holds no secret, so it may travel in any channel.
-. Operations reviews the request against the requirements and either creates
-  the client in your realm or sends the request back with a reason. While you
-  wait, do the next section's prediction.
-. When operations confirms the client exists, open your realm in the
++
+It stores the request in the `reports-client-request` ConfigMap in your
+developer namespace and waits for the ops desk's answer.
+. If the ops desk rejects the request, the output lists each reason with the
+  number of the requirement it fails. Fix those settings in
+  `client-request.yaml` and run the command again.
+. When the ops desk approves the request, it ends with `approved the request`.
+  Open your realm in the
   link:{keycloak_origin}/admin/master/console/#/{realm_name}[Keycloak administration console,window=_blank]
   and check **Clients → reports**: its settings are the ones you asked for.
 
-The client secret operations returns is a credential. Receive it only in a
-private channel, paste it only into the command below, and never into chat,
-tickets, files, or a command line.
+The ops desk writes the client secret from Keycloak straight into the
+`reports-client` Secret in your namespace, so nobody handles it, pastes it, or
+sends it anywhere.
 
 == Ship it
 
-. In the **oc** terminal, store the secret in the `reports-client` Secret:
+. In the **oc** terminal, check that the secret has arrived in the
+  `reports-client` Secret:
 +
 [source,bash]
 ----
-bin/exercise.sh secret d8-reports/reports
+bin/exercise.sh status d8-reports/reports
 ----
 +
-It asks for the secret without showing what you type, and passes it to `oc`
-through a pipe, never as an argument. Paste the secret and press Enter.
+It reads only the Secret's annotations, never the secret, and ends with
+`wrote the client secret into reports-client`.
 . Run the task **Build d8-reports/reports in the developer namespace and roll
   it out**. It writes your `reports-config.env` to the `reports-config`
   ConfigMap, with your issuer filled in, and restarts `reports`. It ends with

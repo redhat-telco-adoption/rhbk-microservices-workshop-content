@@ -29,9 +29,11 @@ cookie to Orders.
 == Ship it first: the starter, as it is
 
 . Sign out of every app (Module 2).
-. In your workspace, run the task **Package d5-bff/bff, then build and roll it
-  out**. It packages your SPA from Module 3 into the BFF, builds the BFF
-  starter unchanged, and rolls out the `bff` Deployment. The first run downloads the
+. In your workspace, run these tasks in order: **Package the
+  d3-spa-pkce/frontend starter**, **Package the d5-bff/bff starter**, and
+  **Build d5-bff/bff in the developer namespace and roll it out**. They package
+  your SPA from Module 3 into the BFF, build the BFF starter unchanged, and
+  roll out the `bff` Deployment. The first run downloads the
   Maven dependencies and takes several minutes; read the next section while it
   runs.
 . When it ends with `successfully rolled out`, open your
@@ -110,8 +112,9 @@ cookie, so the cookie is removed only after it.
 
 == Ship it and forge again
 
-. Run the task **Package d5-bff/bff, then build and roll it out** again, and
-  wait for `successfully rolled out`.
+. Run the task **Package the d5-bff/bff starter** again, then **Build
+  d5-bff/bff in the developer namespace and roll it out**, and wait for
+  `successfully rolled out`.
 . Open your link:{bff_url}[BFF,window=_blank] and sign in as `manager`.
 . Send the same forged write from the **Console**. It now returns `403`, and
   Orders never sees the request.

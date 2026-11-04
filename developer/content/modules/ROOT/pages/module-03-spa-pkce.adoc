@@ -137,11 +137,13 @@ calls at the same moment cause one token request, not two.
 
 == Ship it
 
-. Run the task **Package d3-spa-pkce/frontend, then build and roll it out**.
-  It builds the SPA in the workspace, uploads it to a build in your namespace,
-  and rolls out the `frontend` Deployment with the new image. It takes a few
-  minutes and ends with `successfully rolled out`.
-. If it stops with an error, read the last lines: it says which step failed.
+. Run the task **Package the d3-spa-pkce/frontend starter**, then the task
+  **Build d3-spa-pkce/frontend in the developer namespace and roll it out**.
+  Together they build the SPA in the workspace, upload it to a build in your
+  namespace, and roll out the `frontend` Deployment with the new image. They
+  take a few minutes, and the second ends with `successfully rolled out`.
+. If a task stops with an error, read its last lines: they say which step
+  failed.
   Run the test task first if the build reports a TypeScript error.
 
 == See it: PKCE, memory, and refresh

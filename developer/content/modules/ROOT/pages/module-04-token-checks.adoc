@@ -42,8 +42,9 @@ those tokens to the starter's `GET /orders`, which status would it return: 200,
 
 == Do: set up a terminal for the live checks
 
-In your workspace, open the menu (☰) and choose **Terminal → New Terminal**.
-When it asks for a container, choose **oc**. Paste this block. It defines the
+In your workspace, open the menu (☰) and choose **Terminal → New Terminal
+(Select a Container)**, then choose **oc**. Plain **New Terminal** opens the
+default container, which has no `oc`. Paste this block. It defines the
 helpers from Module 1, one that edits a token the way an attacker could, two
 addresses, and a way to get the Orders service account's token without showing
 its secret.

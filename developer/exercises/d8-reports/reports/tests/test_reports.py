@@ -15,6 +15,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
 from mock_jwks import MockIssuer  # noqa: E402
+import reports_request  # noqa: E402  (the rules the ops desk applies to the filed request)
 
 REQUEST = yaml.safe_load((HERE / "client-request.yaml").read_text())
 URL = "@REPORTS_URL@"
@@ -63,6 +64,10 @@ class ClientRequestTest(unittest.TestCase):
         self.assertEqual(REQUEST["realmRoleScopeMappings"], ["user"])
         self.assertIn("orders-api-aud", REQUEST["defaultClientScopes"])
         self.assertFalse({"inventory-api-aud", "notifications-api-aud"} & set(REQUEST["defaultClientScopes"]))
+
+    def test_the_ops_desk_accepts_this_request(self):
+        reasons = reports_request.review((HERE / "client-request.yaml").read_text(), URL)
+        self.assertEqual(reasons, [], "the ops desk would send the request back with these reasons")
 
     def test_the_managers_token_carries_orders_api_and_user_only(self):
         claims = predicted_token_claims(REQUEST, MANAGER_ROLES)

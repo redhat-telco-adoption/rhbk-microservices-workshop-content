@@ -52,10 +52,13 @@ image. It works only in your developer namespace, `<user>-rhbk-dev`, taken from
 any other. Images stay in that namespace's internal registry; nothing is pushed
 to Quay, and the pinned images the operations track uses are unchanged.
 
-For D8, `bin/exercise.sh request d8-reports/reports` prints your client request
-with your `reports` address, `secret` stores the secret operations returns
-(read from the terminal, never an argument), and `rollout` applies the
-configuration and restarts `reports`.
+For D8, `bin/exercise.sh request d8-reports/reports` files your client request,
+with your `reports` address, as ConfigMap `reports-client-request` for the
+reservation's ops desk, and prints its answer (`--print` only prints the
+request). On approval, the ops desk writes the client secret into Secret
+`reports-client`; `status` waits for it, reading only the Secret's annotations.
+`rollout` then applies the configuration and restarts `reports`, and refuses to
+run before the secret is issued.
 
 ## Checks
 

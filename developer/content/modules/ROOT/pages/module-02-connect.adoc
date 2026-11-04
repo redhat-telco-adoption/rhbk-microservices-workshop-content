@@ -98,15 +98,16 @@ your realm with 401, because their `iss` and signing keys do not match.
   pod's **Created** time under **Workloads → Pods** is just now.
 . Open `pass:a[{spa_url}/config.json]` in a new tab. It shows your issuer and
   `spa`, and no secret.
+. The three apps share one Keycloak sign-in in your browser, so the SPA may
+  still be signed in as `manager` from Module 1. Sign out of each app before
+  you switch users, starting with the SPA now. If **Sign out** shows
+  Keycloak's "Do you want to log out?" page, click **Logout**. After you sign
+  out of the proxy, close any tab left on Keycloak's sign-in page.
 . Sign in as `reader` through each app, then sign out: the
   link:{spa_url}[SPA,window=_blank] (a popup),
   link:{bff_url}[BFF,window=_blank] (the page goes to Keycloak and back), and
   link:{proxy_url}[proxy,window=_blank] (Keycloak appears immediately; the
   whole app is behind the sign-in). All three patterns sign in.
-. The three apps share one Keycloak sign-in in your browser. Sign out of each
-  app before you switch users. If **Sign out** shows Keycloak's "Do you want
-  to log out?" page, click **Logout**. After you sign out of the proxy, close
-  any tab left on Keycloak's sign-in page.
 
 == Explain
 
