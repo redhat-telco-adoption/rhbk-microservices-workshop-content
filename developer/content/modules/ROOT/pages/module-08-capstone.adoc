@@ -52,9 +52,11 @@ The exercise is in `d8-reports/reports/` and has two files in `starter/`:
   parts: turn off full scope, and map only the `user` realm role in
   `realmRoleScopeMappings`.
 . In `reports-config.env`, at the `ANTI-PATTERN` comment, make the application
-  sign in as `reports`, not as the BFF's client: set the client ID of its
-  `keycloak` registration. Keep the registration ID `keycloak`, because it is
-  part of the sign-in redirect path.
+  sign in as `reports`, not as the BFF's client. Add the client ID of its
+  `keycloak` registration on a line of its own:
+  `SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_CLIENTID=reports`. Keep
+  the registration ID `keycloak`, because it is part of the sign-in redirect
+  path.
 . Run the test task again until every test passes.
 +
 .Reference solution
