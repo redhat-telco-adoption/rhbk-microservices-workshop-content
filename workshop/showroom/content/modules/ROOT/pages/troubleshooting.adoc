@@ -63,6 +63,21 @@ the facilitator.
 * **A command prints `401` or `{"active": false}` unexpectedly.** The token
   expired; copy a fresh one.
 
+== After the facilitator catches you up
+
+If you fall behind, the facilitator can bring your realm and apps to the end of
+a module. They tell you which module first. Afterwards:
+
+* Your realm matches the guide at the end of that module. Anything you
+  configured beyond the guide is gone.
+* Your apps restart, so they can show 503 for a minute or two.
+* You are signed out. Sign in to each app again.
+* `reader` and `manager` have the passwords the guide gives.
+* Client secrets have changed, and your namespace's secrets already hold the
+  new values. A secret you copied earlier no longer works.
+
+Continue at the start of the next module.
+
 == Ground rules
 
 Work only in your realm `{realm_name}` and namespace `{attendee_namespace}`.

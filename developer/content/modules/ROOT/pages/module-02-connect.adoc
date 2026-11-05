@@ -54,9 +54,11 @@ into your configuration exactly is your job.
 . **Predict:** the issuer is one character off. Will the BFF start?
 . Wait a minute, then open **Observe → Logs**, search for
   `did not match the requested issuer`, and click **Run Query** (click it again
-  if the results do not change). The newest line shows only
-  `Application run failed`; the next is long, with the part that matters at its
-  end:
+  if the results do not change). The newest match is one long `Application run failed`
+  record: the BFF logs each record as one JSON line, so the cause is inside its
+  `stack_trace` field, not on a line of its own. If the row shows only the
+  message, click **Details** to read `stack_trace`; if it shows the whole JSON
+  line, read it there. The part that matters is:
 +
 [subs="attributes+"]
 ----
@@ -100,7 +102,9 @@ your realm with 401, because their `iss` and signing keys do not match.
   `spa`, and no secret.
 . The three apps share one Keycloak sign-in in your browser, so the SPA may
   still be signed in as `manager` from Module 1. Sign out of each app before
-  you switch users, starting with the SPA now. If **Sign out** shows
+  you switch users, starting with the SPA now. If the SPA shows **Sign in**,
+  click it (it may sign you straight back in as `manager`), then **Sign out**.
+  If **Sign out** shows
   Keycloak's "Do you want to log out?" page, click **Logout**. After you sign
   out of the proxy, close any tab left on Keycloak's sign-in page.
 . Sign in as `reader` through each app, then sign out: the

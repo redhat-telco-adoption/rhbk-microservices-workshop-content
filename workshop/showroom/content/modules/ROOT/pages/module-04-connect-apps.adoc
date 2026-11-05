@@ -92,9 +92,9 @@ image::m04-restart-rollout.png[Restart rollout action on the bff Deployment,link
 . **Predict:** the issuer is only one character off. Will the BFF start?
 . Wait a minute, then open **Observe → Logs**, search for
   `did not match the requested issuer`, and click **Run Query** (click it again
-  if the results do not change). The BFF refused to start. Two lines match: the
-  newest shows only `Application run failed`, and the next is long, with the
-  part that matters at its end:
+  if the results do not change). The BFF refused to start. The newest
+  match is one long `Application run failed` record. The part that matters is
+  near the end of its `stack_trace` field, in the row or under **Details**:
 +
 [subs="attributes+"]
 ----

@@ -111,12 +111,14 @@ What differs is the client it signs in as.
 **View orders** returns 200 and **Create a sample order** returns 403. The
 manager still has the `manager` role, but this client never receives it, so
 Orders sees only `user`. In **Observe → Logs**, search for `missing_role` and
-click **Run Query** (again if the results do not change). Click **Details** on
-the newest `request completed` line, which is Orders`' line. The
-`request_complete` line above it comes from the `reports` app. Orders`' line
-shows `client_id` `reports` and `reason` `missing_role`. The `orders-api` pod's **Logs** tab shows
-the same line with `roles` `["user"]`, while the `reports` pod's line lists no
-roles: the app does not read them, Orders does.
+click **Run Query** (again if the results do not change). The newest
+`request completed` line is Orders`'; the `request_complete` line above it
+comes from the `reports` app. Read Orders`' fields in the row, or click
+**Details** if the row shows only that message: `client_id` `reports`,
+`reason` `missing_role`, and `roles` `["user"]`. **Details** leaves out
+`roles`; if the row does not show them, the `orders-api` pod's **Logs** tab
+does. The `reports` pod's line lists no roles: the app does not read them,
+Orders does.
 
 image::m08-reports-denied.png["The reports app, signed in as manager, showing HTTP 403 for Create a sample order",link=self,window=_blank]
 ====

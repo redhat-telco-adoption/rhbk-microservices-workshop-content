@@ -38,7 +38,7 @@ only), and the logs, decide whether this is a bug or policy, and what would
 change it.
 
 A second colleague, signed in to a new app as `manager`, gets 401 on every
-request, and the Orders line says `reason` `bad_audience`. Is that policy too,
+request, and the Orders line says `reason` `invalid_token`. Is that policy too,
 and whom do you ask?
 
 .Reference answer
@@ -52,9 +52,10 @@ change. Check the client side too: a user can have a role and still not get it
 in the token if the client's scope does not allow it.
 
 The second case is not policy. Orders could not accept the token, so it never
-checked roles. `bad_audience` means the new app's tokens do not name
-`orders-api`: its client lacks the `orders-api-aud` scope. Decode a token to
-confirm, then ask operations for that exact change (Module 1, At your desk).
+checked roles. Decode one of the new app's tokens and check its `iss`, `aud`,
+and `exp`. The usual cause is an `aud` that does not name `orders-api`: the
+app's client lacks the `orders-api-aud` scope. Ask operations for that exact
+change (Module 1, At your desk).
 ====
 
 == Scenario 2: a token appears in a support ticket

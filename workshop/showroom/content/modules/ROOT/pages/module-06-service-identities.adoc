@@ -81,9 +81,10 @@ It still returns 502. The next steps find out how far the request got.
 . Open that trace. It now contains an `inventory-api` span: the exchange
   worked. There is no `notifications-api` span.
 . Open **Observe → Logs**, search for `/inventory/reserve`, and click **Run
-  Query** (again if the results do not change). The newest Inventory line shows
-  only `request_complete`. Click **Details** to see `username` `manager`,
-  `client_id` `orders-api`, and `decision` `allow`: the user's identity arrived,
+  Query** (again if the results do not change). In the newest Inventory line,
+  read the fields in the row, or click **Details** if it shows only
+  `request_complete`: `username` `manager`,
+  `client_id` `orders-api`, and `decision` `allow`. The user's identity arrived,
   and Inventory can see that Orders brought it.
 +
 image::m06-inventory-log.png["Inventory log line for the manager, called by orders-api",link=self,window=_blank]
@@ -187,13 +188,14 @@ image::m06-trace.png["Trace of a manager order across Orders, Inventory, and Not
 
 . Copy the **Trace ID** from the top right of the trace page.
 . In **Observe → Logs**, search for it and click **Run Query** (again if the
-  results do not change). You get one line per API. The Orders and Inventory lines show only
-  their message (`request completed`, `request_complete`); click **Details** to
-  see their fields:
+  results do not change). You get one line per API. A row shows either only
+  its message (`request completed`, `request_complete`) or the app's whole JSON
+  line. Read the fields in the row, or click **Details** on a message-only row:
 +
 --
-* **Orders:** `username` `manager`, `client_id` `spa`. **Details** leaves out
-  `roles`; the `orders-api` pod's **Logs** tab shows roles `manager` and `user`.
+* **Orders:** `username` `manager`, `client_id` `spa`, and roles `manager` and
+  `user`. **Details** leaves out `roles`; if the row does not show them, the
+  `orders-api` pod's **Logs** tab does.
 * **Inventory:** `username` still `manager`, but `client_id` `orders-api`.
 * **Notifications:** `username` `service-account-orders-api`, role
   `notifier`. No user is involved.

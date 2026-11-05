@@ -99,7 +99,8 @@ against the six requirements, like a person on duty would, and answers within
 a minute.
 
 . In your workspace's **oc** terminal, go to the exercises and file your
-  request, with your `reports` address filled in:
+  request. Leave `@REPORTS_URL@` in `client-request.yaml`: the command fills
+  in your `reports` address, and the tests expect the placeholder.
 +
 [source,bash,subs="attributes+"]
 ----
@@ -131,10 +132,12 @@ sends it anywhere.
 bin/exercise.sh status d8-reports/reports
 ----
 +
-It reads only the Secret's annotations, never the secret, and ends with
-`wrote the client secret into reports-client`.
-. Run the task **Build d8-reports/reports in the developer namespace and roll
-  it out**. It writes your `reports-config.env` to the `reports-config`
+It reads only the Secret's annotations, never the secret. It reports that the
+ops desk `wrote the client secret into reports-client`, then ends with the hint
+`Next: bin/exercise.sh rollout d8-reports/reports`.
+. Run that rollout: either the command from the hint, or the task **Build
+  d8-reports/reports in the developer namespace and roll it out**, which runs
+  the same command. It writes your `reports-config.env` to the `reports-config`
   ConfigMap, with your issuer filled in, and restarts `reports`. It ends with
   `successfully rolled out`.
 

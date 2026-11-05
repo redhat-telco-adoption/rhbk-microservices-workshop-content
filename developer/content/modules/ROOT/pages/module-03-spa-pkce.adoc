@@ -161,11 +161,11 @@ calls at the same moment cause one token request, not two.
   data is stored** in the app: **Access token in JavaScript memory: Yes**.
 . Reload the page. You are signed out: a token kept only in memory is gone with
   the page. Sign in again as `reader`.
-. Leave the tab open for five minutes, the access token's lifetime, then click
-  **View orders**. In **Network**, a new `token` request appears before the
-  `orders` request, with `grant_type` `refresh_token`, and **View orders**
-  returns 200. The `orders` request carries the new token in its
-  `Authorization` header. Sign out.
+. Leave the tab open for five minutes, the access token's lifetime, and watch
+  **Network**. When the token expires, the SPA refreshes it without a click: a
+  new `token` request appears, with `grant_type` `refresh_token`. Then click
+  **View orders**. It returns 200, and the `orders` request carries the new
+  token in its `Authorization` header. Sign out.
 
 == Check
 
