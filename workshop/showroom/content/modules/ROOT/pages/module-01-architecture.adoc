@@ -8,14 +8,14 @@
 == Why it matters
 
 Signing in tells an application who you are. It does not decide what you may
-do. That decision belongs to every application programming interface (API) that receives a request, and each one
-must check the token itself. Most real incidents in this area come from a
-component that trusted something it should have checked: a button hidden in
-the user interface (UI), a token meant for a different API, or a token kept where a script can
-read it.
+do. That decision belongs to every application programming interface (API)
+that receives a request, and each one must check the token itself. Most real
+incidents in this area come from a component that trusted something it should
+have checked: a button hidden in the user interface (UI), a token meant for a
+different API, or a token kept where a script can read it.
 
-Where a token lives decides who can steal it. Before you build anything, you
-will map where each pattern keeps its tokens and predict the consequences. You
+Where a token lives decides who can steal it. Before you build anything,
+map where each pattern keeps its tokens and predict the consequences. You
 check most predictions with real evidence in Module 5, and reason through the
 last one in Module 7.
 
@@ -25,12 +25,13 @@ last one in Module 7.
   signed statement: who the user is, which application asked for it (`azp`),
   which APIs may accept it (`aud`), what roles it carries, and when it
   expires. Anyone holding it can use it until it expires.
-* **Orders** is the protected API. It checks every token and decides.
+* **Orders** is the protected API. It checks every token and decides whether
+  to allow the request.
 * **Inventory** and **Notifications** are called by Orders, not by the
   browser.
 * The **frontend** is one build served three ways, once per sign-in pattern:
-  by its own `frontend` Deployment for the single-page application (SPA), and from inside the `bff` and
-  `proxy` for the other two.
+  by its own `frontend` Deployment for the single-page application (SPA),
+  and from inside the `bff` and `proxy` Deployments for the other two.
 
 The diagram shows everything in your project and the main calls between them.
 Every API also downloads Keycloak's public keys to check signatures, and the
@@ -54,10 +55,10 @@ mixing them up causes real bugs.
 |===
 
 All three are JavaScript Object Notation (JSON) Web Tokens (JWTs): three
-base64url parts separated by dots, starting with `eyJ`, and signed by Keycloak.
-Signed is not encrypted: anyone can decode and read them, but any change breaks the signature, so an
-API that checks the signature rejects an altered token. Never put secrets in
-claims.
+base64url parts separated by dots, starting with `eyJ`, and signed by
+Keycloak. Signed is not encrypted: anyone can decode and read them, but any
+change breaks the signature, so an API that checks the signature rejects an
+altered token. Never put secrets in claims.
 
 == Do: study the three sign-in patterns
 
@@ -69,10 +70,10 @@ tokens are kept afterwards.
 image::spa-auth-flow.svg[SPA authorization code flow with PKCE,link=self,window=_blank]
 
 .Backend for frontend (BFF): tokens stay on the server
-image::bff-auth-flow.svg[BFF login and session flow,link=self,window=_blank]
+image::bff-auth-flow.svg[BFF sign-in and session flow,link=self,window=_blank]
 
 .Reverse proxy: tokens stay in the proxy's Redis session
-image::proxy-auth-flow.svg[Reverse proxy login and session flow,link=self,window=_blank]
+image::proxy-auth-flow.svg[Reverse proxy sign-in and session flow,link=self,window=_blank]
 
 === Service-to-service calls
 
@@ -97,7 +98,7 @@ being wrong.
 |If Keycloak is down for ten minutes, can a signed-in user keep working? | | |
 |===
 
-CSRF is when another website makes your browser
+In a CSRF attack, another website makes your browser
 send a request to an app, hoping the browser attaches that app's cookies by
 itself. Use that to answer row 4.
 
@@ -154,5 +155,5 @@ alternatives.
 == At your desk
 
 Draw this map for your own application before choosing tools: which component
-receives the login callback, where tokens are stored, which components call
+receives the sign-in callback, where tokens are stored, which components call
 which APIs, and which of those are reachable from the internet.

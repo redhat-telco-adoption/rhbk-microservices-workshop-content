@@ -10,14 +10,14 @@
 A secure design still has to be run: someone gets a 403 they did not expect, a
 token ends up in a log, Keycloak has an outage. The evidence you have used so
 far (traces, log lines with a reason, and tokens you can inspect) is what lets
-you answer those calls quickly and without guessing. Each scenario below has a
-reference answer; write yours first.
+you handle those situations quickly and without guessing. Each scenario below
+has a reference answer; write yours first.
 
 == Do: follow a denial end to end
 
 . Sign out of every app first (Module 5).
-. Sign in to the link:{spa_url}[SPA,window=_blank] as `reader`, click **View
-  orders**, then **Create a sample order**.
+. Sign in to the link:{spa_url}[SPA,window=_blank] as `reader`.
+. Click **View orders**, then **Create a sample order**.
 . Open
   link:{openshift_console_url}/observe/traces?namespace=tracing&name=workshop&tenant={attendee_id}&start=15m&limit=100&q=%7B+resource.service.name+%3D+%22orders-api%22+%26%26+name+%3D+%22POST+%2Forders%22+%7D[your Orders traces,window=_blank]
   and find the denied `POST /orders` trace. Through the BFF the trace is named
@@ -72,9 +72,9 @@ check the token's `iss`, `aud`, and `exp`. The usual cause is a client without
 Someone pasted a request, including its `+Authorization: Bearer ...+` header,
 into a ticket.
 
-. **Try it.** In the SPA, click **Sign out**, then sign in again as `reader`
+. **Try it:** in the SPA, click **Sign out**, then sign in again as `reader`
   so the token is new.
-. Within the next few minutes, in Keycloak open **Users → reader → Sessions**
+. Within the next few minutes, in Keycloak, open **Users → reader → Sessions**
   and sign out each session from its row menu.
 . **Predict:** the user's sessions are gone. What will **View orders** in the
   SPA return now? Write it down, then click it.

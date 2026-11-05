@@ -5,9 +5,8 @@
 *Before you start:* Modules 1–7, because this module gives requirements rather than steps +
 *By the end, you can:* choose a sign-in pattern and name the risk you accept; register a client from written requirements; prove its limits in the token and the application
 
-This module gives you requirements, not step-by-step instructions. You have
-used everything it needs. Part 1 is a design discussion. In Part 2, you build
-a client and the facilitator checks it.
+You have used everything this module needs. Part 1 is a design discussion. In
+Part 2, you build a client and the facilitator checks it.
 
 == Part 1: choose a sign-in pattern
 
@@ -43,8 +42,9 @@ does.
 ====
 
 . **A public product catalog with a favorites list.** A static site on a
-  content delivery network (CDN), no server of its own, calling your existing favorites API. The scripts
-  on the page are your own, built and reviewed in one repository.
+  content delivery network (CDN), no server of its own, calling your existing
+  favorites API. The scripts on the page are your own, built and reviewed in
+  one repository.
 +
 .Reference answer
 [%collapsible]
@@ -97,13 +97,14 @@ work out which setting causes the difference.
 What differs is the client it signs in as.
 
 . Copy the client secret from **Clients → reports → Credentials** into the
-  `reports-client` Secret in your namespace (key `BFF_CLIENT_SECRET`), and
-  restart the `reports` rollout, as you did for the BFF in Module 4.
+  `reports-client` Secret in your namespace (key `BFF_CLIENT_SECRET`).
+. Restart the `reports` rollout, as you did for the BFF in Module 4.
 . **Predict:** signed in to `reports` as `manager`, what will **View orders**
   and **Create a sample order** return? Write it down.
+. If you are still signed in to another app as someone else, sign out there
+  first (Module 5).
 . Open link:{reports_url}[reports,window=_blank], sign in as `manager`, and
-  try both. If you are still signed in to another app as someone else, sign
-  out there first (Module 5).
+  try both.
 +
 .What happened
 [%collapsible]
@@ -162,15 +163,15 @@ all six requirements.
 [cols="1,2,3",options="header"]
 |===
 |Setting |Value |From requirement
-|Client authentication |On (confidential) |1: runs on a server and can keep a secret
-|Standard flow |On |1: users sign in through Keycloak
+|Client authentication |**On** (confidential) |1: runs on a server and can keep a secret
+|Standard flow |**On** |1: users sign in through Keycloak
 |PKCE Method |`S256` |6
-|Direct access grants |Off |5: never handles passwords
-|Service accounts roles |Off |5: never acts on its own behalf
+|Direct access grants |**Off** |5: never handles passwords
+|Service accounts roles |**Off** |5: never acts on its own behalf
 |Valid redirect URIs |`pass:a[{reports_url}/login/oauth2/code/keycloak]` |4
 |Valid post logout redirect URIs |`pass:a[{reports_url}/]` |4
 |Client scopes |`orders-api-aud` as Default; no `inventory-api-aud` or `notifications-api-aud` |2
-|`reports-dedicated` → Scope |Full scope allowed Off; realm role `user` only |3
+|`reports-dedicated` → **Scope** |**Full scope allowed** **Off**; realm role `user` only |3
 |===
 
 The manager's token has `aud` `orders-api` and `realm_access.roles` `["user"]`.

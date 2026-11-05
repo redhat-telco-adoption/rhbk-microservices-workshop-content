@@ -28,5 +28,5 @@ asciidoc:
     # Where Dev Spaces clones the exercises from. Set content_ref to the named
     # ref this guide is published on (workshop/developer/showroom/README.md).
     content_repo_url: https://github.com/redhat-telco-adoption/rhbk-microservices-workshop-content
-    content_ref: developer-guide-20261105b
+    content_ref: developer-guide-20261106
     exercises_path: developer/exercises

@@ -59,8 +59,8 @@ The reader's write was refused. Is that the button's doing, or the API's?
   and copy its whole value (right-click it or select the text). The value
   starts with `Bearer`.
 . Open the **Console** tab. If the browser asks you to type `allow pasting`
-  first, do so. Type `var auth = '`, paste your copied value, type `'`, and
-  press Enter.
+  first, do so.
+. Type `var auth = '`, paste your copied value, type `'`, and press Enter.
 . Paste this:
 +
 [source,javascript,subs="attributes+"]
@@ -105,7 +105,7 @@ SPA's main risk.
 Open **Observe → Logs** in the OpenShift Console, search for `missing_role`,
 and click **Run Query** (again if the results do not change). Then search for
 `invalid_token`. You find the Orders lines for your attempts. A row shows
-either only its message, `request completed`, or the app's whole JSON line.
+either only its message (`request completed`) or the app's whole JSON line.
 Read the fields in the row, or click **Details** on a message-only row:
 
 * `status` 403, `reason` `missing_role`, `username` `reader`: Orders knew who
@@ -122,8 +122,8 @@ credential.
 
 === The manager
 
-. Click **Sign out**, sign in as `manager`, and click **View orders**, then
-  **Create a sample order**.
+. Click **Sign out**, then sign in as `manager`.
+. Click **View orders**, then **Create a sample order**.
 . Reading works. Creating returns 502 with `downstream_unavailable`. This
   is expected. The manager passed Orders`' role check (not a 403), but Orders
   cannot yet get the tokens it needs to call Inventory and Notifications. You
@@ -180,8 +180,9 @@ The result is `403`, and Orders never sees the request.
   carries an `X-XSRF-TOKEN` header copied from the readable `XSRF-TOKEN`
   cookie. A page on another site cannot read that cookie, so it cannot forge
   the header.
-. Sign out, sign in as `reader`, and confirm **View orders** succeeds and
-  **Create a sample order** returns 403. Sign out.
+. Sign out, then sign in as `reader`.
+. Confirm **View orders** returns 200 and **Create a sample order** returns 403.
+. Sign out.
 
 == Do: the proxy
 
@@ -203,7 +204,9 @@ The result is `403`, and Orders never sees the request.
   the proxy's own address. Both checks are part of this lab's NGINX gateway
   configuration, not something oauth2-proxy provides. If you put a proxy in
   front of your own app, you must add the same checks.
-. Sign out, sign in as `reader`, and confirm 200 and 403. Sign out.
+. Sign out, then sign in as `reader`.
+. Confirm **View orders** returns 200 and **Create a sample order** returns 403.
+. Sign out.
 
 == Check
 
@@ -264,7 +267,8 @@ Every API must make these checks on every request. Check the signature first
 and roles only after the other checks. The other checks can run in any order:
 
 . **Signature**, with keys from the realm's `jwks_uri`, allowing only the
-  expected algorithm (`RS256` here, the signature algorithm Keycloak uses by default).
+  expected algorithm (`RS256` here, the signature algorithm Keycloak uses by
+  default).
 . **Issuer** (`iss`) equals your realm's issuer exactly.
 . **Audience** (`aud`) includes this API.
 . **Expiry** (`exp`) is in the future, with a small clock tolerance.

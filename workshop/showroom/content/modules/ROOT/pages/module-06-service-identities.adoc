@@ -58,10 +58,11 @@ click **Create a sample order** after each step.
   added only when Orders asks for it by name, which it does during the
   exchange. Ordinary tokens never carry the Inventory audience.
 . Open **Clients → orders-api → Client scopes → orders-api-dedicated →
-  Scope**, turn **Full scope allowed** **Off**, and assign the realm roles
-  `user` and `manager`. Tokens issued to `orders-api`, including exchanged
-  ones, can now carry only those two roles, not every realm role. Inventory
-  itself checks only `user`.
+  Scope**, and turn **Full scope allowed** **Off**.
+. On the same tab, click **Assign role → Realm roles**, select `user` and
+  `manager`, and click **Assign**. Tokens issued to `orders-api`, including
+  exchanged ones, can now carry only those two roles, not every realm role.
+  Inventory itself checks only `user`.
 . **Predict:** will the order succeed now? If not, how far will it get?
   Write it down, then click **Create a sample order** in the SPA.
 +
@@ -73,10 +74,11 @@ It still returns 502. The next steps find out how far the request got.
 . Open
   link:{openshift_console_url}/observe/traces?namespace=tracing&name=workshop&tenant={attendee_id}&start=15m&limit=100&q=%7B+resource.service.name+%3D+%22orders-api%22+%26%26+name+%3D+%22POST+%2Forders%22+%7D[your Orders traces,window=_blank]
   (**Observe → Traces**, **Tempo instance** `tracing / workshop`, **Tenant**
-  `{attendee_id}`, **Service Name** `orders-api`, **Max traces** 100, and the link's query for `POST /orders` spans; only you can
-  read this tenant, though the list names others). If you open Traces from the
-  menu instead of the link, set those values yourself: the **Tenant** starts on
-  `workshop`, which you cannot read.
+  `{attendee_id}`, **Service Name** `orders-api`, **Max traces** 100, and
+  the link's query for `POST /orders` spans; only you can read this tenant,
+  though the list names others). If you open Traces from the menu instead of
+  the link, set those values yourself: the **Tenant** starts on `workshop`,
+  which you cannot read.
 . Find the newest `POST /orders` trace. A trace can take a minute to appear:
   check that it started after your click, and reload if it did not.
 . Open that trace. It now contains an `inventory-api` span: the exchange
@@ -95,8 +97,8 @@ image::m06-inventory-log.png["Inventory log line for the manager, called by orde
 == Step 2: a service account for Notifications
 
 . Open **Clients → orders-api**. Under **Capability config → Authentication
-  flow**, select the **Service accounts roles** checkbox and click **Save**. Orders can now request tokens
-  for itself (the *client credentials* flow).
+  flow**, select the **Service accounts roles** checkbox and click **Save**.
+  Orders can now request tokens for itself (the *client credentials* flow).
 . Open **Clients → notifications-api → Roles → Create role**, enter
   `notifier`, and save. This is a *client role*: it belongs to Notifications
   and means nothing to any other API.

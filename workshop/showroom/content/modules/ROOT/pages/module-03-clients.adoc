@@ -11,12 +11,13 @@ A *client* is Keycloak's record of an application: how it may sign users in,
 where Keycloak may send the browser back, and what goes into its tokens.
 Three settings carry most of the security:
 
-* **Redirect URIs (uniform resource identifiers).** After sign-in, Keycloak sends a one-time code to the
-  redirect URI. If an attacker can choose that address, they receive the code
-  and can turn it into tokens. Exact URIs close that door.
-* **Audience (`aud`).** A token says which APIs may accept it. Without an audience, a
-  token issued for one API can be replayed against every other API that trusts
-  the realm.
+* **Redirect URIs (uniform resource identifiers).** After sign-in, Keycloak
+  sends a one-time code to the redirect URI. If an attacker can choose that
+  address, they receive the code and can turn it into tokens. Exact URIs close
+  that door.
+* **Audience (`aud`).** A token says which APIs may accept it. Without an
+  audience, a token issued for one API can be replayed against every other API
+  that trusts the realm.
 * **Roles in the token.** A token should carry only the roles the receiving
   API needs. Extra roles turn a stolen token into a bigger problem.
 
@@ -79,14 +80,14 @@ module. Click **Sign out**.
 
 === Break it: a redirect URI that does not match
 
-. In Keycloak, open **Clients → spa → Settings** and change the valid redirect
-  URI to `pass:a[{spa_url}/auth/callback]`. Click **Save**.
+. In Keycloak, open **Clients → spa → Settings** and change
+  **Valid redirect URIs** to `pass:a[{spa_url}/auth/callback]`. Click **Save**.
 . In the SPA, click **Sign in**. The popup shows Keycloak's error page:
-  **Invalid parameter: redirect_uri**. Keycloak refused to send a code to an
+  `Invalid parameter: redirect_uri`. Keycloak refused to send a code to an
   address it does not know.
 . Close the popup and reload the SPA page.
-. Change the redirect URI back to `pass:a[{spa_url}/auth/popup-callback]` and
-  save.
+. Change **Valid redirect URIs** back to
+  `pass:a[{spa_url}/auth/popup-callback]` and click **Save**.
 . Sign in again to confirm it works, then sign out.
 
 .Why not just allow `pass:a[{spa_url}/*]`?
@@ -110,23 +111,23 @@ give it its own identity in Module 6.
 |===
 |Client ID |Capability config |Login settings |Why
 |`bff`
-|Client authentication **On**; Standard flow **On**; Direct access grants **Off**; PKCE Method `S256`
-|Valid redirect URIs `pass:a[{bff_url}/login/oauth2/code/keycloak]`; Valid post logout redirect URIs `pass:a[{bff_url}/]`
+|**Client authentication** **On**; **Standard flow** **On**; **Direct access grants** **Off**; **PKCE Method** `S256`
+|**Valid redirect URIs** `pass:a[{bff_url}/login/oauth2/code/keycloak]`; **Valid post logout redirect URIs** `pass:a[{bff_url}/]`
 |A server can keep a secret, so Keycloak also checks the client secret when the BFF redeems a code. PKCE still protects the code in transit.
 |`proxy`
-|Client authentication **On**; Standard flow **On**; Direct access grants **Off**; PKCE Method `S256`
-|Valid redirect URIs `pass:a[{proxy_url}/oauth2/callback]`; Valid post logout redirect URIs `pass:a[{proxy_url}/]`
+|**Client authentication** **On**; **Standard flow** **On**; **Direct access grants** **Off**; **PKCE Method** `S256`
+|**Valid redirect URIs** `pass:a[{proxy_url}/oauth2/callback]`; **Valid post logout redirect URIs** `pass:a[{proxy_url}/]`
 |Same reasoning as the BFF; the proxy's sign-in component is a server.
 |`orders-api`
-|Client authentication **On**; all flows **Off**
+|**Client authentication** **On**; all flows **Off**
 |none
 |An API does not sign users in. It gets a secret now; Module 6 turns on the two flows it needs to call other services.
 |`inventory-api`
-|Client authentication **On**; all flows **Off**
+|**Client authentication** **On**; all flows **Off**
 |none
 |Exists so tokens can name Inventory as their audience.
 |`notifications-api`
-|Client authentication **On**; all flows **Off**
+|**Client authentication** **On**; all flows **Off**
 |none
 |Exists so tokens can name Notifications as their audience, and to hold its role in Module 6.
 |===
@@ -137,8 +138,8 @@ client from its redirect URI; that is harmless for a server-side app.
 
 == Do: create roles
 
-. Open **Realm roles → Create role**, enter `user`, and save. Do the same for
-  `manager`.
+. Open **Realm roles → Create role**, enter `user`, and save.
+. Create the role `manager` the same way.
 . Open the `manager` role, go to its **Associated roles** tab, click **Assign
   role → Realm roles**, select `user`, and click **Assign**. `manager` is now
   a *composite* role: anyone with `manager` also has `user`.
@@ -175,10 +176,11 @@ console, listed under `resource_access.account`. Keycloak adds a client to
 ====
 +
 image::m03-evaluate-full-scope.png["Manager's spa token with Full scope allowed on, including Keycloak's default roles",link=self,window=_blank]
-. For each of `spa`, `bff`, and `proxy`: open **Clients →** _client_ **→
-  Client scopes →** _client_**-dedicated → Scope**, turn **Full scope
-  allowed** **Off**, then click **Assign role → Realm roles**, select `user`
-  and `manager`, and click **Assign**.
+. For each of `spa`, `bff`, and `proxy`:
+.. Open **Clients →** _client_ **→ Client scopes →** _client_**-dedicated →
+   Scope**, and turn **Full scope allowed** **Off**.
+.. On the same tab, click **Assign role → Realm roles**, select `user` and
+   `manager`, and click **Assign**.
 . Generate the manager's `spa` token again (switch tabs to refresh it). Only
   `manager` and `user` remain. The `resource_access.account` roles are gone
   too, and so is `aud`: the token no longer carries any of the account
@@ -205,7 +207,7 @@ has the right role. The next steps give the SPA's tokens that audience.
 . Click **Sign out**.
 . Open **Client scopes → Create client scope**. Name it `orders-api-aud`, set
   **Type** to **None**, turn **Include in token scope** **On**, and save.
-. On its **Mappers** tab choose **Configure a new mapper → Audience**. Name it
+. On its **Mappers** tab, choose **Configure a new mapper → Audience**. Name it
   `orders-api-aud`, select `orders-api` as the **Included Client Audience**,
   turn **Add to access token** **On** and **Add to ID token** **Off**, and
   save.
@@ -268,7 +270,7 @@ intercepted in the browser or a log cannot be injected into another session.
 Current OAuth guidance recommends PKCE for every client.
 ====
 
-. A colleague turns Direct access grants on "to make testing easier". What
+. A colleague turns **Direct access grants** on "to make testing easier". What
   changes?
 +
 .Answer
