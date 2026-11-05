@@ -15,7 +15,7 @@ dN-<topic>/<service>/
   tests/         tests added to a scratch copy of the starter when they run
 bin/exercise.sh  test, package, and roll out an exercise
 test-helpers/    the mock-JWKS issuer in Java, Python, and Node, shared by the tests
-devfile.yaml     the Dev Spaces workspace, with a test and a rollout command per exercise
+devfile.yaml     the Dev Spaces workspace, with a test command per exercise and a rollout command for each one that deploys
 ```
 
 | Exercise | Reference | What you fix | Tests |
@@ -27,6 +27,10 @@ devfile.yaml     the Dev Spaces workspace, with a test and a rollout command per
 | `d5-bff/bff` | `apps/bff` | Header stripping around `TokenRelay`, and CSRF | Each route strips credentials; a write without the CSRF token gets 403 |
 | `d6-service-to-service/orders-api` | `apps/orders-api` | Token exchange in `InventoryClient`, client credentials in `NotificationsClient` | Each API receives its own token, never the user's |
 | `d8-reports/reports` | The workshop role's `reports-config` | The client request for operations, and the `reports` runtime configuration | The request meets the capstone requirements; Orders allows reads and refuses writes |
+| `dd-policy-enforcer/orders-api` | The Elective D page's reference configuration | `application.properties`: the approve path's method and scope, and where the `channel` claim comes from | Only `POST` is mapped, it needs `order:approve`, and `channel` comes only from the gateway's header |
+
+The Elective D exercise is configuration only: it deploys nothing, so it has a
+test command and no rollout (`BUILD=none`).
 
 Each defect is marked with an `ANTI-PATTERN:` comment, in the file's comment
 syntax, as spec section 8 requires. The tests use the forgeries from

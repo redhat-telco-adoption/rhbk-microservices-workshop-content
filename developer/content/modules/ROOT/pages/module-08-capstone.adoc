@@ -113,8 +113,9 @@ developer namespace and waits for the ops desk's answer.
 . If the ops desk rejects the request, the output lists each reason with the
   number of the requirement it fails. Fix those settings in
   `client-request.yaml` and run the command again.
-. When the ops desk approves the request, it ends with `approved the request`.
-  Open your realm in the
+. When the ops desk approves the request, the output says `The ops desk
+  approved the request and created the reports client`, followed by a `Next:`
+  hint. Open your realm in the
   link:{keycloak_origin}/admin/master/console/#/{realm_name}[Keycloak administration console,window=_blank]
   and check **Clients → reports**: its settings are the ones you asked for.
 

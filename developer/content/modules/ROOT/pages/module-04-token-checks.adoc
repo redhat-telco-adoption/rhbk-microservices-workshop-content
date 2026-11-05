@@ -110,7 +110,10 @@ never meant for Orders; the API should not have got as far as the roles.
    the validator chain, and import
    `org.springframework.security.oauth2.jwt.JwtIssuerValidator`: the starter
    does not import it.
-. Run the test task again until every test passes.
+. Run the test task again until every test passes. The task's terminal tab
+  shows a check mark when every test passes and a cross when one fails. A
+  passing run ends with Orders' own `request completed` log lines, which the
+  forged-token tests produce, not with a test summary.
 +
 .Reference solution
 [%collapsible]

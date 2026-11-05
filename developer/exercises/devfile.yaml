@@ -228,6 +228,13 @@ commands:
       workingDir: ${PROJECT_SOURCE}
       commandLine: >-
         cd "$(dirname "$(find "${PROJECT_SOURCE}" -maxdepth 6 -path '*/exercises/bin/exercise.sh' -print -quit)")/.." && bin/exercise.sh rollout d8-reports/reports
+  - id: test-dd-policy-enforcer-orders-api
+    exec:
+      label: Test the dd-policy-enforcer/orders-api starter
+      component: python
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: >-
+        cd "$(dirname "$(find "${PROJECT_SOURCE}" -maxdepth 6 -path '*/exercises/bin/exercise.sh' -print -quit)")/.." && bin/exercise.sh test dd-policy-enforcer/orders-api
   - id: show-versions
     exec:
       label: Show toolchain versions

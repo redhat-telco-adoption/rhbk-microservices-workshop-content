@@ -27,6 +27,10 @@ the facilitator.
 
 == Tests and rollouts
 
+* **You can't tell whether a test task passed.** Look at the task's terminal
+  tab: a check mark means every test passed, and a cross means one failed. A
+  passing run of the Orders tests ends with the API's own log lines, not with
+  a test summary.
 * **A test task fails after your change.** Read the first failing test's name
   and message: each names the forgery or the check it expected. Compare your
   change with the reference solution on the module page.

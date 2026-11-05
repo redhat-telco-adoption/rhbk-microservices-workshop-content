@@ -46,8 +46,9 @@ click **Create a sample order** after each step.
 
 == Step 1: token exchange for Inventory
 
-. In Keycloak, open **Clients → orders-api**. Under **Capability config**,
-  turn **Standard Token Exchange** **On** and click **Save**.
+. In Keycloak, open **Clients → orders-api**. Under **Capability config →
+  Authentication flow**, select the **Standard Token Exchange** checkbox and
+  click **Save**.
 . Create a client scope `inventory-api-aud` as in Module 3: **Type** **None**,
   **Include in token scope** **On**, and an **Audience** mapper with
   `inventory-api` as the **Included Client Audience**, **Add to access token**
@@ -93,8 +94,8 @@ image::m06-inventory-log.png["Inventory log line for the manager, called by orde
 
 == Step 2: a service account for Notifications
 
-. Open **Clients → orders-api**. Under **Capability config**, turn **Service
-  accounts roles** **On** and click **Save**. Orders can now request tokens
+. Open **Clients → orders-api**. Under **Capability config → Authentication
+  flow**, select the **Service accounts roles** checkbox and click **Save**. Orders can now request tokens
   for itself (the *client credentials* flow).
 . Open **Clients → notifications-api → Roles → Create role**, enter
   `notifier`, and save. This is a *client role*: it belongs to Notifications

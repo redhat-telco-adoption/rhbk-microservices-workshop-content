@@ -2,8 +2,8 @@
 :navtitle: D. Authorization Services
 
 *Time:* 40 minutes +
-*Before you start:* Module 6, and the terminal setup from xref:electives.adoc#_the_terminal[Electives] +
-*By the end, you can:* read a resource, policy, and permission model in Keycloak; ask Keycloak for a decision on a user's behalf, with and without pushed claims; configure a policy enforcer and a Claim Information Point (CIP) that only trusts facts the user cannot set
+*Before you start:* Module 6, and your Dev Spaces workspace from Module 3 +
+*By the end, you can:* read a resource, policy, and permission model; explain how an API asks Keycloak for a decision on a user's behalf, with and without pushed claims; configure a policy enforcer and a Claim Information Point (CIP) that only trusts facts the user cannot set
 
 == Why it matters
 
@@ -21,17 +21,11 @@ Keycloak for a decision and can *push claims*, facts from the request or from
 other systems, for the policies to use. The component in your API that
 collects those facts is the CIP.
 
-== Check first: has operations set it up?
+Your realm does not have Authorization Services set up, so this elective
+reads the model and the decision requests, and you write and test the policy
+enforcer configuration in your workspace. Nothing in Keycloak changes.
 
-Authorization Services is not part of your realm's standard preparation. In
-the
-link:{keycloak_origin}/admin/master/console/#/{realm_name}[Keycloak administration console,window=_blank],
-open **Clients → orders-api**. If it has an **Authorization** tab, operations
-has set up the model below for your realm: do every section. If it has none,
-read the model, skip the sections marked *(live)*, and do the others; the
-policy enforcer section needs no Keycloak changes.
-
-== See it: the model operations configured
+== See it: the model
 
 The model protects one resource, `order`, with two scopes, `order:read` and
 `order:approve`:
@@ -41,30 +35,23 @@ The model protects one resource, `order`, with two scopes, `order:read` and
 |Kind |Name |What it says
 |Policy (Role) |`is-manager` |The user has the realm role `manager`.
 |Policy (Role) |`is-user` |The user has the realm role `user`.
-|Policy (Regex) |`region-north` |The token's `region` claim is `north`. The `manager` user has that attribute, and a `region` scope puts it in `spa` and `orders-api` tokens.
+|Policy (Regex) |`region-north` |The token's `region` claim is `north`. The `manager` user would have that attribute, and a `region` scope would put it in `spa` and `orders-api` tokens.
 |Policy (Regex) |`from-branch` |The pushed claim `channel` is `branch`. It is a *context attribute*: sent with the request, not read from the token.
 |Permission |`read-order` |`order:read` needs `is-user`.
 |Permission |`approve-order` |`order:approve` needs `is-manager`, `region-north`, and `from-branch`, all of them (*Unanimous*).
 |===
 
-*(live)* On **Clients → orders-api → Authorization**, open **Resources**,
-**Policies**, and **Permissions**, and find each row of the table.
-
 **Predict:** a manager asks to approve an order. Without anything pushed,
 permit or deny?
 
-== Do: ask Keycloak for a decision (live)
+== Read it: how an API asks for a decision
 
 An API asks with the User-Managed Access (UMA) grant, the protocol behind
 Authorization Services, at the token endpoint. `response_mode=decision`
-returns only the verdict.
+returns only the verdict. Read the requests; you do not run them.
 
-. In the link:{spa_url}[SPA,window=_blank], sign out, sign in as `manager` (so
-  the token carries `region`), and click **View orders**. Copy the token and
-  run `paste_token`. It expires after five minutes; if a response is not the
-  one a step describes, copy a fresh token.
-. Ask as Orders, with its own credentials, on behalf of the user
-  (`subject_token`), without pushed claims:
+. Orders asks with its own credentials, on behalf of the user
+  (`subject_token`, the manager's access token), without pushed claims:
 +
 [source,bash]
 ----
@@ -77,10 +64,14 @@ decide() {
 decide
 ----
 +
-Keycloak answers with an `access_denied` error: `from-branch` had nothing to
-match.
-. Push the `channel` claim. Pushed claims are a base64-encoded JSON object
-  whose values are arrays of strings:
+.What Keycloak answers
+[%collapsible]
+====
+An `access_denied` error: `from-branch` had nothing to match, and
+`approve-order` needs every policy.
+====
+. Orders pushes the `channel` claim. Pushed claims are a base64-encoded JSON
+  object whose values are arrays of strings:
 +
 [source,bash]
 ----
@@ -88,11 +79,16 @@ CLAIMS=$(printf '{"channel":["branch"]}' | base64 -w0)
 decide -d claim_token="$CLAIMS" -d claim_token_format=urn:ietf:params:oauth:token-type:jwt
 ----
 +
-Keycloak answers with `{"result":true}`.
+.What Keycloak answers
+[%collapsible]
+====
+`{"result":true}`: the manager is in `north`, and the request says it came
+from a branch.
+====
 
-== Break it: who may push claims (live)
+== Break it: who may push claims
 
-Pushing `channel=branch` from your terminal made you look like a branch
+Pushing `channel=branch` made the request look like it came from a branch
 office. Could the browser do the same?
 
 . Read the request the SPA would send, with the user's token as a bearer
@@ -106,9 +102,9 @@ curl -s -H "Authorization: Bearer $TOKEN" \
   -d claim_token="$CLAIMS" -d claim_token_format=urn:ietf:params:oauth:token-type:jwt \
   "$ISSUER/protocol/openid-connect/token"; echo
 ----
-. **Predict:** will Keycloak accept it? Write it down, then run it.
+. **Predict:** will Keycloak accept it? Write it down, then open the answer.
 +
-.What happened
+.What happens
 [%collapsible]
 ====
 Keycloak refuses: public clients may not push claims. A browser application
@@ -116,21 +112,30 @@ cannot keep a secret, so anything it pushes could be forged. Only an
 authenticated, confidential client, normally the resource server itself, may
 push claims, and it is then responsible for their truth.
 ====
-. Sign out of the SPA, and run `unset TOKEN CLAIMS`.
 
 == Do: configure a policy enforcer
 
-In an application, the Keycloak policy enforcer does what `decide` did by
+In an application, the Keycloak policy enforcer does what `decide` does by
 hand: it maps request paths to resources and scopes, collects claims through
 its CIP, and asks Keycloak for the decision before your code runs. Orders has
-no approve endpoint yet. Write the configuration a Quarkus version of Orders
+no approve endpoint yet. Fix the configuration a Quarkus version of Orders
 would use, with `quarkus-keycloak-authorization`, for this endpoint:
 
 * `POST /orders/<id>/approve` needs scope `order:approve` on resource `order`.
 * `channel` comes from the `X-Network-Zone` header, which the cluster's
   gateway sets on every request and removes when a browser sends it.
 
-Write your version in a scratch file in the workspace, then compare.
+. In your workspace, run the task **Test the dd-policy-enforcer/orders-api
+  starter**. The tests read the starter's configuration and fail: it maps every
+  method, and takes `channel` from the request body.
+. Fix the three places marked `ANTI-PATTERN` in
+  `dd-policy-enforcer/orders-api/starter/application.properties`:
+.. Map only `POST`: rename the `methods.any` entry to `methods.post` and add
+   `quarkus.keycloak.policy-enforcer.paths.approve.methods.post.method=POST`.
+.. Require `order:approve`, not `order:read`.
+.. Take `channel` from the `X-Network-Zone` header, not from the body.
+. Run the test task again. When every test passes, the output ends with `OK`.
+  There is nothing to build or roll out.
 
 .Reference configuration
 [%collapsible]
@@ -153,11 +158,11 @@ any caller claim to be a branch office.
 
 == Check
 
-* Your policy enforcer configuration maps the approve endpoint to `order` and
-  `order:approve`, and takes `channel` only from the gateway's header.
-* If operations set up the model: `decide` was denied without pushed claims
-  and returned `{"result":true}` with them, and the request without a client
-  secret was refused.
+* The task **Test the dd-policy-enforcer/orders-api starter** passes: only
+  `POST` on the approve path is mapped, it needs `order:approve` on `order`,
+  and `channel` comes only from the gateway's header.
+* You can say why the first decision request is denied, why the second is
+  permitted, and why Keycloak refuses claims pushed by the SPA.
 
 == Explain
 

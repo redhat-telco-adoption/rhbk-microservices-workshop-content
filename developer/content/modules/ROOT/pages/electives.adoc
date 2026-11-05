@@ -16,7 +16,7 @@ your namespace or realm.
 |Elective |You will |Time
 |xref:elective-b-signing-keys.adoc[B. Signing keys in your validator] |See how your APIs pick a key, and what they do with a key or an algorithm they do not know |25 min
 |xref:elective-c-introspection.adoc[C. Local validation or introspection] |Compare what Orders' local check and Keycloak's introspection endpoint say about a token after sign-out |20 min
-|xref:elective-d-authorization-services.adoc[D. Authorization Services] |Ask Keycloak for a decision with pushed claims, and configure a policy enforcer |40 min
+|xref:elective-d-authorization-services.adoc[D. Authorization Services] |Read decision requests with pushed claims, and configure and test a policy enforcer |40 min
 |xref:elective-e-external-tokens.adoc[E. Tokens from another issuer] |See Orders reject a foreign token, then design how to accept a partner's tokens |20 min
 |===
 
