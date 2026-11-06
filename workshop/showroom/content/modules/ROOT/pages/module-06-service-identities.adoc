@@ -103,7 +103,8 @@ image::m06-inventory-log.png["Inventory log line for the manager, called by orde
   `notifier`, and save. This is a *client role*: it belongs to Notifications
   and means nothing to any other API.
 . Open **Clients → orders-api → Service accounts roles → Assign role → Client
-  roles**, select `notifications-api` `notifier`, and click **Assign**.
+  roles**, type `notifier` in the search box, select the `notifications-api`
+  `notifier` row, and click **Assign**.
 +
 image::m03-service-account-roles.png[Service accounts roles tab for orders-api,link=self,window=_blank]
 
@@ -147,8 +148,8 @@ but not in the client's scope never reaches the token.
 == Step 3: allow the role, then refresh the token
 
 . Open **Clients → orders-api → Client scopes → orders-api-dedicated → Scope →
-  Assign role → Client roles**, select `notifications-api` `notifier`, and
-  click **Assign**.
+  Assign role → Client roles**, type `notifier` in the search box, select the
+  `notifications-api` `notifier` row, and click **Assign**.
 +
 image::m03-dedicated-scope.png["Scope tab of orders-api-dedicated with user, manager, and notifier",link=self,window=_blank]
 

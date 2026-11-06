@@ -133,7 +133,9 @@ would use, with `quarkus-keycloak-authorization`, for this endpoint:
 .. Map only `POST`: rename the `methods.any` entry to `methods.post` and add
    `quarkus.keycloak.policy-enforcer.paths.approve.methods.post.method=POST`.
 .. Require `order:approve`, not `order:read`.
-.. Take `channel` from the `X-Network-Zone` header, not from the body.
+.. Take `channel` from the `X-Network-Zone` header, not from the body: set
+   the `claim-information-point.claims.channel` value to
+   `+{request.header['X-Network-Zone']}+`.
 . Run the test task again. When every test passes, the output ends with `OK`.
   There is nothing to build or roll out.
 
