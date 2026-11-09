@@ -193,8 +193,9 @@ image::m06-trace.png["Trace of a manager order across Orders, Inventory, and Not
 . Copy the **Trace ID** from the top right of the trace page.
 . In **Observe → Logs**, search for it and click **Run Query** (again if the
   results do not change). You get one line per API. A row shows either only
-  its message (`request completed`, `request_complete`) or the app's whole JSON
-  line. Read the fields in the row, or click **Details** on a message-only row:
+  its message (`request completed`, `request_complete`, or `notification_sent`)
+  or the app's whole JSON line. Read the fields in the row, or click **Details**
+  on a message-only row:
 +
 --
 * **Orders:** `username` `manager`, `client_id` `spa`, and roles `manager` and

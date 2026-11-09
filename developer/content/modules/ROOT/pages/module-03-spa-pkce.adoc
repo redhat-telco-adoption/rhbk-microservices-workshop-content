@@ -62,6 +62,8 @@ minutes without activity; open it again the same way. Your edits are kept.
   **devfile**, then **Show the oc user and the developer namespace access**.
   It prints your username, `Developer namespace: {attendee_namespace}`, and
   `yes` twice: your workspace may build and roll out there.
++
+image::d03-run-task.png[The devfile task list after Terminal → Run Task… → devfile,link=self,window=_blank]
 
 Every task in this guide runs the same way: **Terminal → Run Task… → devfile**,
 then the task named in the step. Tasks run in their own terminal panel and

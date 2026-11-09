@@ -94,7 +94,8 @@ image::m04-restart-rollout.png[Restart rollout action on the bff Deployment,link
   `did not match the requested issuer`, and click **Run Query** (click it again
   if the results do not change). The BFF refused to start. The newest
   match is one long `Application run failed` record. The part that matters is
-  near the end of its `stack_trace` field, in the row or under **Details**:
+  in its `stack_trace` field, after the chain of `Error creating bean` messages
+  and before the `at ...` lines, in the row or under **Details**:
 +
 [subs="attributes+"]
 ----

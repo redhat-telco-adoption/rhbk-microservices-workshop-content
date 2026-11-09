@@ -22,12 +22,17 @@ scenario has a reference answer; write yours first.
   link:{openshift_console_url}/observe/traces?namespace=tracing&name=workshop&tenant={attendee_id}&start=15m&limit=100&q=%7B+resource.service.name+%3D+%22orders-api%22+%26%26+name+%3D+%22POST+%2Forders%22+%7D[your Orders traces,window=_blank]
   and open the denied `POST /orders` trace. Click the Orders span to see the
   403 status. The request never reached Inventory or Notifications.
++
+image::d07-deny-trace.png["The denied POST /orders trace: one Orders span, with status code 403",link=self,window=_blank]
 . In **Observe → Logs**, search for `missing_role` and click **Run Query**
-  (again if the results do not change). Click **Details** on the newest
-  `request completed` line, which is Orders' line: `decision` `deny`, status
-  403, and `reason` `missing_role`, with no token or secret in the log. The
-  `orders-api` pod's **Logs** tab (**Workloads → Pods →** _pod_ **→ Logs**)
-  shows the whole line, with `roles` `["user"]`.
+  (again if the results do not change). The newest `request completed` line is
+  Orders' line. Read its fields in the row, or click **Details** if the row
+  shows only the message: `decision` `deny`, status 403, and `reason`
+  `missing_role`, with no token or secret in the log. The `orders-api` pod's
+  **Logs** tab (**Workloads → Pods →** _pod_ **→ Logs**) also shows the whole
+  line, with `roles` `["user"]`.
++
+image::d07-deny-log.png[Orders' missing_role line in Observe → Logs,link=self,window=_blank]
 . Sign out.
 
 == Scenario 1: "I can't create orders"

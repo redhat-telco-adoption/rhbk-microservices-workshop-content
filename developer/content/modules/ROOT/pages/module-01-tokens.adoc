@@ -155,6 +155,8 @@ browser:
 
 . Open **Clients → proxy → Client scopes → Evaluate**. Click the **Users**
   field and pick `manager` from the list (typing alone does not select).
++
+image::d01-proxy-evaluate.png[The proxy client's Evaluate tab with the manager user picked,link=self,window=_blank]
 . Click **Effective role scope mappings**, then **Generated access token**; the
   token appears only after you switch tabs like this.
 . **Predict:** the proxy's token has one more entry in `aud` than the SPA's.
