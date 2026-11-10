@@ -40,9 +40,10 @@ Orders`' call to Inventory, is a *span*. If one of the three APIs has no span
 in a trace, the request never reached it. Keycloak is not traced here; you see
 only Orders`' calls to it.
 
-Right now a manager's order fails with 502. Keep the
-link:{spa_url}[SPA,window=_blank] open and signed in as `manager`; you
-click **Create a sample order** after each step.
+Right now a manager's order fails with 502. Open your
+link:{spa_url}[SPA,window=_blank] and sign in as `manager` (if it still shows
+**Sign out**, sign out and sign in again), and keep it open; you click
+**Create a sample order** after each step.
 
 == Step 1: token exchange for Inventory
 
@@ -173,9 +174,11 @@ replaced.
   under `notification`. The first order after a restart can take a few seconds
   while Orders fetches the realm's keys and its first tokens.
 
-If it fails with `Token exchange rejected` in the Orders log after a restart,
-check that the new pod really started (Module 4) and that the `orders-api-client`
-Secret has the current client secret.
+If it fails with `Token exchange rejected` in the Orders log, check that you
+have not signed out of another app since you signed in to this one. If you
+have, sign out of this app and sign in again. After a restart, also check that
+the new pod really started (Module 4) and that the `orders-api-client` Secret
+has the current client secret.
 
 Remember this one. After you change a service's roles, it keeps working with
 its old permissions until it gets a new token.

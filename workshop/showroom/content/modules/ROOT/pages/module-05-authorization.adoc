@@ -132,13 +132,16 @@ credential.
 
 == Before you switch apps
 
-The three apps share one Keycloak sign-in in your browser. An app you already
-used keeps its own session until you sign out of it, and a new app may sign
-you in as the last user without asking. Sign out of every app before you
-switch users. If you open the BFF or proxy and Keycloak's sign-in page does not
-appear, you are already signed in as someone: sign out first. If **Sign out**
-shows Keycloak's "Do you want to log out?" page, click **Logout**. The BFF and
-proxy pages do not name the signed-in user until you call the API: click
+The three apps share one Keycloak sign-in in your browser. Signing out of any
+app ends that sign-in for all three, but an app you already used still shows
+**Sign out** until you sign out of it too. That app can still read orders, but
+from Module 6 on, a manager's order there returns 502: sign out of it and sign
+in again. While that shared sign-in lasts, a new app may sign you in as the
+same user without asking. Sign out of every app before you switch users. If
+you open the BFF or proxy and Keycloak's sign-in page does not appear, you
+are already signed in as someone: sign out first. If **Sign out** shows
+Keycloak's "Do you want to log out?" page, click **Logout**. The BFF and proxy
+pages do not name the signed-in user until you call the API: click
 **View orders** and read `caller` in the **API response** block. After you
 sign out of the proxy, close any tab left on Keycloak's sign-in page: a later
 sign-in in another tab can complete it and sign you in to the proxy as the

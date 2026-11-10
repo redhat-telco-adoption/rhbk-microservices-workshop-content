@@ -18,7 +18,7 @@ the facilitator.
 
 * **`Invalid parameter: redirect_uri`.** Compare the client's redirect URI
   with the app's callback address: scheme, host, path, trailing slash.
-* **Signed in as the wrong user.** The apps share one Keycloak session. Sign out
+* **Signed in as the wrong user.** The apps share one Keycloak sign-in. Sign out
   of every app you used, then sign in again.
 * **The proxy shows an error after sign-in, at `/oauth2/callback`.** Check the
   `client-secret` key in `proxy-secrets` (Module 4) against **Clients → proxy →
@@ -34,13 +34,18 @@ the facilitator.
   restart the rollout.
 * **Every request returns 401.** Check the issuer character by character, and
   the `orders-api-aud` scope on the client you signed in with.
-* **Manager writes return 502.** Expected until Module 6. After Module 6,
-  follow the trace and search the logs for `/inventory/reserve` and `/notify`.
+* **Manager writes return 502.** Expected until Module 6. After Module 6, if
+  you signed out of another app since you signed in, the shared sign-in has
+  ended: sign out of the app that returns 502 and sign in again (Module 5).
+  Otherwise, follow the trace and search the logs for `/inventory/reserve` and
+  `/notify`.
 * **`reports` shows 503 or `Client not found`.** Expected until Module 8.
-* **Orders logs `Token exchange rejected`.** Check that **Standard Token
-  Exchange** is on for `orders-api` and that `inventory-api-aud` is attached as
-  **Optional**. After a restart, check that the new pod started and that
-  `orders-api-client` holds the current client secret (Module 6).
+* **Orders logs `Token exchange rejected`.** If you signed out of another app
+  since you signed in, the shared sign-in has ended: sign out of the app that
+  returns 502 and sign in again (Module 5). Otherwise, check that **Standard
+  Token Exchange** is on for `orders-api` and that `inventory-api-aud` is
+  attached as **Optional**. After a restart, check that the new pod started
+  and that `orders-api-client` holds the current client secret (Module 6).
 * **A role change has no effect on a service.** Orders caches its service
   token; restart `orders-api` or wait five minutes (Module 6).
 * **`ImagePullBackOff`.** A lab environment problem, not a lab task; tell the
